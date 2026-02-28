@@ -1,7 +1,7 @@
 import Fastify from 'fastify';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
-import { serviceHealthResponseSchema } from '@hostpilot/contracts';
+import { serviceHealthResponseSchema } from '@walt/contracts';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
 const app = Fastify({ logger: true });
@@ -9,7 +9,7 @@ const app = Fastify({ logger: true });
 await app.register(swagger, {
   openapi: {
     info: {
-      title: 'HostPilot Gateway API',
+      title: 'Walt Gateway API',
       version: '0.1.0'
     }
   }

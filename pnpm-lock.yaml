@@ -45,7 +45,7 @@ importers:
       '@fastify/swagger-ui':
         specifier: ^5.2.2
         version: 5.2.5
-      '@hostpilot/config-eslint':
+      '@walt/config-eslint':
         specifier: workspace:*
         version: link:packages/config-eslint
       '@types/node':
@@ -120,13 +120,13 @@ importers:
 
   apps/gateway:
     dependencies:
-      '@hostpilot/contracts':
+      '@walt/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
 
   apps/web:
     dependencies:
-      '@hostpilot/contracts':
+      '@walt/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
 
@@ -146,25 +146,25 @@ importers:
 
   services/identity:
     dependencies:
-      '@hostpilot/contracts':
+      '@walt/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
 
   services/messaging:
     dependencies:
-      '@hostpilot/contracts':
+      '@walt/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
 
   services/notifications:
     dependencies:
-      '@hostpilot/contracts':
+      '@walt/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
 
   services/ops:
     dependencies:
-      '@hostpilot/contracts':
+      '@walt/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
 

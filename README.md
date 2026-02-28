@@ -1,6 +1,6 @@
-# HostPilot Monorepo
+# Walt Monorepo
 
-Monorepo scaffold for HostPilot AI command center and microservices.
+Monorepo scaffold for Walt AI command center and microservices.
 
 ## Stack
 
