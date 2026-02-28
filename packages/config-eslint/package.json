@@ -1,0 +1,12 @@
+{
+  "name": "@hostpilot/config-eslint",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.mjs"
+  },
+  "devDependencies": {
+    "@next/eslint-plugin-next": "^15.2.1"
+  }
+}

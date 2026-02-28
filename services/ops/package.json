@@ -1,0 +1,17 @@
+{
+  "name": "@hostpilot/service-ops",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "lint": "eslint src --max-warnings=0",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "echo 'No tests yet for @hostpilot/service-ops'"
+  },
+  "dependencies": {
+    "@hostpilot/contracts": "workspace:*"
+  }
+}
