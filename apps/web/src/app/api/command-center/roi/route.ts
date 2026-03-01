@@ -1,6 +1,8 @@
 import { roiUpdateInputSchema } from '@walt/contracts';
 import { NextResponse } from 'next/server';
 
+import { handleApiError } from '@/lib/secure-logger';
+
 import { getRoiMetricsInSingleton, recordGuestReviewInSingleton, recordRefundInSingleton } from '@/lib/command-center-store';
 
 export async function GET() {
@@ -17,7 +19,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ metrics });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Invalid request';
-    return NextResponse.json({ error: message }, { status: 400 });
+    return handleApiError({ error, route: '/api/command-center/roi' });
   }
 }

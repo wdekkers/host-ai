@@ -1,6 +1,8 @@
 import { riskRecommendationInputSchema } from '@walt/contracts';
 import { NextResponse } from 'next/server';
 
+import { handleApiError } from '@/lib/secure-logger';
+
 import { getRiskRecommendation } from '@/lib/command-center-store';
 
 export async function POST(request: Request) {
@@ -8,7 +10,6 @@ export async function POST(request: Request) {
     const parsed = riskRecommendationInputSchema.parse(await request.json());
     return NextResponse.json({ recommendation: getRiskRecommendation(parsed) });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Invalid request';
-    return NextResponse.json({ error: message }, { status: 400 });
+    return handleApiError({ error, route: '/api/command-center/risk' });
   }
 }

@@ -1,19 +1,24 @@
 import { z } from 'zod';
 
-export const draftStatusSchema = z.enum(['pending', 'edited', 'approved', 'sent']);
+export const draftStatusSchema = z.enum(['pending', 'edited', 'approved', 'sent', 'rejected']);
 export type DraftStatus = z.infer<typeof draftStatusSchema>;
 
 export const draftSourceSchema = z.object({
   type: z.enum(['policy', 'reservation', 'property-note']),
   label: z.string().min(1),
-  snippet: z.string().min(1)
+  snippet: z.string().min(1),
+  confidence: z.enum(['low', 'medium', 'high']).optional(),
+  referenceUrl: z.string().url().optional(),
+  referenceId: z.string().min(1).optional()
 });
 export type DraftSource = z.infer<typeof draftSourceSchema>;
 
 export const auditLogEntrySchema = z.object({
-  action: z.enum(['created', 'edited', 'approved', 'sent']),
+  action: z.enum(['created', 'edited', 'approved', 'sent', 'rejected']),
   actorId: z.string().min(1),
-  timestamp: z.string().datetime()
+  timestamp: z.string().datetime(),
+  before: z.record(z.string(), z.unknown()).optional(),
+  after: z.record(z.string(), z.unknown()).optional()
 });
 export type AuditLogEntry = z.infer<typeof auditLogEntrySchema>;
 
@@ -38,7 +43,7 @@ export const createDraftInputSchema = z.object({
 export type CreateDraftInput = z.infer<typeof createDraftInputSchema>;
 
 export const updateDraftInputSchema = z.object({
-  action: z.enum(['edit', 'approve', 'send']),
+  action: z.enum(['edit', 'approve', 'send', 'reject']),
   actorId: z.string().min(1).default('host-user'),
   body: z.string().optional()
 });
@@ -76,6 +81,13 @@ export const strategyRecommendationInputSchema = z.object({
   portfolioConfidence: z.number().min(0).max(100)
 });
 export type StrategyRecommendationInput = z.infer<typeof strategyRecommendationInputSchema>;
+
+export const experienceRiskInputSchema = z.object({
+  fixImpact: z.number().min(0).max(100),
+  guestSensitivity: z.number().min(0).max(100),
+  nightsRemaining: z.number().int().min(1).max(60)
+});
+export type ExperienceRiskInput = z.infer<typeof experienceRiskInputSchema>;
 
 export const rolloutActionInputSchema = z.object({
   action: z.literal('complete-internal-validation')

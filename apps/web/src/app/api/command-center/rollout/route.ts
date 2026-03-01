@@ -1,6 +1,8 @@
 import { rolloutActionInputSchema } from '@walt/contracts';
 import { NextResponse } from 'next/server';
 
+import { handleApiError } from '@/lib/secure-logger';
+
 import { completeInternalValidationInSingleton, getRolloutStateInSingleton } from '@/lib/command-center-store';
 
 export async function GET() {
@@ -12,7 +14,6 @@ export async function PATCH(request: Request) {
     rolloutActionInputSchema.parse(await request.json());
     return NextResponse.json({ rollout: completeInternalValidationInSingleton() });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Invalid request';
-    return NextResponse.json({ error: message }, { status: 400 });
+    return handleApiError({ error, route: '/api/command-center/rollout' });
   }
 }

@@ -1,6 +1,8 @@
 import { createIncidentInputSchema } from '@walt/contracts';
 import { NextResponse } from 'next/server';
 
+import { handleApiError } from '@/lib/secure-logger';
+
 import { createIncidentInSingleton, listIncidentsInSingleton } from '@/lib/command-center-store';
 
 export async function GET() {
@@ -12,7 +14,6 @@ export async function POST(request: Request) {
     const parsed = createIncidentInputSchema.parse(await request.json());
     return NextResponse.json({ item: createIncidentInSingleton(parsed.summary) }, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Invalid request';
-    return NextResponse.json({ error: message }, { status: 400 });
+    return handleApiError({ error, route: '/api/command-center/incidents' });
   }
 }
