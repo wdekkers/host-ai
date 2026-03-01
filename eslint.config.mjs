@@ -1,3 +1,3 @@
-import config from '@hostpilot/config-eslint';
+import config from '@walt/config-eslint';
 
 export default config;

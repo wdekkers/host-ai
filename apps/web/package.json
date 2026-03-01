@@ -1,5 +1,5 @@
 {
-  "name": "@hostpilot/web",
+  "name": "@walt/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -8,9 +8,9 @@
     "start": "next start",
     "lint": "eslint src --max-warnings=0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "echo 'No tests yet for @hostpilot/web'"
+    "test": "tsx --test src/**/*.test.ts"
   },
   "dependencies": {
-    "@hostpilot/contracts": "workspace:*"
+    "@walt/contracts": "workspace:*"
   }
 }

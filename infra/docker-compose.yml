@@ -2,12 +2,12 @@ version: "3.9"
 services:
   postgres:
     image: postgres:16
-    container_name: hostpilot-postgres
+    container_name: walt-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: hostpilot
-      POSTGRES_PASSWORD: hostpilot
-      POSTGRES_DB: hostpilot
+      POSTGRES_USER: walt
+      POSTGRES_PASSWORD: walt
+      POSTGRES_DB: walt
     ports:
       - "5432:5432"
     volumes:

@@ -1,6 +1,6 @@
-# HostPilot Monorepo
+# Walt Monorepo
 
-Monorepo scaffold for HostPilot AI command center and microservices.
+Monorepo scaffold for Walt AI command center and microservices.
 
 ## Stack
 
@@ -54,6 +54,23 @@ pnpm gen:openapi
 ```bash
 pnpm dev
 ```
+
+## Integration Setup (Hospitable)
+
+For the `apps/web` integration routes, configure env vars in either:
+- repo root `.env` (shared), or
+- `apps/web/.env.local` (app-local, based on `apps/web/.env.example`)
+
+Required keys:
+
+```bash
+HOSPITABLE_WEBHOOK_SECRET=...
+HOSPITABLE_API_KEY=...
+HOSPITABLE_BASE_URL=https://api.hospitable.com
+```
+
+- `POST /api/integrations/hospitable` ingests signed webhook events.
+- `GET /api/integrations/hospitable/messages` pulls outbound messages from Hospitable API (requires API key/base URL).
 
 ## Useful Commands
 
