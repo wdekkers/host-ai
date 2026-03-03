@@ -1,0 +1,32 @@
+{
+	email admin@walt-services.com
+}
+
+ai-dev.walt-services.com {
+	# API Gateway
+	handle /api/* {
+		reverse_proxy gateway:4000
+	}
+
+	# Swagger docs
+	handle /docs* {
+		reverse_proxy gateway:4000
+	}
+
+	# Next.js web dashboard (catch-all)
+	handle {
+		reverse_proxy web:3000
+	}
+
+	log {
+		output stdout
+		format console
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+}
