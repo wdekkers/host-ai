@@ -1,6 +1,8 @@
-import { jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { jsonb, pgSchema, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 
-export const events = pgTable('events', {
+export const waltSchema = pgSchema('walt');
+
+export const events = waltSchema.table('events', {
   id: uuid('id').primaryKey(),
   type: text('type').notNull(),
   accountId: uuid('account_id').notNull(),
