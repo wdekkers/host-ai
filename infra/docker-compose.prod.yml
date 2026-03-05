@@ -1,0 +1,140 @@
+x-common: &common
+  restart: unless-stopped
+  env_file:
+    - ../.env.production
+  networks:
+    - walt-net
+
+x-fastify: &fastify
+  <<: *common
+  image: ghcr.io/wesleydekkers/walt-fastify:${IMAGE_TAG:-latest}
+
+services:
+  # ──────────────────────────────────────────
+  # Reverse Proxy — only public-facing container
+  # ──────────────────────────────────────────
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - walt-net
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+  # ──────────────────────────────────────────
+  # Database Migration — runs once, then exits
+  # ──────────────────────────────────────────
+  migrate:
+    image: ghcr.io/wesleydekkers/walt-migrate:${IMAGE_TAG:-latest}
+    <<: *common
+    restart: "no"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  # ──────────────────────────────────────────
+  # Next.js Web Dashboard
+  # ──────────────────────────────────────────
+  web:
+    image: ghcr.io/wesleydekkers/walt-web:${IMAGE_TAG:-latest}
+    <<: *common
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+
+  # ──────────────────────────────────────────
+  # API Gateway
+  # ──────────────────────────────────────────
+  gateway:
+    <<: *fastify
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      - PORT=4000
+    command: ["apps/gateway/dist/index.js"]
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+
+  # ──────────────────────────────────────────
+  # Microservices
+  # ──────────────────────────────────────────
+  identity:
+    <<: *fastify
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      - PORT=4101
+    command: ["services/identity/dist/index.js"]
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  messaging:
+    <<: *fastify
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      - PORT=4102
+    command: ["services/messaging/dist/index.js"]
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  ops:
+    <<: *fastify
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      - PORT=4103
+    command: ["services/ops/dist/index.js"]
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  notifications:
+    <<: *fastify
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      - PORT=4104
+    command: ["services/notifications/dist/index.js"]
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+networks:
+  walt-net:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
