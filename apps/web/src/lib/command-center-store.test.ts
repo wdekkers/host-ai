@@ -2029,7 +2029,7 @@ void test('stores always-manual escalation matrix and blocks autonomous handling
 });
 
 void test('exposes v1 intent taxonomy for booking rules arrival checkout pool early-late spa and sauna', async () => {
-  const response = await getIntentTaxonomy();
+  const response = await getIntentTaxonomy(new Request('http://localhost/api/command-center/intent-drafts'), {});
   const body = (await response.json()) as { intents: string[] };
   assert.equal(response.status, 200);
   assert.equal(body.intents.includes('booking-inquiry'), true);
@@ -2054,7 +2054,8 @@ void test('enforces draft-only defaults and marks high-stakes categories as manu
         intent: 'refund-request',
         guestName: 'Safety Guest'
       })
-    })
+    }),
+    {}
   );
   const body = (await response.json()) as { mode: string; manualOnly: boolean; item: { status: string } };
   assert.equal(response.status, 200);
@@ -2100,7 +2101,8 @@ void test('builds deterministic template sections for structured rules-based int
         intent: 'early-check-in-request',
         guestName: 'Template Guest'
       })
-    })
+    }),
+    {}
   );
   const body = (await response.json()) as {
     item: { body: string };
@@ -2124,7 +2126,8 @@ void test('creates clarifying-question draft when required context is missing', 
         intent: 'early-check-in-request',
         guestName: 'Clarify Guest'
       })
-    })
+    }),
+    {}
   );
   const body = (await response.json()) as {
     requiresClarification: boolean;

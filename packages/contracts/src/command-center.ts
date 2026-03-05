@@ -44,7 +44,6 @@ export type CreateDraftInput = z.infer<typeof createDraftInputSchema>;
 
 export const updateDraftInputSchema = z.object({
   action: z.enum(['edit', 'approve', 'send', 'reject']),
-  actorId: z.string().min(1).default('host-user'),
   body: z.string().optional()
 });
 export type UpdateDraftInput = z.infer<typeof updateDraftInputSchema>;

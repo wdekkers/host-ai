@@ -403,6 +403,7 @@ export function CommandCenterDashboard() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [twilioError, setTwilioError] = useState<string | null>(null);
   const [hospitableMessagesError, setHospitableMessagesError] = useState<string | null>(null);
+  const [isReadOnly, setIsReadOnly] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -428,6 +429,19 @@ export function CommandCenterDashboard() {
     portfolioConfidence: 95
   });
   const [strategyRecommendation, setStrategyRecommendation] = useState<StrategyRecommendation | null>(null);
+
+  const handleAuthStatus = (status: number) => {
+    if (status === 401) {
+      if (typeof window !== 'undefined') {
+        window.location.href = '/sign-in';
+      }
+      return;
+    }
+    if (status === 403) {
+      setIsReadOnly(true);
+      setError('You do not have permission for one or more command-center actions.');
+    }
+  };
 
   const priorities = useMemo(() => {
     const pending = items.filter((item) => item.status === 'pending' || item.status === 'edited').length;
@@ -497,6 +511,46 @@ export function CommandCenterDashboard() {
           fetch('/api/command-center/operating-profile'),
           fetch('/api/command-center/autopilot')
         ]);
+
+      const responses = [
+        queueRes,
+        landingRes,
+        awarenessRes,
+        incidentsRes,
+        rolloutRes,
+        signalsRes,
+        roiRes,
+        auditRes,
+        prioritiesRes,
+        proactiveRes,
+        cleanerJitRes,
+        monitoringRes,
+        incidentAlertsRes,
+        outboxRes,
+        approvalProjectionRes,
+        propertyProjectionRes,
+        entitiesRes,
+        propertiesOverviewRes,
+        integrationStatusRes,
+        roiDashboardRes,
+        adoptionMetricsRes,
+        twilioThreadsRes,
+        propertyBrainRes,
+        portfolioTrendsRes,
+        operatingProfileRes,
+        autopilotActionsRes
+      ];
+
+      const denied = responses.find((response) => response.status === 401 || response.status === 403);
+      if (denied) {
+        handleAuthStatus(denied.status);
+        return;
+      }
+
+      const failed = responses.find((response) => !response.ok);
+      if (failed) {
+        throw new Error(`Request failed with status ${failed.status}`);
+      }
 
       const queueData = (await queueRes.json()) as QueueResponse;
       const landingData = (await landingRes.json()) as LandingResponse;
@@ -590,7 +644,10 @@ export function CommandCenterDashboard() {
   }, [selectedDraftId]);
 
   const createDraft = async () => {
-    await fetch('/api/command-center/drafts', {
+    if (isReadOnly) {
+      return;
+    }
+    const response = await fetch('/api/command-center/drafts', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -599,15 +656,26 @@ export function CommandCenterDashboard() {
         context: { guestName: 'Guest', checkInTime: '4:00 PM' }
       })
     });
+    if (!response.ok) {
+      handleAuthStatus(response.status);
+      return;
+    }
     await loadDashboard();
   };
 
   const updateDraft = async (id: string, action: 'edit' | 'approve' | 'send' | 'reject', body?: string) => {
+    if (isReadOnly) {
+      return;
+    }
     const response = await fetch(`/api/command-center/queue/${id}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ action, actorId: 'host-user', body })
+      body: JSON.stringify({ action, body })
     });
+    if (response.status === 401 || response.status === 403) {
+      handleAuthStatus(response.status);
+      return;
+    }
     if (!response.ok) {
       const payload = (await response.json()) as { error?: string };
       throw new Error(payload.error ?? 'Action failed. Retry or refresh the queue.');
@@ -669,11 +737,18 @@ export function CommandCenterDashboard() {
   };
 
   const completeValidation = async () => {
-    await fetch('/api/command-center/rollout', {
+    if (isReadOnly) {
+      return;
+    }
+    const response = await fetch('/api/command-center/rollout', {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ action: 'complete-internal-validation' })
     });
+    if (!response.ok) {
+      handleAuthStatus(response.status);
+      return;
+    }
     await loadDashboard();
   };
 
@@ -820,7 +895,10 @@ export function CommandCenterDashboard() {
   };
 
   const evaluateAutopilot = async () => {
-    await fetch('/api/command-center/autopilot', {
+    if (isReadOnly) {
+      return;
+    }
+    const response = await fetch('/api/command-center/autopilot', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
@@ -829,24 +907,42 @@ export function CommandCenterDashboard() {
         body: webhookMessage
       })
     });
+    if (!response.ok) {
+      handleAuthStatus(response.status);
+      return;
+    }
     await loadDashboard();
   };
 
   const rollbackAutopilot = async (actionId: string) => {
-    await fetch('/api/command-center/autopilot/rollback', {
+    if (isReadOnly) {
+      return;
+    }
+    const response = await fetch('/api/command-center/autopilot/rollback', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ actionId, reason: 'Host override from command center' })
     });
+    if (!response.ok) {
+      handleAuthStatus(response.status);
+      return;
+    }
     await loadDashboard();
   };
 
   const updateProfileStrictness = async (strictness: number) => {
-    await fetch('/api/command-center/operating-profile', {
+    if (isReadOnly) {
+      return;
+    }
+    const response = await fetch('/api/command-center/operating-profile', {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ strictness })
     });
+    if (!response.ok) {
+      handleAuthStatus(response.status);
+      return;
+    }
     await loadDashboard();
   };
 
@@ -864,11 +960,13 @@ export function CommandCenterDashboard() {
   };
 
   const seedPropertyBrain = async () => {
-    await fetch(`/api/command-center/property-brain/${encodeURIComponent(propertyBrainPropertyId)}`, {
+    if (isReadOnly) {
+      return;
+    }
+    const response = await fetch(`/api/command-center/property-brain/${encodeURIComponent(propertyBrainPropertyId)}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        actorId: 'ops-property-brain',
         coreRules: {
           checkInTime: '16:00',
           checkOutTime: '10:00',
@@ -904,6 +1002,10 @@ export function CommandCenterDashboard() {
         }
       })
     });
+    if (!response.ok) {
+      handleAuthStatus(response.status);
+      return;
+    }
     await loadDashboard();
   };
 
@@ -1558,12 +1660,19 @@ export function CommandCenterDashboard() {
                 min={0}
                 max={100}
                 value={operatingProfile.economicSensitivity}
+                disabled={isReadOnly}
                 onChange={(event) => {
                   void fetch('/api/command-center/operating-profile', {
                     method: 'PATCH',
                     headers: { 'content-type': 'application/json' },
                     body: JSON.stringify({ economicSensitivity: Number(event.target.value) })
-                  }).then(() => loadDashboard());
+                  }).then((response) => {
+                    if (!response.ok) {
+                      handleAuthStatus(response.status);
+                      return;
+                    }
+                    return loadDashboard();
+                  });
                 }}
                 style={{ width: '100%' }}
               />
@@ -1619,14 +1728,17 @@ export function CommandCenterDashboard() {
       </section>
 
       <div style={{ marginBottom: '1rem' }}>
-        <button onClick={() => void createDraft()} style={buttonStyle('#111827')}>
-          Generate AI Draft
-        </button>
+        {!isReadOnly ? (
+          <button onClick={() => void createDraft()} style={buttonStyle('#111827')}>
+            Generate AI Draft
+          </button>
+        ) : null}
       </div>
 
       <h2 style={{ marginBottom: '0.5rem' }}>Approval Queue</h2>
       {loading && <p>Loading...</p>}
       {error && <p style={{ color: '#b91c1c' }}>{error}</p>}
+      {isReadOnly && <p style={{ color: '#92400e' }}>Read-only mode: you can view data but cannot execute restricted actions.</p>}
       {actionError && <p style={{ color: '#b91c1c' }}>{actionError}</p>}
 
       <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
@@ -1708,6 +1820,7 @@ export function CommandCenterDashboard() {
             item={item}
             isSelected={item.id === selectedDraftId}
             onSelect={setSelectedDraftId}
+            canExecute={!isReadOnly}
             onUpdate={async (id, action, body) => {
               try {
                 await updateDraft(id, action, body);
@@ -1899,12 +2012,16 @@ export function CommandCenterDashboard() {
           </p>
         ) : null}
         <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.4rem' }}>
-          <button onClick={() => void evaluateAutopilot()} style={buttonStyle('#14532d')}>
-            Evaluate Autopilot
-          </button>
-          <button onClick={() => void updateProfileStrictness(75)} style={buttonStyle('#1e3a8a')}>
-            Set Strictness 75
-          </button>
+          {!isReadOnly ? (
+            <>
+              <button onClick={() => void evaluateAutopilot()} style={buttonStyle('#14532d')}>
+                Evaluate Autopilot
+              </button>
+              <button onClick={() => void updateProfileStrictness(75)} style={buttonStyle('#1e3a8a')}>
+                Set Strictness 75
+              </button>
+            </>
+          ) : null}
         </div>
         <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: 13 }}>
           {autopilotActions.slice(0, 5).map((action) => (
@@ -1912,6 +2029,7 @@ export function CommandCenterDashboard() {
               {action.intent} [{action.decision}/{action.status}]
               {action.status !== 'rolled_back' ? (
                 <button
+                  disabled={isReadOnly}
                   onClick={() => void rollbackAutopilot(action.id)}
                   style={{ ...buttonStyle('#991b1b'), marginLeft: '0.35rem', padding: '0.1rem 0.45rem' }}
                 >
@@ -1938,12 +2056,14 @@ function PriorityCard({ label, value }: { label: string; value: number }) {
 function QueueCard({
   item,
   isSelected,
+  canExecute,
   onSelect,
   onUpdate,
   onRegenerateInbound
 }: {
   item: QueueItem;
   isSelected: boolean;
+  canExecute: boolean;
   onSelect: (id: string) => void;
   onUpdate: (id: string, action: 'edit' | 'approve' | 'send' | 'reject', body?: string) => Promise<void>;
   onRegenerateInbound: (id: string) => Promise<void>;
@@ -2024,21 +2144,25 @@ function QueueCard({
         <button onClick={() => onSelect(item.id)} style={buttonStyle('#0f172a')}>
           Open Detail
         </button>
-        <button onClick={() => void onRegenerateInbound(item.id)} style={buttonStyle('#7c3aed')}>
-          Regenerate AI Draft
-        </button>
-        <button onClick={() => void onUpdate(item.id, 'edit', body)} style={buttonStyle('#334155')}>
-          Save Edit
-        </button>
-        <button onClick={() => void onUpdate(item.id, 'approve')} style={buttonStyle('#166534')}>
-          Approve
-        </button>
-        <button onClick={() => void onUpdate(item.id, 'send')} style={buttonStyle('#0369a1')}>
-          Send
-        </button>
-        <button onClick={() => void onUpdate(item.id, 'reject')} style={buttonStyle('#b91c1c')}>
-          Reject
-        </button>
+        {canExecute ? (
+          <>
+            <button onClick={() => void onRegenerateInbound(item.id)} style={buttonStyle('#7c3aed')}>
+              Regenerate AI Draft
+            </button>
+            <button onClick={() => void onUpdate(item.id, 'edit', body)} style={buttonStyle('#334155')}>
+              Save Edit
+            </button>
+            <button onClick={() => void onUpdate(item.id, 'approve')} style={buttonStyle('#166534')}>
+              Approve
+            </button>
+            <button onClick={() => void onUpdate(item.id, 'send')} style={buttonStyle('#0369a1')}>
+              Send
+            </button>
+            <button onClick={() => void onUpdate(item.id, 'reject')} style={buttonStyle('#b91c1c')}>
+              Reject
+            </button>
+          </>
+        ) : null}
       </footer>
     </article>
   );
