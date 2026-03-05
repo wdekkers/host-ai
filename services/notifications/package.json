@@ -1,5 +1,5 @@
 {
-  "name": "@hostpilot/service-notifications",
+  "name": "@walt/service-notifications",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,9 +9,9 @@
     "start": "node dist/index.js",
     "lint": "eslint src --max-warnings=0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "echo 'No tests yet for @hostpilot/service-notifications'"
+    "test": "echo 'No tests yet for @walt/service-notifications'"
   },
   "dependencies": {
-    "@hostpilot/contracts": "workspace:*"
+    "@walt/contracts": "workspace:*"
   }
 }
