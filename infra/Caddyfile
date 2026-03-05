@@ -2,7 +2,7 @@
 	email admin@walt-services.com
 }
 
-ai-dev.walt-services.com {
+ai.walt-services.com {
 	# API Gateway
 	handle /api/* {
 		reverse_proxy gateway:4000

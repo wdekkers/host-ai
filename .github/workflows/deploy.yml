@@ -7,6 +7,8 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/walt
+  AWS_REGION: us-east-1
+  AWS_ROLE_ARN: arn:aws:iam::247187613539:role/hostpilot-github-actions
 
 jobs:
   lint-and-typecheck:
@@ -70,16 +72,55 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
+      - name: Assume AWS role via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Fetch secrets from AWS Secrets Manager
+        id: secrets
+        run: |
+          get() { aws secretsmanager get-secret-value --secret-id "$1" --query SecretString --output text; }
+
+          echo "DATABASE_URL=$(get hostpilot/prod/database-url)" >> "$GITHUB_OUTPUT"
+          echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$(get hostpilot/prod/clerk-publishable-key)" >> "$GITHUB_OUTPUT"
+          echo "CLERK_SECRET_KEY=$(get hostpilot/prod/clerk-secret-key)" >> "$GITHUB_OUTPUT"
+          echo "HOSPITABLE_API_KEY=$(get hostpilot/prod/hospitable-api-key)" >> "$GITHUB_OUTPUT"
+          echo "HOSPITABLE_BASE_URL=$(get hostpilot/prod/hospitable-base-url)" >> "$GITHUB_OUTPUT"
+          echo "GHCR_TOKEN=$(get hostpilot/prod/ghcr-token)" >> "$GITHUB_OUTPUT"
+
       - name: Deploy to Lightsail
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.LIGHTSAIL_HOST }}
           username: ${{ secrets.LIGHTSAIL_USER }}
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          envs: GITHUB_ACTOR,GHCR_TOKEN,DATABASE_URL,NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,CLERK_SECRET_KEY,HOSPITABLE_API_KEY,HOSPITABLE_BASE_URL,IMAGE_TAG
           script: |
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+
+            cat > /opt/walt/.env.production << EOF
+            DATABASE_URL=$DATABASE_URL
+            NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+            CLERK_SECRET_KEY=$CLERK_SECRET_KEY
+            HOSPITABLE_API_KEY=$HOSPITABLE_API_KEY
+            HOSPITABLE_BASE_URL=$HOSPITABLE_BASE_URL
+            EOF
+
             cd /opt/walt
-            export IMAGE_TAG=${{ github.sha }}
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
             docker image prune -f
+        env:
+          GHCR_TOKEN: ${{ steps.secrets.outputs.GHCR_TOKEN }}
+          DATABASE_URL: ${{ steps.secrets.outputs.DATABASE_URL }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ steps.secrets.outputs.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ steps.secrets.outputs.CLERK_SECRET_KEY }}
+          HOSPITABLE_API_KEY: ${{ steps.secrets.outputs.HOSPITABLE_API_KEY }}
+          HOSPITABLE_BASE_URL: ${{ steps.secrets.outputs.HOSPITABLE_BASE_URL }}
+          IMAGE_TAG: ${{ github.sha }}
