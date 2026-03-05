@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
 
+import { withPermission } from '@/lib/auth/authorize';
 import { handleApiError } from '@/lib/secure-logger';
 
 import {
@@ -18,7 +19,6 @@ const priceTierSchema = z.object({
 });
 
 const updatePropertyBrainSchema = z.object({
-  actorId: z.string().min(1).default('host-user'),
   coreRules: z
     .object({
       checkInTime: z.string().min(1).optional(),
@@ -104,18 +104,23 @@ const updatePropertyBrainSchema = z.object({
     .optional()
 });
 
-export async function GET(_request: Request, { params }: Params) {
+export const GET = withPermission('dashboard.read', async (_request: Request, { params }: Params) => {
   const { id } = await params;
   return NextResponse.json({
     profile: getPropertyBrainProfileInSingleton(id),
     completeness: getPropertyBrainCompletenessInSingleton(id)
   });
-}
+});
 
-export async function PATCH(request: Request, { params }: Params) {
+export const PATCH = withPermission('platform.configure', async (request: Request, { params }: Params, authContext) => {
   const { id } = await params;
   try {
-    const parsed = updatePropertyBrainSchema.parse(await request.json());
+    const rawBody = (await request.json()) as { actorId?: unknown };
+    const parsed = updatePropertyBrainSchema.parse(rawBody);
+    const actorId =
+      process.env.NODE_ENV !== 'production' && typeof rawBody.actorId === 'string' && rawBody.actorId.length > 0
+        ? rawBody.actorId
+        : authContext.userId;
     const profile = updatePropertyBrainProfileInSingleton(
       id,
       {
@@ -128,7 +133,7 @@ export async function PATCH(request: Request, { params }: Params) {
         voiceProfile: parsed.voiceProfile,
         escalationMatrix: parsed.escalationMatrix
       },
-      parsed.actorId
+      actorId
     );
     return NextResponse.json({
       profile,
@@ -137,4 +142,4 @@ export async function PATCH(request: Request, { params }: Params) {
   } catch (error) {
     return handleApiError({ error, route: '/api/command-center/property-brain/[id]' });
   }
-}
+});

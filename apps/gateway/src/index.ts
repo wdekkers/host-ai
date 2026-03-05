@@ -4,6 +4,9 @@ import swaggerUi from '@fastify/swagger-ui';
 import { serviceHealthResponseSchema } from '@walt/contracts';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
+import { authPlugin } from './plugins/auth.js';
+import { authorizePlugin } from './plugins/authorize.js';
+
 const app = Fastify({ logger: true });
 
 await app.register(swagger, {
@@ -16,6 +19,8 @@ await app.register(swagger, {
 });
 
 await app.register(swaggerUi, { routePrefix: '/docs' });
+await app.register(authPlugin);
+await app.register(authorizePlugin);
 
 app.get(
   '/health',
@@ -28,6 +33,18 @@ app.get(
     }
   },
   async () => ({ status: 'ok', service: 'gateway' })
+);
+
+app.get(
+  '/me',
+  {
+    preHandler: app.requirePermission('dashboard.read')
+  },
+  async (request) => ({
+    userId: request.auth?.userId,
+    orgId: request.auth?.orgId,
+    role: request.auth?.role
+  })
 );
 
 const port = Number(process.env.PORT ?? 4000);

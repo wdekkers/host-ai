@@ -8,9 +8,10 @@
     "start": "next start",
     "lint": "eslint src --max-warnings=0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "tsx --test src/**/*.test.ts"
+    "test": "NODE_ENV=test tsx --test src/**/*.test.ts"
   },
   "dependencies": {
+    "@clerk/nextjs": "^5.7.5",
     "@walt/contracts": "workspace:*"
   }
 }
