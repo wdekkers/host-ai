@@ -58,10 +58,6 @@ COPY --from=build /app/package.json ./
 # Copy built shared packages
 COPY --from=build /app/packages/contracts/dist ./packages/contracts/dist
 COPY --from=build /app/packages/contracts/package.json ./packages/contracts/
-COPY --from=build /app/packages/db/dist ./packages/db/dist
-COPY --from=build /app/packages/db/package.json ./packages/db/
-COPY --from=build /app/packages/api-client/dist ./packages/api-client/dist
-COPY --from=build /app/packages/api-client/package.json ./packages/api-client/
 
 # Copy built gateway
 COPY --from=build /app/apps/gateway/dist ./apps/gateway/dist
