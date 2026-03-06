@@ -10,14 +10,39 @@ type HospitableListResponse = {
   links?: { next?: string | null };
 };
 
-async function fetchAllReservations(config: { apiKey: string; baseUrl: string }) {
-  const all: Record<string, unknown>[] = [];
-  let url: string | null = new URL('/v2/reservations?limit=100&includes[]=guest&includes[]=properties', config.baseUrl).toString();
+function headers(apiKey: string) {
+  return { accept: 'application/json', authorization: `Bearer ${apiKey}` };
+}
+
+async function fetchAllProperties(config: { apiKey: string; baseUrl: string }) {
+  const all: Array<{ id: string; name: string }> = [];
+  let url: string | null = new URL('/v2/properties?limit=50', config.baseUrl).toString();
 
   while (url) {
-    const res = await fetch(url, {
-      headers: { accept: 'application/json', authorization: `Bearer ${config.apiKey}` }
-    });
+    const res = await fetch(url, { headers: headers(config.apiKey) });
+    if (!res.ok) throw new Error(`Hospitable properties returned ${res.status}`);
+    const body = (await res.json()) as HospitableListResponse;
+    for (const p of body.data ?? []) {
+      all.push({ id: String(p.id), name: String(p.name ?? '') });
+    }
+    url = body.links?.next ?? null;
+  }
+
+  return all;
+}
+
+async function fetchReservationsForProperty(
+  config: { apiKey: string; baseUrl: string },
+  propertyId: string
+): Promise<Record<string, unknown>[]> {
+  const all: Record<string, unknown>[] = [];
+  let url: string | null = new URL(
+    `/v2/reservations?limit=100&properties[]=${propertyId}`,
+    config.baseUrl
+  ).toString();
+
+  while (url) {
+    const res = await fetch(url, { headers: headers(config.apiKey) });
     if (!res.ok) throw new Error(`Hospitable reservations returned ${res.status}`);
     const body = (await res.json()) as HospitableListResponse;
     all.push(...(body.data ?? []));
@@ -27,50 +52,71 @@ async function fetchAllReservations(config: { apiKey: string; baseUrl: string })
   return all;
 }
 
-async function fetchMessagesForReservation(config: { apiKey: string; baseUrl: string }, reservationId: string) {
+async function fetchMessagesForReservation(
+  config: { apiKey: string; baseUrl: string },
+  reservationId: string
+): Promise<Record<string, unknown>[]> {
   const url = new URL(`/v2/reservations/${reservationId}/messages?limit=100`, config.baseUrl);
-  const res = await fetch(url, {
-    headers: { accept: 'application/json', authorization: `Bearer ${config.apiKey}` }
-  });
+  const res = await fetch(url, { headers: headers(config.apiKey) });
   if (!res.ok) return [];
   const body = (await res.json()) as { data?: Record<string, unknown>[] };
   return body.data ?? [];
 }
 
+function extractGuestFromMessages(rawMessages: Record<string, unknown>[]) {
+  const guestMsg = rawMessages.find((m) => m.sender_type === 'guest');
+  if (!guestMsg) return { first_name: null, last_name: null };
+  const sender = (guestMsg.sender ?? {}) as Record<string, unknown>;
+  const fullName = String(sender.full_name ?? '').trim();
+  if (!fullName) return { first_name: null, last_name: null };
+  const [first, ...rest] = fullName.split(' ');
+  return { first_name: first ?? null, last_name: rest.length > 0 ? rest.join(' ') : null };
+}
+
 export async function POST() {
   const config = getHospitableApiConfig();
   if (!config) {
-    return NextResponse.json(
-      { error: 'Hospitable API not configured.' },
-      { status: 503 }
-    );
+    return NextResponse.json({ error: 'Hospitable API not configured.' }, { status: 503 });
   }
 
-  const rawReservations = await fetchAllReservations(config);
+  const properties = await fetchAllProperties(config);
   const now = new Date();
   let reservationCount = 0;
   let messageCount = 0;
 
-  for (const raw of rawReservations) {
-    const normalized = normalizeReservation(raw);
-    await db
-      .insert(reservations)
-      .values({ ...normalized, syncedAt: now })
-      .onConflictDoUpdate({
-        target: reservations.id,
-        set: { ...normalized, syncedAt: now }
-      });
-    reservationCount++;
+  for (const property of properties) {
+    const rawReservations = await fetchReservationsForProperty(config, property.id);
 
-    const rawMessages = await fetchMessagesForReservation(config, normalized.id);
-    for (const msg of rawMessages) {
-      const normalizedMsg = normalizeMessage(msg, normalized.id);
-      if (!normalizedMsg) continue;
+    for (const raw of rawReservations) {
+      const rawMessages = await fetchMessagesForReservation(config, String(raw.id));
+      const guest = extractGuestFromMessages(rawMessages);
+
+      // Inject property and guest info in the shape normalizeReservation expects
+      const enriched: Record<string, unknown> = {
+        ...raw,
+        properties: [{ id: property.id, name: property.name }],
+        guest: { ...guest, id: null, email: null }
+      };
+
+      const normalized = normalizeReservation(enriched);
       await db
-        .insert(messages)
-        .values({ id: uuidv4(), ...normalizedMsg })
-        .onConflictDoNothing();
-      messageCount++;
+        .insert(reservations)
+        .values({ ...normalized, syncedAt: now })
+        .onConflictDoUpdate({
+          target: reservations.id,
+          set: { ...normalized, syncedAt: now }
+        });
+      reservationCount++;
+
+      for (const msg of rawMessages) {
+        const normalizedMsg = normalizeMessage(msg, normalized.id);
+        if (!normalizedMsg) continue;
+        await db
+          .insert(messages)
+          .values({ id: uuidv4(), ...normalizedMsg })
+          .onConflictDoNothing();
+        messageCount++;
+      }
     }
   }
 
