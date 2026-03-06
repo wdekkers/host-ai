@@ -54,11 +54,12 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: parsedQuery.error.message }, { status: 400 });
   }
 
-  const providerUrl = new URL('/v2/messages', config.baseUrl);
+  const reservationId = parsedQuery.data.reservationId;
+  const path = reservationId
+    ? `/v1/reservations/${reservationId}/messages`
+    : '/v1/messages';
+  const providerUrl = new URL(path, config.baseUrl);
   providerUrl.searchParams.set('limit', String(parsedQuery.data.limit));
-  if (parsedQuery.data.reservationId) {
-    providerUrl.searchParams.set('reservationId', parsedQuery.data.reservationId);
-  }
 
   const providerResponse = await fetch(providerUrl, {
     method: 'GET',
