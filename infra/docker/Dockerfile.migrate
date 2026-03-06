@@ -1,6 +1,4 @@
-# One-shot container: pushes Drizzle schema to Postgres, then exits.
-# Uses db:push (not db:migrate) — no migration SQL files exist yet.
-# Switch to db:migrate once migration workflow is established.
+# One-shot container: applies Drizzle migrations to Postgres, then exits.
 
 FROM node:22-alpine AS base
 RUN corepack enable && corepack prepare pnpm@10.6.0 --activate
@@ -22,4 +20,4 @@ COPY tsconfig.base.json ./
 
 RUN pnpm install --frozen-lockfile
 
-CMD ["pnpm", "--filter", "@walt/db", "db:push"]
+CMD ["pnpm", "--filter", "@walt/db", "db:migrate"]
