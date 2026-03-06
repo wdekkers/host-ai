@@ -36,17 +36,19 @@ async function fetchReservationsForProperty(
   propertyId: string
 ): Promise<Record<string, unknown>[]> {
   const all: Record<string, unknown>[] = [];
-  let url: string | null = new URL(
-    `/v2/reservations?limit=100&properties[]=${propertyId}`,
-    config.baseUrl
-  ).toString();
+  let page = 1;
 
-  while (url) {
+  while (true) {
+    // Build URL manually — links.next from Hospitable drops the properties[] filter
+    // and uses http:// instead of https://, so we manage pagination ourselves.
+    const url = `${config.baseUrl}/v2/reservations?limit=100&properties[]=${encodeURIComponent(propertyId)}&page=${page}`;
     const res = await fetch(url, { headers: headers(config.apiKey) });
     if (!res.ok) throw new Error(`Hospitable reservations returned ${res.status}`);
     const body = (await res.json()) as HospitableListResponse;
-    all.push(...(body.data ?? []));
-    url = body.links?.next ?? null;
+    const batch = body.data ?? [];
+    all.push(...batch);
+    if (batch.length < 100) break;
+    page++;
   }
 
   return all;
