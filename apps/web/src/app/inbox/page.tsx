@@ -1,4 +1,5 @@
 import { desc, eq } from 'drizzle-orm';
+import Link from 'next/link';
 import { messages, reservations } from '@walt/db';
 import { db } from '@/lib/db';
 
@@ -16,7 +17,7 @@ function formatRelativeTime(date: Date | null) {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function truncate(text: string, maxLen = 120) {
+function truncate(text: string, maxLen = 100) {
   if (text.length <= maxLen) return text;
   return text.slice(0, maxLen).trimEnd() + '…';
 }
@@ -25,65 +26,125 @@ export default async function InboxPage() {
   const rows = await db
     .select({
       id: messages.id,
+      reservationId: messages.reservationId,
       body: messages.body,
       senderType: messages.senderType,
       senderFullName: messages.senderFullName,
       createdAt: messages.createdAt,
-      suggestion: messages.suggestion,
-      reservationId: messages.reservationId,
       guestFirstName: reservations.guestFirstName,
-      guestLastName: reservations.guestLastName
+      guestLastName: reservations.guestLastName,
+      propertyName: reservations.propertyName,
+      checkIn: reservations.checkIn,
+      checkOut: reservations.checkOut,
+      status: reservations.status,
     })
     .from(messages)
     .leftJoin(reservations, eq(messages.reservationId, reservations.id))
-    .where(eq(messages.senderType, 'guest'))
-    .orderBy(desc(messages.createdAt))
-    .limit(100);
+    .orderBy(desc(messages.createdAt));
+
+  // Group into threads by reservation, most-recently-active first
+  type Thread = {
+    reservationId: string;
+    guestName: string;
+    propertyName: string | null;
+    checkIn: Date | null;
+    checkOut: Date | null;
+    status: string | null;
+    lastBody: string;
+    lastSenderType: string;
+    lastMessageAt: Date;
+    messageCount: number;
+    hasUnrepliedGuest: boolean;
+  };
+
+  const threadMap = new Map<string, Thread>();
+  for (const row of rows) {
+    if (!threadMap.has(row.reservationId)) {
+      const guestName =
+        [row.guestFirstName, row.guestLastName].filter(Boolean).join(' ') ||
+        row.senderFullName ||
+        'Guest';
+      threadMap.set(row.reservationId, {
+        reservationId: row.reservationId,
+        guestName,
+        propertyName: row.propertyName,
+        checkIn: row.checkIn,
+        checkOut: row.checkOut,
+        status: row.status,
+        lastBody: row.body,
+        lastSenderType: row.senderType,
+        lastMessageAt: row.createdAt,
+        messageCount: 0,
+        hasUnrepliedGuest: false,
+      });
+    }
+    const thread = threadMap.get(row.reservationId)!;
+    thread.messageCount++;
+    // If the latest message is from the guest, mark as needing reply
+    if (thread.lastSenderType === 'guest') thread.hasUnrepliedGuest = true;
+  }
+
+  const threads = [...threadMap.values()];
 
   return (
     <div className="p-8">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold">Inbox</h1>
         <p className="text-sm text-gray-500 mt-1">
-          {rows.length} message{rows.length !== 1 ? 's' : ''}
+          {threads.length} conversation{threads.length !== 1 ? 's' : ''}
         </p>
       </div>
 
-      {rows.length === 0 ? (
+      {threads.length === 0 ? (
         <div className="rounded-lg border border-gray-200 bg-white p-12 text-center text-gray-500">
-          No messages yet. Sync reservations or wait for webhook messages.
+          No messages yet. Sync reservations first.
         </div>
       ) : (
         <div className="rounded-lg border border-gray-200 bg-white divide-y divide-gray-200">
-          {rows.map((msg) => {
-            const guestName =
-              [msg.guestFirstName, msg.guestLastName].filter(Boolean).join(' ') ||
-              msg.senderFullName ||
-              'Guest';
-            return (
-              <div key={msg.id} className="px-6 py-4 hover:bg-gray-50">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-sm text-gray-900">{guestName}</span>
-                      <span className="text-xs text-gray-400">·</span>
-                      <span className="text-xs text-gray-400">Reservation {msg.reservationId}</span>
-                    </div>
-                    <p className="text-sm text-gray-600">{truncate(msg.body)}</p>
-                    {msg.suggestion && (
-                      <div className="mt-2 rounded bg-blue-50 border border-blue-100 px-3 py-2">
-                        <p className="text-xs font-medium text-blue-600 mb-1">Suggested reply</p>
-                        <p className="text-sm text-blue-900">{msg.suggestion}</p>
-                      </div>
-                    )}
-                  </div>
-                  <span className="flex-shrink-0 text-xs text-gray-400 whitespace-nowrap">
-                    {formatRelativeTime(msg.createdAt)}
+          {threads.map((thread) => (
+            <Link
+              key={thread.reservationId}
+              href={`/inbox/${thread.reservationId}`}
+              className="flex items-start gap-4 px-6 py-4 hover:bg-gray-50 transition-colors"
+            >
+              {/* Unread dot */}
+              <div className="mt-1.5 flex-shrink-0 w-2">
+                {thread.hasUnrepliedGuest && (
+                  <span className="block w-2 h-2 rounded-full bg-blue-500" />
+                )}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2 mb-0.5">
+                  <span className={`text-sm ${thread.hasUnrepliedGuest ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
+                    {thread.guestName}
+                  </span>
+                  <span className="flex-shrink-0 text-xs text-gray-400">
+                    {formatRelativeTime(thread.lastMessageAt)}
                   </span>
                 </div>
+                <p className="text-xs text-gray-400 mb-1">
+                  {thread.propertyName ?? '—'}
+                  {thread.checkIn && (
+                    <span className="ml-2">
+                      · {thread.checkIn.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {thread.checkOut && ` – ${thread.checkOut.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                    </span>
+                  )}
+                </p>
+                <p className="text-sm text-gray-500 truncate">
+                  {thread.lastSenderType === 'host' && (
+                    <span className="text-gray-400">You: </span>
+                  )}
+                  {truncate(thread.lastBody)}
+                </p>
               </div>
-            );
-          })}
+
+              <span className="flex-shrink-0 text-xs text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
+                {thread.messageCount}
+              </span>
+            </Link>
+          ))}
         </div>
       )}
     </div>
