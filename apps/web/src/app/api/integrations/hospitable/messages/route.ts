@@ -16,23 +16,55 @@ type ProviderMessage = {
   sentAt: string;
 };
 
-function normalizeMessage(value: unknown, index: number): ProviderMessage | null {
+type ApiConfig = { apiKey: string; baseUrl: string };
+
+function normalizeMessage(
+  value: unknown,
+  index: number,
+  reservationId: string,
+  guestName: string
+): ProviderMessage | null {
   if (!value || typeof value !== 'object') {
     return null;
   }
 
   const record = value as Record<string, unknown>;
-  const id = String(record.id ?? `msg-${index}`);
-  const reservationId = String(record.reservationId ?? record.reservation_id ?? '');
-  const guestName = String(record.guestName ?? record.guest_name ?? 'Guest');
-  const message = String(record.message ?? record.body ?? '');
-  const sentAt = String(record.sentAt ?? record.sent_at ?? new Date().toISOString());
+  const id = String(record.id ?? `msg-${reservationId}-${index}`);
+  const message = String(record.message ?? record.body ?? record.text ?? '');
+  const sentAt = String(record.sentAt ?? record.sent_at ?? record.created_at ?? new Date().toISOString());
 
-  if (reservationId.length === 0 || message.length === 0) {
+  if (!message) {
     return null;
   }
 
   return { id, reservationId, guestName, message, sentAt };
+}
+
+function extractList(raw: unknown): unknown[] {
+  if (Array.isArray(raw)) return raw;
+  if (raw && typeof raw === 'object') {
+    const r = raw as Record<string, unknown>;
+    if (Array.isArray(r.data)) return r.data;
+    if (Array.isArray(r.messages)) return r.messages;
+  }
+  return [];
+}
+
+async function fetchMessagesForReservation(
+  config: ApiConfig,
+  reservationId: string,
+  guestName: string
+): Promise<ProviderMessage[]> {
+  const url = new URL(`/v2/reservations/${reservationId}/messages`, config.baseUrl);
+  const response = await fetch(url, {
+    headers: { accept: 'application/json', authorization: `Bearer ${config.apiKey}` }
+  });
+  if (!response.ok) return [];
+
+  const raw = (await response.json()) as unknown;
+  return extractList(raw)
+    .map((item, i) => normalizeMessage(item, i, reservationId, guestName))
+    .filter((item): item is ProviderMessage => item !== null);
 }
 
 export async function GET(request: Request) {
@@ -54,51 +86,68 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: parsedQuery.error.message }, { status: 400 });
   }
 
-  const reservationId = parsedQuery.data.reservationId;
-  const path = reservationId
-    ? `/v1/reservations/${reservationId}/messages`
-    : '/v1/messages';
-  const providerUrl = new URL(path, config.baseUrl);
-  providerUrl.searchParams.set('limit', String(parsedQuery.data.limit));
+  const { reservationId, limit } = parsedQuery.data;
 
-  const providerResponse = await fetch(providerUrl, {
-    method: 'GET',
-    headers: {
-      accept: 'application/json',
-      authorization: `Bearer ${config.apiKey}`
+  // Single reservation — fetch messages directly
+  if (reservationId) {
+    const providerUrl = new URL(`/v2/reservations/${reservationId}/messages`, config.baseUrl);
+    providerUrl.searchParams.set('limit', String(limit));
+
+    const providerResponse = await fetch(providerUrl, {
+      headers: { accept: 'application/json', authorization: `Bearer ${config.apiKey}` }
+    });
+
+    if (!providerResponse.ok) {
+      return NextResponse.json(
+        { error: `Hospitable API request failed with ${providerResponse.status}.`, providerStatus: providerResponse.status },
+        { status: 502 }
+      );
     }
+
+    const raw = (await providerResponse.json()) as unknown;
+    const items = extractList(raw)
+      .map((item, i) => normalizeMessage(item, i, reservationId, 'Guest'))
+      .filter((item): item is ProviderMessage => item !== null);
+
+    return NextResponse.json({ source: 'hospitable-api', count: items.length, items });
+  }
+
+  // No reservationId — fetch recent reservations, then fan out to messages per reservation
+  const reservationsUrl = new URL('/v2/reservations', config.baseUrl);
+  reservationsUrl.searchParams.set('limit', '20');
+
+  const reservationsResponse = await fetch(reservationsUrl, {
+    headers: { accept: 'application/json', authorization: `Bearer ${config.apiKey}` }
   });
 
-  if (!providerResponse.ok) {
+  if (!reservationsResponse.ok) {
     return NextResponse.json(
       {
-        error: `Hospitable API request failed with ${providerResponse.status}.`,
-        providerStatus: providerResponse.status
+        error: `Hospitable API request failed with ${reservationsResponse.status}.`,
+        providerStatus: reservationsResponse.status
       },
       { status: 502 }
     );
   }
 
-  const rawPayload = (await providerResponse.json()) as
-    | { data?: unknown[]; messages?: unknown[] }
-    | unknown[]
-    | Record<string, unknown>;
+  const reservationsList = extractList((await reservationsResponse.json()) as unknown);
 
-  const candidates = Array.isArray(rawPayload)
-    ? rawPayload
-    : Array.isArray(rawPayload.data)
-      ? rawPayload.data
-      : Array.isArray(rawPayload.messages)
-        ? rawPayload.messages
-        : [];
+  const messageArrays = await Promise.all(
+    reservationsList.map((res): Promise<ProviderMessage[]> => {
+      if (!res || typeof res !== 'object') return Promise.resolve([]);
+      const r = res as Record<string, unknown>;
+      const resId = String(r.id ?? '');
+      if (!resId) return Promise.resolve([]);
+      const guest = r.guest as Record<string, unknown> | undefined;
+      const guestName = String(r.guestName ?? r.guest_name ?? guest?.name ?? 'Guest');
+      return fetchMessagesForReservation(config, resId, guestName);
+    })
+  );
 
-  const items = candidates
-    .map((item, index) => normalizeMessage(item, index))
-    .filter((item): item is ProviderMessage => item !== null);
+  const allMessages = messageArrays
+    .flat()
+    .sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime())
+    .slice(0, limit);
 
-  return NextResponse.json({
-    source: 'hospitable-api',
-    count: items.length,
-    items
-  });
+  return NextResponse.json({ source: 'hospitable-api', count: allMessages.length, items: allMessages });
 }
