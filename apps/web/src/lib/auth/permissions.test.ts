@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { getPermissionForApiRoute, hasPermission, resolveRoleFromClaims } from './permissions';
+import { getPermissionForApiRoute, hasPermission } from './permissions';
 
 void test('viewer can only read dashboard', () => {
   assert.equal(hasPermission('viewer', 'dashboard.read'), true);
@@ -18,10 +18,4 @@ void test('maps route + method to permission', () => {
   assert.equal(getPermissionForApiRoute('/api/command-center/queue/123', 'PATCH'), 'drafts.write');
   assert.equal(getPermissionForApiRoute('/api/command-center/autopilot/rollback', 'POST'), 'automation.execute');
   assert.equal(getPermissionForApiRoute('/api/integrations/hospitable', 'POST'), null);
-});
-
-void test('resolves role from claims fallback to viewer', () => {
-  assert.equal(resolveRoleFromClaims({ metadata: { role: 'owner' } }), 'owner');
-  assert.equal(resolveRoleFromClaims({ org_role: 'manager' }), 'manager');
-  assert.equal(resolveRoleFromClaims({ metadata: { role: 'not-a-role' } }), 'viewer');
 });

@@ -1,7 +1,8 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { clerkClient, clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
-import { getPermissionForApiRoute, hasPermission, resolveRoleFromClaims } from '@/lib/auth/permissions';
+import { getPermissionForApiRoute, hasPermission } from '@/lib/auth/permissions';
+import { roleSchema } from '@walt/contracts';
 
 const isPublicRoute = createRouteMatcher(['/sign-in(.*)']);
 
@@ -26,7 +27,11 @@ export default clerkMiddleware(async (auth, request) => {
   if (pathname.startsWith('/api')) {
     const permission = getPermissionForApiRoute(pathname, request.method);
     if (permission) {
-      const role = resolveRoleFromClaims(session.sessionClaims);
+      const client = await clerkClient();
+      const user = await client.users.getUser(session.userId);
+      const roleCandidate = (user.privateMetadata as Record<string, unknown>).role;
+      const parsed = roleSchema.safeParse(roleCandidate);
+      const role = parsed.success ? parsed.data : 'viewer';
       if (!hasPermission(role, permission)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
