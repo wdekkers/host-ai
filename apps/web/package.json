@@ -12,6 +12,9 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^5.7.5",
-    "@walt/contracts": "workspace:*"
+    "@tailwindcss/postcss": "^4.2.1",
+    "@walt/contracts": "workspace:*",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.1"
   }
 }
