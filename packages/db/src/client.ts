@@ -2,6 +2,12 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 
 export const createDb = (connectionString: string) => {
-  const pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false } });
+  // Strip sslmode from the connection string so the explicit ssl option below
+  // takes full effect. AWS Lightsail Postgres uses a self-signed CA that is
+  // not in the system trust store, so we accept the connection but skip CA
+  // chain verification (the connection is still TLS-encrypted).
+  const url = new URL(connectionString);
+  url.searchParams.delete('sslmode');
+  const pool = new Pool({ connectionString: url.toString(), ssl: { rejectUnauthorized: false } });
   return drizzle({ client: pool });
 };
