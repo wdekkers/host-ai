@@ -6,8 +6,13 @@ export const createDb = (connectionString: string) => {
   // takes full effect. AWS Lightsail Postgres uses a self-signed CA that is
   // not in the system trust store, so we accept the connection but skip CA
   // chain verification (the connection is still TLS-encrypted).
-  const url = new URL(connectionString);
-  url.searchParams.delete('sslmode');
-  const pool = new Pool({ connectionString: url.toString(), ssl: { rejectUnauthorized: false } });
+  // Guard against undefined at build time (DATABASE_URL not available then).
+  let connStr = connectionString;
+  if (connectionString) {
+    const url = new URL(connectionString);
+    url.searchParams.delete('sslmode');
+    connStr = url.toString();
+  }
+  const pool = new Pool({ connectionString: connStr, ssl: { rejectUnauthorized: false } });
   return drizzle({ client: pool });
 };
