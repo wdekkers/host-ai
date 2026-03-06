@@ -2655,8 +2655,7 @@ void test('fetches and normalizes hospitable outbound messages when api is confi
 
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const target = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-    assert.equal(target.includes('/v2/messages'), true);
-    assert.equal(target.includes('reservationId=res-demo-001'), true);
+    assert.equal(target.includes('/v1/reservations/res-demo-001/messages'), true);
     assert.equal(target.includes('limit=2'), true);
     assert.equal(String((init?.headers as Record<string, string>).authorization).startsWith('Bearer'), true);
     return new Response(
