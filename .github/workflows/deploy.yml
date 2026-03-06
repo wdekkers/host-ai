@@ -48,6 +48,9 @@ jobs:
           - name: migrate
             dockerfile: infra/docker/Dockerfile.migrate
             image_suffix: migrate
+          - name: caddy
+            dockerfile: infra/docker/Dockerfile.caddy
+            image_suffix: caddy
     steps:
       - uses: actions/checkout@v4
 
