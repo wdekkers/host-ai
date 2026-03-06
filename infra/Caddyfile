@@ -3,19 +3,23 @@
 }
 
 ai.walt-services.com {
-	# Next.js API routes (integrations, auth callbacks, etc.)
-	handle /api/integrations/* {
-		reverse_proxy web:3000
+	# API Gateway routes only
+	handle /api/health* {
+		reverse_proxy gateway:4000
 	}
 
-	# API Gateway
-	handle /api/* {
+	handle /api/me* {
 		reverse_proxy gateway:4000
 	}
 
 	# Swagger docs
 	handle /docs* {
 		reverse_proxy gateway:4000
+	}
+
+	# All other /api/* routes go to Next.js (command-center, integrations, etc.)
+	handle /api/* {
+		reverse_proxy web:3000
 	}
 
 	# Next.js web dashboard (catch-all)
