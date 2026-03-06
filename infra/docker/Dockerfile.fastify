@@ -59,6 +59,10 @@ COPY --from=build /app/package.json ./
 COPY --from=build /app/packages/contracts/dist ./packages/contracts/dist
 COPY --from=build /app/packages/contracts/package.json ./packages/contracts/
 
+# Re-link workspace package so Node.js can resolve @walt/contracts at runtime
+RUN mkdir -p node_modules/@walt && \
+    ln -sfn /app/packages/contracts node_modules/@walt/contracts
+
 # Copy built gateway
 COPY --from=build /app/apps/gateway/dist ./apps/gateway/dist
 COPY --from=build /app/apps/gateway/package.json ./apps/gateway/

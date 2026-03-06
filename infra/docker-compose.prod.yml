@@ -1,13 +1,13 @@
 x-common: &common
   restart: unless-stopped
   env_file:
-    - ../.env.production
+    - ./.env.production
   networks:
     - walt-net
 
 x-fastify: &fastify
   <<: *common
-  image: ghcr.io/wesleydekkers/walt-fastify:${IMAGE_TAG:-latest}
+  image: ghcr.io/wdekkers/walt-fastify:${IMAGE_TAG:-latest}
 
 services:
   # ──────────────────────────────────────────
@@ -35,7 +35,7 @@ services:
   # Database Migration — runs once, then exits
   # ──────────────────────────────────────────
   migrate:
-    image: ghcr.io/wesleydekkers/walt-migrate:${IMAGE_TAG:-latest}
+    image: ghcr.io/wdekkers/walt-migrate:${IMAGE_TAG:-latest}
     <<: *common
     restart: "no"
     deploy:
@@ -47,7 +47,7 @@ services:
   # Next.js Web Dashboard
   # ──────────────────────────────────────────
   web:
-    image: ghcr.io/wesleydekkers/walt-web:${IMAGE_TAG:-latest}
+    image: ghcr.io/wdekkers/walt-web:${IMAGE_TAG:-latest}
     <<: *common
     depends_on:
       migrate:
