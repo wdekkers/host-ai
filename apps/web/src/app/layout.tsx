@@ -13,7 +13,8 @@ const navLinks = [
   { href: '/', label: 'Dashboard' },
   { href: '/inbox', label: 'Inbox' },
   { href: '/reservations', label: 'Reservations' },
-  { href: '/properties', label: 'Properties' }
+  { href: '/properties', label: 'Properties' },
+  { href: '/questions', label: 'Questions' }
 ];
 
 export default function RootLayout({ children }: { children: ReactNode }) {
