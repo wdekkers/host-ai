@@ -86,5 +86,9 @@ export function getPermissionForApiRoute(pathname: string, method: string): Perm
     return 'drafts.write';
   }
 
+  if (pathname.startsWith('/api/admin/')) {
+    return 'platform.configure';
+  }
+
   return 'ops.write';
 }
