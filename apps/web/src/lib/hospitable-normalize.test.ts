@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { normalizeReservation, normalizeMessage } from './hospitable-normalize.js';
 
-test('normalizeReservation extracts core fields from Hospitable v2 payload', () => {
+void test('normalizeReservation extracts core fields from Hospitable v2 payload', () => {
   const raw = {
     id: 'abc-123',
     conversation_id: 'conv-1',
@@ -30,7 +30,7 @@ test('normalizeReservation extracts core fields from Hospitable v2 payload', () 
   assert.equal(result.nights, 4);
 });
 
-test('normalizeReservation handles missing guest and properties gracefully', () => {
+void test('normalizeReservation handles missing guest and properties gracefully', () => {
   const raw = { id: 'xyz', status: 'cancelled' };
   const result = normalizeReservation(raw);
   assert.equal(result.id, 'xyz');
@@ -38,7 +38,7 @@ test('normalizeReservation handles missing guest and properties gracefully', () 
   assert.equal(result.propertyId, null);
 });
 
-test('normalizeMessage extracts core fields from Hospitable v2 message payload', () => {
+void test('normalizeMessage extracts core fields from Hospitable v2 message payload', () => {
   const raw = {
     reservation_id: 'res-1',
     platform: 'airbnb',
@@ -56,7 +56,7 @@ test('normalizeMessage extracts core fields from Hospitable v2 message payload',
   assert.equal(result!.senderFullName, 'Jane Doe');
 });
 
-test('normalizeMessage returns null when body is empty', () => {
+void test('normalizeMessage returns null when body is empty', () => {
   const raw = { reservation_id: 'res-1', body: '', sender_type: 'guest', created_at: '2025-05-10T10:00:00Z' };
   const result = normalizeMessage(raw, 'res-1');
   assert.equal(result, null);
