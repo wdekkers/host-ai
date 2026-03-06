@@ -27,11 +27,26 @@ function formatDate(date: Date | null) {
 }
 
 export default async function ReservationsPage() {
-  const rows = await db
+  const result = await db
     .select()
     .from(reservations)
     .orderBy(desc(reservations.arrivalDate))
-    .limit(200);
+    .limit(200)
+    .catch((err: unknown) => ({ error: err instanceof Error ? err.message : 'Database error' }));
+
+  if ('error' in result) {
+    return (
+      <div className="p-8">
+        <h1 className="text-2xl font-semibold mb-4">Reservations</h1>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-red-700">
+          <p className="font-medium">Database error</p>
+          <p className="text-sm mt-1">{result.error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const rows = result;
 
   return (
     <div className="p-8">
