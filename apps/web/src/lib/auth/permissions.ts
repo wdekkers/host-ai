@@ -1,4 +1,4 @@
-import { permissionValues, roleSchema } from '@walt/contracts';
+import { permissionValues } from '@walt/contracts';
 
 import type { Permission, Role } from '@walt/contracts';
 
@@ -19,23 +19,6 @@ const rolePermissionMap: Record<Role, ReadonlySet<Permission>> = {
 
 export function hasPermission(role: Role, permission: Permission): boolean {
   return rolePermissionMap[role]?.has(permission) ?? false;
-}
-
-export function resolveRoleFromClaims(claims: unknown): Role {
-  if (!claims || typeof claims !== 'object') {
-    return 'viewer';
-  }
-
-  const record = claims as Record<string, unknown>;
-  const metadata = record.metadata;
-  const publicMetadata = record.publicMetadata;
-  const roleCandidate =
-    record.org_role ??
-    (metadata && typeof metadata === 'object' ? (metadata as Record<string, unknown>).role : undefined) ??
-    (publicMetadata && typeof publicMetadata === 'object' ? (publicMetadata as Record<string, unknown>).role : undefined);
-
-  const parsed = roleSchema.safeParse(roleCandidate);
-  return parsed.success ? parsed.data : 'viewer';
 }
 
 export function getPermissionForApiRoute(pathname: string, method: string): Permission | null {

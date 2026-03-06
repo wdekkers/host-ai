@@ -1,4 +1,4 @@
-import { ClerkProvider } from '@clerk/nextjs';
+import { ClerkProvider, UserButton } from '@clerk/nextjs';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
@@ -11,7 +11,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <ClerkProvider>{children}</ClerkProvider>
+        <ClerkProvider>
+          <div style={{ position: 'fixed', top: 12, right: 16, zIndex: 9999 }}>
+            <UserButton />
+          </div>
+          {children}
+        </ClerkProvider>
       </body>
     </html>
   );

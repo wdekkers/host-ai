@@ -1,6 +1,4 @@
-import { authContextSchema } from '@walt/contracts';
-
-import { resolveRoleFromClaims } from './permissions';
+import { authContextSchema, roleSchema } from '@walt/contracts';
 
 import type { AuthContext } from '@walt/contracts';
 
@@ -40,10 +38,16 @@ export async function getAuthContext(request?: Request): Promise<AuthContext | n
     return null;
   }
 
+  const client = await clerkModule.clerkClient();
+  const user = await client.users.getUser(session.userId);
+  const roleCandidate = (user.privateMetadata as Record<string, unknown>).role;
+  const parsed = roleSchema.safeParse(roleCandidate);
+  const role = parsed.success ? parsed.data : 'viewer';
+
   return authContextSchema.parse({
     userId: session.userId,
     orgId: session.orgId,
-    role: resolveRoleFromClaims(session.sessionClaims),
+    role,
     propertyIds: undefined
   });
 }
