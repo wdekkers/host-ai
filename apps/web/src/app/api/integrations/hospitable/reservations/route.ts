@@ -59,7 +59,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: parsedQuery.error.message }, { status: 400 });
   }
 
-  const providerUrl = new URL('/v1/reservations', config.baseUrl);
+  const providerUrl = new URL('/v2/reservations', config.baseUrl);
   providerUrl.searchParams.set('limit', String(parsedQuery.data.limit));
   if (parsedQuery.data.status) {
     providerUrl.searchParams.set('status', parsedQuery.data.status);

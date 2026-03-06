@@ -1,30 +1,30 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
+import { v4 as uuidv4 } from 'uuid';
+import Anthropic from '@anthropic-ai/sdk';
+import { reservations, messages } from '@walt/db';
+import { eq } from 'drizzle-orm';
 
 import { handleApiError } from '@/lib/secure-logger';
-import { ingestHospitableMessageInSingleton } from '@/lib/command-center-store';
+import { getHospitableApiConfig } from '@/lib/integrations-env';
+import { db } from '@/lib/db';
+import { normalizeReservation, normalizeMessage } from '@/lib/hospitable-normalize';
 
-const hospitableWebhookSchema = z.object({
-  eventId: z.string().min(1),
+const webhookSchema = z.object({
   reservationId: z.string().min(1),
-  guestName: z.string().min(1),
   message: z.string().min(1),
-  sentAt: z.string().datetime().optional()
+  senderType: z.string().default('guest'),
+  senderName: z.string().optional(),
+  sentAt: z.string().optional()
 });
 
-function verifyHospitableWebhookSignature(request: Request, rawBody: string) {
+function verifySignature(request: Request, rawBody: string) {
   const secret = process.env.HOSPITABLE_WEBHOOK_SECRET?.trim();
-  if (!secret) {
-    return;
-  }
-
+  if (!secret) return;
   const timestamp = request.headers.get('x-hospitable-timestamp');
   const signature = request.headers.get('x-hospitable-signature');
-  if (!timestamp || !signature) {
-    throw new Error('Missing webhook signature headers');
-  }
-
+  if (!timestamp || !signature) throw new Error('Missing webhook signature headers');
   const expected = createHmac('sha256', secret).update(`${timestamp}.${rawBody}`).digest('hex');
   const providedBuffer = Buffer.from(signature, 'hex');
   const expectedBuffer = Buffer.from(expected, 'hex');
@@ -33,17 +33,100 @@ function verifyHospitableWebhookSignature(request: Request, rawBody: string) {
   }
 }
 
+async function fetchReservation(config: { apiKey: string; baseUrl: string }, reservationId: string) {
+  const url = new URL(`/v2/reservations/${reservationId}?includes[]=guest&includes[]=properties`, config.baseUrl);
+  const res = await fetch(url, {
+    headers: { accept: 'application/json', authorization: `Bearer ${config.apiKey}` }
+  });
+  if (!res.ok) return null;
+  const body = (await res.json()) as { data?: Record<string, unknown> };
+  return body.data ?? null;
+}
+
+async function generateSuggestion(reservation: Record<string, unknown>, messageBody: string): Promise<string | null> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return null;
+
+  const client = new Anthropic({ apiKey });
+  const guest = reservation.guest as Record<string, unknown> | undefined;
+  const props = reservation.properties as Record<string, unknown>[] | undefined;
+  const guestName = String(guest?.first_name ?? 'the guest');
+  const propertyName = String(props?.[0]?.name ?? 'the property');
+  const checkIn = reservation.check_in ? new Date(reservation.check_in as string).toLocaleDateString() : 'unknown';
+  const checkOut = reservation.check_out ? new Date(reservation.check_out as string).toLocaleDateString() : 'unknown';
+
+  const response = await client.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 500,
+    system: `You are a helpful short-term rental host assistant. Draft a warm, concise reply to a guest message.
+Property: ${propertyName}
+Guest: ${guestName}
+Check-in: ${checkIn}
+Check-out: ${checkOut}
+Reply in the same language as the guest message. Keep it under 3 sentences unless the question requires more detail.`,
+    messages: [{ role: 'user', content: messageBody }]
+  });
+
+  const block = response.content[0];
+  return block?.type === 'text' ? block.text : null;
+}
+
 export async function POST(request: Request) {
   try {
     const rawBody = await request.text();
-    verifyHospitableWebhookSignature(request, rawBody);
+    verifySignature(request, rawBody);
+
     const body = JSON.parse(rawBody) as unknown;
-    const parsed = hospitableWebhookSchema.parse(body);
-    const { item, duplicated } = ingestHospitableMessageInSingleton(parsed);
-    return NextResponse.json({ item, duplicated }, { status: duplicated ? 200 : 202 });
+    const parsed = webhookSchema.parse(body);
+    const config = getHospitableApiConfig();
+
+    let reservationRaw: Record<string, unknown> | null = null;
+    if (config) {
+      reservationRaw = await fetchReservation(config, parsed.reservationId);
+      if (reservationRaw) {
+        const normalized = normalizeReservation(reservationRaw);
+        await db
+          .insert(reservations)
+          .values({ ...normalized, syncedAt: new Date() })
+          .onConflictDoUpdate({
+            target: reservations.id,
+            set: { ...normalized, syncedAt: new Date() }
+          });
+      }
+    }
+
+    const msgRaw: Record<string, unknown> = {
+      reservation_id: parsed.reservationId,
+      body: parsed.message,
+      sender_type: parsed.senderType,
+      sender: { full_name: parsed.senderName ?? '' },
+      created_at: parsed.sentAt ?? new Date().toISOString()
+    };
+    const normalizedMsg = normalizeMessage(msgRaw, parsed.reservationId);
+
+    if (normalizedMsg) {
+      const msgId = uuidv4();
+      await db
+        .insert(messages)
+        .values({ id: msgId, ...normalizedMsg })
+        .onConflictDoNothing();
+
+      if (parsed.senderType === 'guest' && reservationRaw) {
+        const suggestion = await generateSuggestion(reservationRaw, parsed.message);
+        if (suggestion) {
+          await db
+            .update(messages)
+            .set({ suggestion, suggestionGeneratedAt: new Date() })
+            .where(eq(messages.id, msgId));
+        }
+      }
+    }
+
+    return NextResponse.json({ ok: true }, { status: 202 });
   } catch (error) {
     const status =
-      error instanceof Error && (error.message === 'Missing webhook signature headers' || error.message === 'Invalid webhook signature')
+      error instanceof Error &&
+      (error.message === 'Missing webhook signature headers' || error.message === 'Invalid webhook signature')
         ? 401
         : 400;
     return handleApiError({ error, route: '/api/integrations/hospitable', status });

@@ -1,4 +1,4 @@
-import { jsonb, pgSchema, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { integer, jsonb, pgSchema, primaryKey, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 export const waltSchema = pgSchema('walt');
 
@@ -45,5 +45,49 @@ export const propertyAccess = waltSchema.table(
   },
   (table) => ({
     pk: primaryKey({ columns: [table.organizationId, table.userId, table.propertyId] })
+  })
+);
+
+export const reservations = waltSchema.table('reservations', {
+  id: text('id').primaryKey(),
+  conversationId: text('conversation_id'),
+  platform: text('platform'),
+  platformId: text('platform_id'),
+  status: text('status'),
+  arrivalDate: timestamp('arrival_date', { withTimezone: true }),
+  departureDate: timestamp('departure_date', { withTimezone: true }),
+  checkIn: timestamp('check_in', { withTimezone: true }),
+  checkOut: timestamp('check_out', { withTimezone: true }),
+  bookingDate: timestamp('booking_date', { withTimezone: true }),
+  lastMessageAt: timestamp('last_message_at', { withTimezone: true }),
+  nights: integer('nights'),
+  guestId: text('guest_id'),
+  guestFirstName: text('guest_first_name'),
+  guestLastName: text('guest_last_name'),
+  guestEmail: text('guest_email'),
+  propertyId: text('property_id'),
+  propertyName: text('property_name'),
+  raw: jsonb('raw').notNull(),
+  syncedAt: timestamp('synced_at', { withTimezone: true }).notNull()
+});
+
+export const messages = waltSchema.table(
+  'messages',
+  {
+    id: uuid('id').primaryKey(),
+    reservationId: text('reservation_id')
+      .notNull()
+      .references(() => reservations.id),
+    platform: text('platform'),
+    body: text('body').notNull(),
+    senderType: text('sender_type').notNull(),
+    senderFullName: text('sender_full_name'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+    suggestion: text('suggestion'),
+    suggestionGeneratedAt: timestamp('suggestion_generated_at', { withTimezone: true }),
+    raw: jsonb('raw').notNull()
+  },
+  (table) => ({
+    uniq: uniqueIndex('messages_reservation_created_at_idx').on(table.reservationId, table.createdAt)
   })
 );
