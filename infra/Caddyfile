@@ -3,6 +3,11 @@
 }
 
 ai.walt-services.com {
+	# Next.js API routes (integrations, auth callbacks, etc.)
+	handle /api/integrations/* {
+		reverse_proxy web:3000
+	}
+
 	# API Gateway
 	handle /api/* {
 		reverse_proxy gateway:4000
