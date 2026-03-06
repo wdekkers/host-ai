@@ -3,8 +3,27 @@ import { NextResponse } from 'next/server';
 
 import { getPermissionForApiRoute, hasPermission } from '@/lib/auth/permissions';
 import { roleSchema } from '@walt/contracts';
+import type { Role } from '@walt/contracts';
 
 const isPublicRoute = createRouteMatcher(['/sign-in(.*)']);
+
+// Cache role lookups for 5 minutes to avoid Clerk Management API rate limits.
+const roleCache = new Map<string, { role: Role; expiresAt: number }>();
+const ROLE_CACHE_TTL_MS = 5 * 60 * 1000;
+
+async function getUserRole(userId: string): Promise<Role> {
+  const cached = roleCache.get(userId);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.role;
+  }
+  const client = await clerkClient();
+  const user = await client.users.getUser(userId);
+  const roleCandidate = (user.privateMetadata as Record<string, unknown>).role;
+  const parsed = roleSchema.safeParse(roleCandidate);
+  const role = parsed.success ? parsed.data : 'viewer';
+  roleCache.set(userId, { role, expiresAt: Date.now() + ROLE_CACHE_TTL_MS });
+  return role;
+}
 
 export default clerkMiddleware(async (auth, request) => {
   const pathname = request.nextUrl.pathname;
@@ -27,11 +46,7 @@ export default clerkMiddleware(async (auth, request) => {
   if (pathname.startsWith('/api')) {
     const permission = getPermissionForApiRoute(pathname, request.method);
     if (permission) {
-      const client = await clerkClient();
-      const user = await client.users.getUser(session.userId);
-      const roleCandidate = (user.privateMetadata as Record<string, unknown>).role;
-      const parsed = roleSchema.safeParse(roleCandidate);
-      const role = parsed.success ? parsed.data : 'viewer';
+      const role = await getUserRole(session.userId);
       if (!hasPermission(role, permission)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
