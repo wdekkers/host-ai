@@ -1,6 +1,7 @@
 import { desc } from 'drizzle-orm';
 import { reservations } from '@walt/db';
 import { db } from '@/lib/db';
+import SyncButton from './SyncButton';
 
 const statusStyles: Record<string, string> = {
   booking: 'bg-green-100 text-green-800',
@@ -50,19 +51,19 @@ export default async function ReservationsPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold">Reservations</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {rows.length} reservation{rows.length !== 1 ? 's' : ''}
-        </p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">Reservations</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {rows.length} reservation{rows.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+        <SyncButton />
       </div>
 
       {rows.length === 0 ? (
         <div className="rounded-lg border border-gray-200 bg-white p-12 text-center text-gray-500">
-          No reservations synced yet.{' '}
-          <span className="block mt-1 text-sm">
-            Call <code className="font-mono">POST /api/admin/sync-hospitable</code> to import your data.
-          </span>
+          No reservations synced yet. Use the button above to import your data.
         </div>
       ) : (
         <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
