@@ -16,7 +16,7 @@ function headers(apiKey: string) {
 
 async function fetchAllProperties(config: { apiKey: string; baseUrl: string }) {
   const all: Record<string, unknown>[] = [];
-  let url: string | null = new URL('/v1/properties?limit=50', config.baseUrl).toString();
+  let url: string | null = new URL('/v2/properties?limit=50', config.baseUrl).toString();
 
   while (url) {
     const res = await fetch(url, { headers: headers(config.apiKey) });
@@ -38,7 +38,7 @@ async function fetchReservationsForProperty(
   const all: Record<string, unknown>[] = [];
   // Use links.next for cursor-based pagination. Hospitable may return http:// in next links
   // and sometimes drops the properties[] filter — we fix both on each iteration.
-  let url: string | null = `${config.baseUrl}/v1/reservations?limit=100&properties[]=${encodeURIComponent(propertyId)}`;
+  let url: string | null = `${config.baseUrl}/v2/reservations?limit=100&properties[]=${encodeURIComponent(propertyId)}`;
 
   while (url) {
     const res = await fetch(url, { headers: headers(config.apiKey) });
@@ -65,7 +65,7 @@ async function fetchMessagesForReservation(
   config: { apiKey: string; baseUrl: string },
   reservationId: string
 ): Promise<Record<string, unknown>[]> {
-  const url = new URL(`/v1/reservations/${reservationId}/messages?limit=100`, config.baseUrl);
+  const url = new URL(`/v2/reservations/${reservationId}/messages?limit=100`, config.baseUrl);
   const res = await fetch(url, { headers: headers(config.apiKey) });
   if (!res.ok) return [];
   const body = (await res.json()) as { data?: Record<string, unknown>[] };
@@ -83,13 +83,14 @@ function extractGuestFromMessages(rawMessages: Record<string, unknown>[]) {
 }
 
 function normalizeProperty(raw: Record<string, unknown>) {
-  const location = (raw.location ?? {}) as Record<string, unknown>;
+  // v2 API returns a nested address object: { street, city, state, country, ... }
+  const addr = (raw.address ?? {}) as Record<string, unknown>;
   return {
     id: String(raw.id),
-    name: String(raw.name ?? raw.title ?? ''),
-    address: String(raw.address ?? raw.street ?? location.address ?? ''),
-    city: String(raw.city ?? location.city ?? ''),
-    status: String(raw.status ?? 'active'),
+    name: String(raw.name ?? raw.public_name ?? ''),
+    address: String(addr.street ?? addr.display ?? ''),
+    city: String(addr.city ?? ''),
+    status: raw.listed === false ? 'inactive' : 'active',
     raw: raw as Record<string, unknown>,
   };
 }

@@ -34,7 +34,7 @@ function verifySignature(request: Request, rawBody: string) {
 }
 
 async function fetchReservation(config: { apiKey: string; baseUrl: string }, reservationId: string) {
-  const url = new URL(`/v1/reservations/${reservationId}?includes[]=guest&includes[]=properties`, config.baseUrl);
+  const url = new URL(`/v2/reservations/${reservationId}?includes[]=guest&includes[]=properties`, config.baseUrl);
   const res = await fetch(url, {
     headers: { accept: 'application/json', authorization: `Bearer ${config.apiKey}` }
   });
