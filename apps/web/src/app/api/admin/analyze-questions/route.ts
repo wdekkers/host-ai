@@ -32,6 +32,7 @@ export async function POST() {
   const response = await client.chat.completions.create({
     model: 'gpt-4o-mini',
     max_tokens: 2000,
+    response_format: { type: 'json_object' },
     messages: [
       {
         role: 'system',
