@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { reservations, messages } from '@walt/db';
 import { eq } from 'drizzle-orm';
 
@@ -44,10 +44,10 @@ async function fetchReservation(config: { apiKey: string; baseUrl: string }, res
 }
 
 async function generateSuggestion(reservation: Record<string, unknown>, messageBody: string): Promise<string | null> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
 
-  const client = new Anthropic({ apiKey });
+  const client = new OpenAI({ apiKey });
   const guest = reservation.guest as Record<string, unknown> | undefined;
   const props = reservation.properties as Record<string, unknown>[] | undefined;
   const guestName = String(guest?.first_name ?? 'the guest');
@@ -55,20 +55,24 @@ async function generateSuggestion(reservation: Record<string, unknown>, messageB
   const checkIn = reservation.check_in ? new Date(reservation.check_in as string).toLocaleDateString() : 'unknown';
   const checkOut = reservation.check_out ? new Date(reservation.check_out as string).toLocaleDateString() : 'unknown';
 
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-6',
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o-mini',
     max_tokens: 500,
-    system: `You are a helpful short-term rental host assistant. Draft a warm, concise reply to a guest message.
+    messages: [
+      {
+        role: 'system',
+        content: `You are a helpful short-term rental host assistant. Draft a warm, concise reply to a guest message.
 Property: ${propertyName}
 Guest: ${guestName}
 Check-in: ${checkIn}
 Check-out: ${checkOut}
-Reply in the same language as the guest message. Keep it under 3 sentences unless the question requires more detail.`,
-    messages: [{ role: 'user', content: messageBody }]
+Reply in the same language as the guest message. Keep it under 3 sentences unless the question requires more detail.`
+      },
+      { role: 'user', content: messageBody }
+    ]
   });
 
-  const block = response.content[0];
-  return block?.type === 'text' ? block.text : null;
+  return response.choices[0]?.message?.content ?? null;
 }
 
 export async function POST(request: Request) {

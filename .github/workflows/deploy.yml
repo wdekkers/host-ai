@@ -99,6 +99,7 @@ jobs:
           CLERK_SECRET_KEY=$(get hostpilot/prod/clerk-secret-key)
           HOSPITABLE_API_KEY=$(get hostpilot/prod/hospitable-api-key)
           HOSPITABLE_BASE_URL=$(get hostpilot/prod/hospitable-base-url)
+          OPENAI_API_KEY=$(get hostpilot/prod/openai-api-key)
           GHCR_TOKEN=$(get hostpilot/prod/ghcr-token)
 
           # Mask all values so they never appear in logs
@@ -106,6 +107,7 @@ jobs:
           echo "::add-mask::$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"
           echo "::add-mask::$CLERK_SECRET_KEY"
           echo "::add-mask::$HOSPITABLE_API_KEY"
+          echo "::add-mask::$OPENAI_API_KEY"
           echo "::add-mask::$GHCR_TOKEN"
 
           echo "DATABASE_URL=$DATABASE_URL" >> "$GITHUB_OUTPUT"
@@ -113,6 +115,7 @@ jobs:
           echo "CLERK_SECRET_KEY=$CLERK_SECRET_KEY" >> "$GITHUB_OUTPUT"
           echo "HOSPITABLE_API_KEY=$HOSPITABLE_API_KEY" >> "$GITHUB_OUTPUT"
           echo "HOSPITABLE_BASE_URL=$HOSPITABLE_BASE_URL" >> "$GITHUB_OUTPUT"
+          echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> "$GITHUB_OUTPUT"
           echo "GHCR_TOKEN=$GHCR_TOKEN" >> "$GITHUB_OUTPUT"
 
       - name: Encode compose file
@@ -125,7 +128,7 @@ jobs:
           host: ${{ vars.LIGHTSAIL_HOST }}
           username: ${{ vars.LIGHTSAIL_USER }}
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-          envs: GITHUB_ACTOR,GHCR_TOKEN,DATABASE_URL,NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,CLERK_SECRET_KEY,HOSPITABLE_API_KEY,HOSPITABLE_BASE_URL,IMAGE_TAG,COMPOSE_B64
+          envs: GITHUB_ACTOR,GHCR_TOKEN,DATABASE_URL,NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,CLERK_SECRET_KEY,HOSPITABLE_API_KEY,HOSPITABLE_BASE_URL,OPENAI_API_KEY,IMAGE_TAG,COMPOSE_B64
           script: |
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
@@ -138,6 +141,7 @@ jobs:
             CLERK_SECRET_KEY=$CLERK_SECRET_KEY
             HOSPITABLE_API_KEY=$HOSPITABLE_API_KEY
             HOSPITABLE_BASE_URL=$HOSPITABLE_BASE_URL
+            OPENAI_API_KEY=$OPENAI_API_KEY
             EOF
 
             cd /opt/walt
@@ -151,5 +155,6 @@ jobs:
           CLERK_SECRET_KEY: ${{ steps.secrets.outputs.CLERK_SECRET_KEY }}
           HOSPITABLE_API_KEY: ${{ steps.secrets.outputs.HOSPITABLE_API_KEY }}
           HOSPITABLE_BASE_URL: ${{ steps.secrets.outputs.HOSPITABLE_BASE_URL }}
+          OPENAI_API_KEY: ${{ steps.secrets.outputs.OPENAI_API_KEY }}
           IMAGE_TAG: ${{ github.sha }}
           COMPOSE_B64: ${{ steps.compose.outputs.b64 }}
