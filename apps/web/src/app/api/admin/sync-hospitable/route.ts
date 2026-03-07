@@ -8,6 +8,7 @@ import { normalizeReservation, normalizeMessage } from '@/lib/hospitable-normali
 type HospitableListResponse = {
   data: Record<string, unknown>[];
   links?: { next?: string | null };
+  meta?: { current_page?: number; last_page?: number; total?: number; from?: number; to?: number };
 };
 
 function headers(apiKey: string) {
@@ -31,13 +32,23 @@ async function fetchAllProperties(config: { apiKey: string; baseUrl: string }) {
   return all;
 }
 
+type ReservationFetchResult = {
+  reservations: Record<string, unknown>[];
+  pages: number;
+  apiTotal: number | null;
+};
+
 async function fetchReservationsForProperty(
   config: { apiKey: string; baseUrl: string },
   propertyId: string
-): Promise<Record<string, unknown>[]> {
+): Promise<ReservationFetchResult> {
   const all: Record<string, unknown>[] = [];
+  let pages = 0;
+  let apiTotal: number | null = null;
+
   // Use links.next for cursor-based pagination. Hospitable may return http:// in next links
   // and sometimes drops the properties[] filter — we fix both on each iteration.
+  // No date filter: rely on Hospitable returning all reservations for the property.
   let url: string | null = `${config.baseUrl}/v2/reservations?limit=100&properties[]=${encodeURIComponent(propertyId)}`;
 
   while (url) {
@@ -46,6 +57,11 @@ async function fetchReservationsForProperty(
     const body = (await res.json()) as HospitableListResponse;
     const batch = body.data ?? [];
     all.push(...batch);
+    pages++;
+
+    if (apiTotal === null && body.meta?.total != null) {
+      apiTotal = body.meta.total;
+    }
 
     const rawNext = body.links?.next ?? null;
     if (!rawNext) break;
@@ -58,7 +74,7 @@ async function fetchReservationsForProperty(
     url = nextUrl.toString();
   }
 
-  return all;
+  return { reservations: all, pages, apiTotal };
 }
 
 async function fetchMessagesForReservation(
@@ -106,6 +122,7 @@ export async function POST() {
   let propertyCount = 0;
   let reservationCount = 0;
   let messageCount = 0;
+  const propertyDetails: { id: string; name: string; reservationsFetched: number; pages: number; apiTotal: number | null }[] = [];
 
   for (const rawProp of rawProperties) {
     const normalizedProp = normalizeProperty(rawProp);
@@ -120,7 +137,8 @@ export async function POST() {
       });
     propertyCount++;
 
-    const rawReservations = await fetchReservationsForProperty(config, normalizedProp.id);
+    const { reservations: rawReservations, pages, apiTotal } = await fetchReservationsForProperty(config, normalizedProp.id);
+    propertyDetails.push({ id: normalizedProp.id, name: normalizedProp.name, reservationsFetched: rawReservations.length, pages, apiTotal });
 
     for (const raw of rawReservations) {
       const rawMessages = await fetchMessagesForReservation(config, String(raw.id));
@@ -155,5 +173,5 @@ export async function POST() {
     }
   }
 
-  return NextResponse.json({ properties: propertyCount, reservations: reservationCount, messages: messageCount });
+  return NextResponse.json({ properties: propertyCount, reservations: reservationCount, messages: messageCount, debug: propertyDetails });
 }
