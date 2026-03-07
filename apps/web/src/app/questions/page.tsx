@@ -1,94 +1,86 @@
-'use client';
-import { useState } from 'react';
+import { asc } from 'drizzle-orm';
+import { properties, propertyFaqs } from '@walt/db';
+import { db } from '@/lib/db';
+import { RunAnalysisButton, AnswerEditor } from './FaqEditor';
 
-type Category = {
-  name: string;
-  count: number;
-  examples: string[];
-  suggestedAnswer: string;
-};
+export default async function QuestionsPage() {
+  const [allProperties, allFaqs] = await Promise.all([
+    db.select({ id: properties.id, name: properties.name }).from(properties).orderBy(asc(properties.name)),
+    db.select().from(propertyFaqs).orderBy(asc(propertyFaqs.category))
+  ]);
 
-export default function QuestionsPage() {
-  const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [total, setTotal] = useState<number | null>(null);
-
-  async function runAnalysis() {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/admin/analyze-questions', { method: 'POST' });
-      const data = (await res.json()) as { categories?: Category[]; error?: string; totalMessages?: number };
-      if (data.error) {
-        setError(data.error);
-        return;
-      }
-      setCategories(data.categories ?? []);
-      setTotal(data.totalMessages ?? null);
-    } catch (e) {
-      setError(String(e));
-    } finally {
-      setLoading(false);
-    }
+  // Group FAQs by propertyId
+  const faqsByProperty = new Map<string, typeof allFaqs>();
+  for (const faq of allFaqs) {
+    const list = faqsByProperty.get(faq.propertyId) ?? [];
+    list.push(faq);
+    faqsByProperty.set(faq.propertyId, list);
   }
+
+  const totalFaqs = allFaqs.length;
+  const lastAnalysed = allFaqs.reduce<Date | null>((latest, f) => {
+    if (!latest || f.analysedAt > latest) return f.analysedAt;
+    return latest;
+  }, null);
 
   return (
     <div className="p-4 sm:p-8">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">Common Questions</h1>
-          {total !== null && (
-            <p className="text-sm text-gray-500 mt-1">Analysed {total} guest messages</p>
+          {totalFaqs > 0 ? (
+            <p className="text-sm text-gray-500 mt-1">
+              {totalFaqs} categor{totalFaqs !== 1 ? 'ies' : 'y'} across {allProperties.length} propert{allProperties.length !== 1 ? 'ies' : 'y'}
+              {lastAnalysed && (
+                <span className="ml-2">· Last analysed {lastAnalysed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+              )}
+            </p>
+          ) : (
+            <p className="text-sm text-gray-500 mt-1">Run analysis to build your Q&amp;A knowledge base</p>
           )}
         </div>
-        <button
-          onClick={runAnalysis}
-          disabled={loading}
-          className="px-4 py-2 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-700 disabled:opacity-50"
-        >
-          {loading ? 'Analysing…' : 'Run Analysis'}
-        </button>
+        <RunAnalysisButton />
       </div>
 
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800 text-sm mb-6">
-          {error}
-        </div>
-      )}
-
-      {categories.length === 0 && !loading && (
+      {totalFaqs === 0 ? (
         <div className="rounded-lg border border-gray-200 bg-white p-12 text-center text-gray-500">
-          Click "Run Analysis" to discover common guest questions.
+          {allProperties.length === 0
+            ? 'No properties yet. Sync data first.'
+            : 'Click "Run Analysis" to discover common guest questions per property.'}
+        </div>
+      ) : (
+        <div className="space-y-8">
+          {allProperties.map((prop) => {
+            const faqs = faqsByProperty.get(prop.id);
+            if (!faqs || faqs.length === 0) return null;
+            return (
+              <div key={prop.id}>
+                <h2 className="text-base font-semibold text-gray-800 mb-3">{prop.name}</h2>
+                <div className="space-y-4">
+                  {faqs.map((faq) => (
+                    <div key={faq.id} className="rounded-lg border border-gray-200 bg-white p-5">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-medium text-gray-900">{faq.category}</h3>
+                      </div>
+                      {faq.examples && faq.examples.length > 0 && (
+                        <div className="mb-3">
+                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Example messages</p>
+                          <ul className="text-sm text-gray-600 space-y-1">
+                            {(faq.examples as string[]).map((ex, i) => (
+                              <li key={i} className="truncate">"{ex}"</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      <AnswerEditor faqId={faq.id} initialAnswer={faq.answer} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
-
-      <div className="space-y-4">
-        {categories.map((cat) => (
-          <div key={cat.name} className="rounded-lg border border-gray-200 bg-white p-5">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="font-medium text-gray-900">{cat.name}</h2>
-              <span className="text-xs text-gray-500">
-                {cat.count} message{cat.count !== 1 ? 's' : ''}
-              </span>
-            </div>
-            <div className="mb-3">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Examples</p>
-              <ul className="text-sm text-gray-600 space-y-1">
-                {cat.examples.map((ex, i) => (
-                  <li key={i} className="truncate">"{ex}"</li>
-                ))}
-              </ul>
-            </div>
-            <div className="rounded bg-blue-50 border border-blue-100 p-3">
-              <p className="text-xs font-medium text-blue-700 uppercase tracking-wider mb-1">
-                Suggested Answer
-              </p>
-              <p className="text-sm text-blue-900">{cat.suggestedAnswer}</p>
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

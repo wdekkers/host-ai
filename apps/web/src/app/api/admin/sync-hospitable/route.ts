@@ -36,19 +36,26 @@ async function fetchReservationsForProperty(
   propertyId: string
 ): Promise<Record<string, unknown>[]> {
   const all: Record<string, unknown>[] = [];
-  let page = 1;
+  // Use links.next for cursor-based pagination. Hospitable may return http:// in next links
+  // and sometimes drops the properties[] filter — we fix both on each iteration.
+  let url: string | null = `${config.baseUrl}/v2/reservations?limit=100&properties[]=${encodeURIComponent(propertyId)}`;
 
-  while (true) {
-    // Build URL manually — links.next from Hospitable drops the properties[] filter
-    // and uses http:// instead of https://, so we manage pagination ourselves.
-    const url = `${config.baseUrl}/v2/reservations?limit=100&properties[]=${encodeURIComponent(propertyId)}&page=${page}`;
+  while (url) {
     const res = await fetch(url, { headers: headers(config.apiKey) });
     if (!res.ok) throw new Error(`Hospitable reservations returned ${res.status}`);
     const body = (await res.json()) as HospitableListResponse;
     const batch = body.data ?? [];
     all.push(...batch);
-    if (batch.length < 100) break;
-    page++;
+
+    const rawNext = body.links?.next ?? null;
+    if (!rawNext) break;
+
+    // Fix http → https and re-inject property filter if Hospitable stripped it
+    const nextUrl = new URL(rawNext.replace(/^http:\/\//i, 'https://'));
+    if (!nextUrl.searchParams.has('properties[]')) {
+      nextUrl.searchParams.set('properties[]', propertyId);
+    }
+    url = nextUrl.toString();
   }
 
   return all;
@@ -76,13 +83,14 @@ function extractGuestFromMessages(rawMessages: Record<string, unknown>[]) {
 }
 
 function normalizeProperty(raw: Record<string, unknown>) {
-  const location = (raw.location ?? {}) as Record<string, unknown>;
+  // v2 API returns a nested address object: { street, city, state, country, ... }
+  const addr = (raw.address ?? {}) as Record<string, unknown>;
   return {
     id: String(raw.id),
-    name: String(raw.name ?? raw.title ?? ''),
-    address: String(raw.address ?? raw.street ?? location.address ?? ''),
-    city: String(raw.city ?? location.city ?? ''),
-    status: String(raw.status ?? 'active'),
+    name: String(raw.name ?? raw.public_name ?? ''),
+    address: String(addr.street ?? addr.display ?? ''),
+    city: String(addr.city ?? ''),
+    status: raw.listed === false ? 'inactive' : 'active',
     raw: raw as Record<string, unknown>,
   };
 }

@@ -81,6 +81,23 @@ export const reservations = waltSchema.table('reservations', {
   syncedAt: timestamp('synced_at', { withTimezone: true }).notNull()
 });
 
+export const propertyFaqs = waltSchema.table(
+  'property_faqs',
+  {
+    id: uuid('id').primaryKey(),
+    propertyId: text('property_id').notNull(),
+    category: text('category').notNull(),
+    question: text('question').notNull(),
+    answer: text('answer'),
+    examples: jsonb('examples').$type<string[]>(),
+    analysedAt: timestamp('analysed_at', { withTimezone: true }).notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull()
+  },
+  (table) => ({
+    uniq: uniqueIndex('property_faqs_property_category_idx').on(table.propertyId, table.category)
+  })
+);
+
 export const messages = waltSchema.table(
   'messages',
   {

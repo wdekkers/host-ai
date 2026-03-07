@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import OpenAI from 'openai';
-import { reservations, messages } from '@walt/db';
+import { reservations, messages, propertyFaqs } from '@walt/db';
 import { eq } from 'drizzle-orm';
 
 import { handleApiError } from '@/lib/secure-logger';
@@ -43,7 +43,11 @@ async function fetchReservation(config: { apiKey: string; baseUrl: string }, res
   return body.data ?? null;
 }
 
-async function generateSuggestion(reservation: Record<string, unknown>, messageBody: string): Promise<string | null> {
+async function generateSuggestion(
+  reservation: Record<string, unknown>,
+  messageBody: string,
+  propertyId: string | null
+): Promise<string | null> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
 
@@ -54,6 +58,24 @@ async function generateSuggestion(reservation: Record<string, unknown>, messageB
   const propertyName = String(props?.[0]?.name ?? 'the property');
   const checkIn = reservation.check_in ? new Date(reservation.check_in as string).toLocaleDateString() : 'unknown';
   const checkOut = reservation.check_out ? new Date(reservation.check_out as string).toLocaleDateString() : 'unknown';
+
+  // Load property FAQs for context
+  let faqContext = '';
+  if (propertyId) {
+    const faqs = await db
+      .select({ category: propertyFaqs.category, answer: propertyFaqs.answer })
+      .from(propertyFaqs)
+      .where(eq(propertyFaqs.propertyId, propertyId));
+    if (faqs.length > 0) {
+      const faqLines = faqs
+        .filter((f) => f.answer)
+        .map((f) => `Q: ${f.category}\nA: ${f.answer}`)
+        .join('\n\n');
+      if (faqLines) {
+        faqContext = `\n\nKnowledge base for this property:\n${faqLines}`;
+      }
+    }
+  }
 
   const response = await client.chat.completions.create({
     model: 'gpt-4o-mini',
@@ -66,7 +88,7 @@ Property: ${propertyName}
 Guest: ${guestName}
 Check-in: ${checkIn}
 Check-out: ${checkOut}
-Reply in the same language as the guest message. Keep it under 3 sentences unless the question requires more detail.`
+Reply in the same language as the guest message. Keep it under 3 sentences unless the question requires more detail.${faqContext}`
       },
       { role: 'user', content: messageBody }
     ]
@@ -116,7 +138,8 @@ export async function POST(request: Request) {
         .onConflictDoNothing();
 
       if (parsed.senderType === 'guest' && reservationRaw) {
-        const suggestion = await generateSuggestion(reservationRaw, parsed.message);
+        const propId = (reservationRaw.properties as Record<string, unknown>[] | undefined)?.[0]?.id as string | null ?? null;
+        const suggestion = await generateSuggestion(reservationRaw, parsed.message, propId);
         if (suggestion) {
           await db
             .update(messages)
