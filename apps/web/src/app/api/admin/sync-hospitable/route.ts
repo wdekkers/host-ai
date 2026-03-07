@@ -48,9 +48,11 @@ async function fetchReservationsForProperty(
 
   // Use links.next for cursor-based pagination. Hospitable may return http:// in next links
   // and sometimes drops the properties[] filter — we fix both on each iteration.
-  // starts_at[gte] overrides Hospitable's default "upcoming only" filter so we get all history.
+  // Override Hospitable's default date window (roughly next 30 days) with explicit bounds
+  // so we get all past history AND all future bookings in one sync.
   const from = '2015-01-01';
-  let url: string | null = `${config.baseUrl}/v2/reservations?limit=100&properties[]=${encodeURIComponent(propertyId)}&starts_at[gte]=${from}`;
+  const to = '2030-12-31';
+  let url: string | null = `${config.baseUrl}/v2/reservations?limit=100&properties[]=${encodeURIComponent(propertyId)}&starts_at[gte]=${from}&starts_at[lte]=${to}`;
 
   while (url) {
     const res = await fetch(url, { headers: headers(config.apiKey) });
