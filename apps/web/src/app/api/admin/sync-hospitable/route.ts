@@ -53,9 +53,10 @@ async function fetchReservationsForProperty(
 
   // Hospitable uses page-based pagination with meta.current_page / meta.last_page.
   // per_page is the correct parameter (not limit).
-  // Override the default ~30-day window with explicit date bounds to get full history + future.
-  const from = '2015-01-01';
-  const to = '2030-12-31';
+  // Use start_date/end_date (not starts_at[gte/lte]) with a bounded window to avoid 400.
+  const now = new Date();
+  const from = '2024-01-01';
+  const to = '2026-12-31';
   let page = 1;
 
   while (true) {
@@ -63,8 +64,8 @@ async function fetchReservationsForProperty(
     url.searchParams.set('per_page', '100');
     url.searchParams.set('page', String(page));
     url.searchParams.append('properties[]', propertyId);
-    url.searchParams.set('starts_at[gte]', from);
-    url.searchParams.set('starts_at[lte]', to);
+    url.searchParams.set('start_date', from);
+    url.searchParams.set('end_date', to);
 
     const res = await fetch(url, { headers: headers(config.apiKey) });
     if (!res.ok) throw new Error(`Hospitable reservations returned ${res.status}`);
