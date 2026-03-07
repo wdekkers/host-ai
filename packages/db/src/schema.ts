@@ -48,6 +48,16 @@ export const propertyAccess = waltSchema.table(
   })
 );
 
+export const properties = waltSchema.table('properties', {
+  id: text('id').primaryKey(), // Hospitable property ID
+  name: text('name').notNull(),
+  address: text('address'),
+  city: text('city'),
+  status: text('status'),
+  raw: jsonb('raw').notNull(),
+  syncedAt: timestamp('synced_at', { withTimezone: true }).notNull()
+});
+
 export const reservations = waltSchema.table('reservations', {
   id: text('id').primaryKey(),
   conversationId: text('conversation_id'),

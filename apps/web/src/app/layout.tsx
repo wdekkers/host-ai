@@ -21,15 +21,18 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body className="bg-gray-50 text-gray-900">
         <ClerkProvider>
+          {/* Mobile top header */}
+          <header className="md:hidden fixed top-0 inset-x-0 h-14 bg-gray-900 text-white flex items-center justify-between px-4 z-50">
+            <span className="text-lg font-semibold tracking-tight">Walt</span>
+            <UserButton />
+          </header>
+
           <div className="flex min-h-screen">
-            {/* Sidebar */}
-            <aside className="fixed top-0 left-0 h-screen w-56 bg-gray-900 text-white flex flex-col z-50">
-              {/* Logo */}
+            {/* Desktop sidebar */}
+            <aside className="hidden md:flex fixed top-0 left-0 h-screen w-56 bg-gray-900 text-white flex-col z-50">
               <div className="px-6 py-5 border-b border-gray-800">
                 <span className="text-xl font-semibold tracking-tight">Walt</span>
               </div>
-
-              {/* Nav links */}
               <nav className="flex-1 px-3 py-4 space-y-1">
                 {navLinks.map(({ href, label }) => (
                   <Link
@@ -41,18 +44,31 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   </Link>
                 ))}
               </nav>
-
-              {/* User button */}
               <div className="px-5 py-4 border-t border-gray-800">
                 <UserButton />
               </div>
             </aside>
 
-            {/* Main content */}
-            <main className="ml-56 flex-1 min-h-screen">
+            {/* Main content — top padding for mobile header, bottom padding for mobile nav */}
+            <main className="pt-14 md:pt-0 pb-20 md:pb-0 md:ml-56 flex-1 min-h-screen">
               {children}
             </main>
           </div>
+
+          {/* Mobile bottom nav */}
+          <nav className="md:hidden fixed bottom-0 inset-x-0 bg-gray-900 border-t border-gray-800 z-50">
+            <div className="flex">
+              {navLinks.map(({ href, label }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="flex-1 flex items-center justify-center py-3 text-xs text-gray-400 hover:text-white transition-colors"
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
+          </nav>
         </ClerkProvider>
       </body>
     </html>
