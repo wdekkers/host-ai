@@ -17,16 +17,21 @@ function headers(apiKey: string) {
 
 async function fetchAllProperties(config: { apiKey: string; baseUrl: string }) {
   const all: Record<string, unknown>[] = [];
-  let url: string | null = new URL('/v2/properties?limit=50', config.baseUrl).toString();
+  let page = 1;
 
-  while (url) {
+  while (true) {
+    const url = new URL('/v2/properties', config.baseUrl);
+    url.searchParams.set('per_page', '50');
+    url.searchParams.set('page', String(page));
     const res = await fetch(url, { headers: headers(config.apiKey) });
     if (!res.ok) throw new Error(`Hospitable properties returned ${res.status}`);
     const body = (await res.json()) as HospitableListResponse;
     for (const p of body.data ?? []) {
       all.push(p);
     }
-    url = body.links?.next ?? null;
+    const lastPage = body.meta?.last_page ?? 1;
+    if (page >= lastPage) break;
+    page++;
   }
 
   return all;
@@ -46,15 +51,21 @@ async function fetchReservationsForProperty(
   let pages = 0;
   let apiTotal: number | null = null;
 
-  // Use links.next for cursor-based pagination. Hospitable may return http:// in next links
-  // and sometimes drops the properties[] filter — we fix both on each iteration.
-  // Override Hospitable's default date window (roughly next 30 days) with explicit bounds
-  // so we get all past history AND all future bookings in one sync.
+  // Hospitable uses page-based pagination with meta.current_page / meta.last_page.
+  // per_page is the correct parameter (not limit).
+  // Override the default ~30-day window with explicit date bounds to get full history + future.
   const from = '2015-01-01';
   const to = '2030-12-31';
-  let url: string | null = `${config.baseUrl}/v2/reservations?limit=100&properties[]=${encodeURIComponent(propertyId)}&starts_at[gte]=${from}&starts_at[lte]=${to}`;
+  let page = 1;
 
-  while (url) {
+  while (true) {
+    const url = new URL('/v2/reservations', config.baseUrl);
+    url.searchParams.set('per_page', '100');
+    url.searchParams.set('page', String(page));
+    url.searchParams.append('properties[]', propertyId);
+    url.searchParams.set('starts_at[gte]', from);
+    url.searchParams.set('starts_at[lte]', to);
+
     const res = await fetch(url, { headers: headers(config.apiKey) });
     if (!res.ok) throw new Error(`Hospitable reservations returned ${res.status}`);
     const body = (await res.json()) as HospitableListResponse;
@@ -66,15 +77,9 @@ async function fetchReservationsForProperty(
       apiTotal = body.meta.total;
     }
 
-    const rawNext = body.links?.next ?? null;
-    if (!rawNext) break;
-
-    // Fix http → https and re-inject property filter if Hospitable stripped it
-    const nextUrl = new URL(rawNext.replace(/^http:\/\//i, 'https://'));
-    if (!nextUrl.searchParams.has('properties[]')) {
-      nextUrl.searchParams.set('properties[]', propertyId);
-    }
-    url = nextUrl.toString();
+    const lastPage = body.meta?.last_page ?? 1;
+    if (page >= lastPage) break;
+    page++;
   }
 
   return { reservations: all, pages, apiTotal };
@@ -84,7 +89,8 @@ async function fetchMessagesForReservation(
   config: { apiKey: string; baseUrl: string },
   reservationId: string
 ): Promise<Record<string, unknown>[]> {
-  const url = new URL(`/v2/reservations/${reservationId}/messages?limit=100`, config.baseUrl);
+  const url = new URL(`/v2/reservations/${reservationId}/messages`, config.baseUrl);
+  url.searchParams.set('per_page', '100');
   const res = await fetch(url, { headers: headers(config.apiKey) });
   if (!res.ok) return [];
   const body = (await res.json()) as { data?: Record<string, unknown>[] };
