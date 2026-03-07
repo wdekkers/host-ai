@@ -54,7 +54,6 @@ async function fetchReservationsForProperty(
   // Hospitable uses page-based pagination with meta.current_page / meta.last_page.
   // per_page is the correct parameter (not limit).
   // Use start_date/end_date (not starts_at[gte/lte]) with a bounded window to avoid 400.
-  const now = new Date();
   const from = '2024-01-01';
   const to = '2026-12-31';
   let page = 1;
