@@ -10,7 +10,6 @@ export const metadata: Metadata = {
 };
 
 const navLinks = [
-  { href: '/', label: 'Dashboard' },
   { href: '/inbox', label: 'Inbox' },
   { href: '/reservations', label: 'Reservations' },
   { href: '/properties', label: 'Properties' },

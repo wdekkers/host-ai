@@ -1,5 +1,5 @@
-import { CommandCenterDashboard } from '../components/command-center-dashboard';
+import { redirect } from 'next/navigation';
 
 export default function HomePage() {
-  return <CommandCenterDashboard />;
+  redirect('/reservations');
 }
