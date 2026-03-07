@@ -37,7 +37,7 @@ export default async function ReservationsPage() {
 
   if ('error' in result) {
     return (
-      <div className="p-8">
+      <div className="p-4 sm:p-8">
         <h1 className="text-2xl font-semibold mb-4">Reservations</h1>
         <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-red-700">
           <p className="font-medium">Database error</p>
@@ -50,8 +50,8 @@ export default async function ReservationsPage() {
   const rows = result;
 
   return (
-    <div className="p-8">
-      <div className="mb-6 flex items-start justify-between">
+    <div className="p-4 sm:p-8">
+      <div className="mb-6 flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">Reservations</h1>
           <p className="text-sm text-gray-500 mt-1">
@@ -66,34 +66,59 @@ export default async function ReservationsPage() {
           No reservations synced yet. Use the button above to import your data.
         </div>
       ) : (
-        <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guest</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-out</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Platform</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {rows.map((r) => (
-                <tr key={r.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                    {[r.guestFirstName, r.guestLastName].filter(Boolean).join(' ') || '—'}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{r.propertyName ?? '—'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{formatDate(r.checkIn)}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{formatDate(r.checkOut)}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500 capitalize">{r.platform ?? '—'}</td>
-                  <td className="px-6 py-4 text-sm"><StatusBadge status={r.status} /></td>
+        <>
+          {/* Mobile card list */}
+          <div className="sm:hidden rounded-lg border border-gray-200 bg-white divide-y divide-gray-200">
+            {rows.map((r) => {
+              const guestName = [r.guestFirstName, r.guestLastName].filter(Boolean).join(' ') || '—';
+              return (
+                <div key={r.id} className="p-4">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <span className="font-medium text-sm text-gray-900">{guestName}</span>
+                    <StatusBadge status={r.status} />
+                  </div>
+                  <p className="text-sm text-gray-500 mb-1">{r.propertyName ?? '—'}</p>
+                  <p className="text-xs text-gray-400">
+                    {formatDate(r.checkIn)} → {formatDate(r.checkOut)}
+                  </p>
+                  {r.platform && (
+                    <p className="text-xs text-gray-400 capitalize mt-0.5">{r.platform}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden sm:block rounded-lg border border-gray-200 bg-white overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guest</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-out</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Platform</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {rows.map((r) => (
+                  <tr key={r.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                      {[r.guestFirstName, r.guestLastName].filter(Boolean).join(' ') || '—'}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{r.propertyName ?? '—'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{formatDate(r.checkIn)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{formatDate(r.checkOut)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500 capitalize">{r.platform ?? '—'}</td>
+                    <td className="px-6 py-4 text-sm"><StatusBadge status={r.status} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );

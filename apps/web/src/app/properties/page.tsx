@@ -41,7 +41,7 @@ export default async function PropertiesPage() {
 
   if (data.error?.includes('not configured')) {
     return (
-      <div className="p-8">
+      <div className="p-4 sm:p-8">
         <h1 className="text-2xl font-semibold mb-6">Properties</h1>
         <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-6 text-yellow-800">
           Integration not configured. Set <code className="font-mono text-sm">HOSPITABLE_API_KEY</code> and{' '}
@@ -53,7 +53,7 @@ export default async function PropertiesPage() {
 
   if (data.error) {
     return (
-      <div className="p-8">
+      <div className="p-4 sm:p-8">
         <h1 className="text-2xl font-semibold mb-6">Properties</h1>
         <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-red-800">
           Error loading properties: {data.error}
@@ -65,7 +65,7 @@ export default async function PropertiesPage() {
   const properties = data.items ?? [];
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-8">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold">Properties</h1>
         <p className="text-sm text-gray-500 mt-1">{properties.length} propert{properties.length !== 1 ? 'ies' : 'y'}</p>
