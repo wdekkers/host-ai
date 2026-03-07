@@ -56,7 +56,7 @@ async function fetchReservationsForProperty(
   // Use start_date/end_date (not starts_at[gte/lte]) with a bounded window to avoid 400.
   const now = new Date();
   const from = '2024-01-01';
-  const to = `${now.getFullYear() + 2}-12-31`;
+  const to = '2026-12-31';
   let page = 1;
 
   while (true) {
