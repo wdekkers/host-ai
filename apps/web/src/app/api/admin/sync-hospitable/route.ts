@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { reservations, messages } from '@walt/db';
+import { properties, reservations, messages } from '@walt/db';
 import { db } from '@/lib/db';
 import { getHospitableApiConfig } from '@/lib/integrations-env';
 import { normalizeReservation, normalizeMessage } from '@/lib/hospitable-normalize';
@@ -15,7 +15,7 @@ function headers(apiKey: string) {
 }
 
 async function fetchAllProperties(config: { apiKey: string; baseUrl: string }) {
-  const all: Array<{ id: string; name: string }> = [];
+  const all: Record<string, unknown>[] = [];
   let url: string | null = new URL('/v2/properties?limit=50', config.baseUrl).toString();
 
   while (url) {
@@ -23,7 +23,7 @@ async function fetchAllProperties(config: { apiKey: string; baseUrl: string }) {
     if (!res.ok) throw new Error(`Hospitable properties returned ${res.status}`);
     const body = (await res.json()) as HospitableListResponse;
     for (const p of body.data ?? []) {
-      all.push({ id: String(p.id), name: String(p.name ?? '') });
+      all.push(p);
     }
     url = body.links?.next ?? null;
   }
@@ -75,19 +75,44 @@ function extractGuestFromMessages(rawMessages: Record<string, unknown>[]) {
   return { first_name: first ?? null, last_name: rest.length > 0 ? rest.join(' ') : null };
 }
 
+function normalizeProperty(raw: Record<string, unknown>) {
+  const location = (raw.location ?? {}) as Record<string, unknown>;
+  return {
+    id: String(raw.id),
+    name: String(raw.name ?? raw.title ?? ''),
+    address: String(raw.address ?? raw.street ?? location.address ?? ''),
+    city: String(raw.city ?? location.city ?? ''),
+    status: String(raw.status ?? 'active'),
+    raw: raw as Record<string, unknown>,
+  };
+}
+
 export async function POST() {
   const config = getHospitableApiConfig();
   if (!config) {
     return NextResponse.json({ error: 'Hospitable API not configured.' }, { status: 503 });
   }
 
-  const properties = await fetchAllProperties(config);
+  const rawProperties = await fetchAllProperties(config);
   const now = new Date();
+  let propertyCount = 0;
   let reservationCount = 0;
   let messageCount = 0;
 
-  for (const property of properties) {
-    const rawReservations = await fetchReservationsForProperty(config, property.id);
+  for (const rawProp of rawProperties) {
+    const normalizedProp = normalizeProperty(rawProp);
+
+    // Upsert property
+    await db
+      .insert(properties)
+      .values({ ...normalizedProp, syncedAt: now })
+      .onConflictDoUpdate({
+        target: properties.id,
+        set: { ...normalizedProp, syncedAt: now }
+      });
+    propertyCount++;
+
+    const rawReservations = await fetchReservationsForProperty(config, normalizedProp.id);
 
     for (const raw of rawReservations) {
       const rawMessages = await fetchMessagesForReservation(config, String(raw.id));
@@ -96,7 +121,7 @@ export async function POST() {
       // Inject property and guest info in the shape normalizeReservation expects
       const enriched: Record<string, unknown> = {
         ...raw,
-        properties: [{ id: property.id, name: property.name }],
+        properties: [{ id: normalizedProp.id, name: normalizedProp.name }],
         guest: { ...guest, id: null, email: null }
       };
 
@@ -122,5 +147,5 @@ export async function POST() {
     }
   }
 
-  return NextResponse.json({ reservations: reservationCount, messages: messageCount });
+  return NextResponse.json({ properties: propertyCount, reservations: reservationCount, messages: messageCount });
 }
