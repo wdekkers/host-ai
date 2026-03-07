@@ -16,7 +16,7 @@ function headers(apiKey: string) {
 
 async function fetchAllProperties(config: { apiKey: string; baseUrl: string }) {
   const all: Record<string, unknown>[] = [];
-  let url: string | null = new URL('/v2/properties?limit=50', config.baseUrl).toString();
+  let url: string | null = new URL('/v1/properties?limit=50', config.baseUrl).toString();
 
   while (url) {
     const res = await fetch(url, { headers: headers(config.apiKey) });
@@ -36,19 +36,26 @@ async function fetchReservationsForProperty(
   propertyId: string
 ): Promise<Record<string, unknown>[]> {
   const all: Record<string, unknown>[] = [];
-  let page = 1;
+  // Use links.next for cursor-based pagination. Hospitable may return http:// in next links
+  // and sometimes drops the properties[] filter — we fix both on each iteration.
+  let url: string | null = `${config.baseUrl}/v1/reservations?limit=100&properties[]=${encodeURIComponent(propertyId)}`;
 
-  while (true) {
-    // Build URL manually — links.next from Hospitable drops the properties[] filter
-    // and uses http:// instead of https://, so we manage pagination ourselves.
-    const url = `${config.baseUrl}/v2/reservations?limit=100&properties[]=${encodeURIComponent(propertyId)}&page=${page}`;
+  while (url) {
     const res = await fetch(url, { headers: headers(config.apiKey) });
     if (!res.ok) throw new Error(`Hospitable reservations returned ${res.status}`);
     const body = (await res.json()) as HospitableListResponse;
     const batch = body.data ?? [];
     all.push(...batch);
-    if (batch.length < 100) break;
-    page++;
+
+    const rawNext = body.links?.next ?? null;
+    if (!rawNext) break;
+
+    // Fix http → https and re-inject property filter if Hospitable stripped it
+    const nextUrl = new URL(rawNext.replace(/^http:\/\//i, 'https://'));
+    if (!nextUrl.searchParams.has('properties[]')) {
+      nextUrl.searchParams.set('properties[]', propertyId);
+    }
+    url = nextUrl.toString();
   }
 
   return all;
@@ -58,7 +65,7 @@ async function fetchMessagesForReservation(
   config: { apiKey: string; baseUrl: string },
   reservationId: string
 ): Promise<Record<string, unknown>[]> {
-  const url = new URL(`/v2/reservations/${reservationId}/messages?limit=100`, config.baseUrl);
+  const url = new URL(`/v1/reservations/${reservationId}/messages?limit=100`, config.baseUrl);
   const res = await fetch(url, { headers: headers(config.apiKey) });
   if (!res.ok) return [];
   const body = (await res.json()) as { data?: Record<string, unknown>[] };
