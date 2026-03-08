@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { buildMessagingApp } from './index.js';
 
-test('GET /contacts returns a contact list', async () => {
+void test('GET /contacts returns a contact list', async () => {
   const app = buildMessagingApp();
   const response = await app.inject({ method: 'GET', url: '/contacts' });
 
@@ -17,7 +17,7 @@ test('GET /contacts returns a contact list', async () => {
   await app.close();
 });
 
-test('GET /messages filters by contactId', async () => {
+void test('GET /messages filters by contactId', async () => {
   const app = buildMessagingApp();
   const response = await app.inject({ method: 'GET', url: '/messages?contactId=contact-001' });
 
