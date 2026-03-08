@@ -9,9 +9,17 @@
     "start": "node dist/index.js",
     "lint": "eslint src --max-warnings=0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "echo 'No tests yet for @walt/service-messaging'"
+    "test": "node --import tsx/esm --test 'src/**/*.test.ts'"
   },
   "dependencies": {
-    "@walt/contracts": "workspace:*"
+    "@walt/contracts": "workspace:*",
+    "@walt/db": "workspace:*",
+    "libphonenumber-js": "^1.11.12",
+    "twilio": "^5.5.1",
+    "uuid": "^11.0.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
   }
 }

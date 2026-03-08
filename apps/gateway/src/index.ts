@@ -52,7 +52,9 @@ app.get('/messaging/contacts', async (_request, reply) => {
   try {
     const response = await fetch(`${messagingServiceBaseUrl}/contacts`);
     if (!response.ok) {
-      return reply.status(response.status).send({ error: `Messaging service returned ${response.status}` });
+      return reply
+        .status(response.status)
+        .send({ error: `Messaging service returned ${response.status}` });
     }
 
     const payload = (await response.json()) as { items: unknown[] };
@@ -110,7 +112,9 @@ app.get('/messaging/messages', async (request, reply) => {
     const query = contactId ? `?contactId=${encodeURIComponent(contactId)}` : '';
     const response = await fetch(`${messagingServiceBaseUrl}/messages${query}`);
     if (!response.ok) {
-      return reply.status(response.status).send({ error: `Messaging service returned ${response.status}` });
+      return reply
+        .status(response.status)
+        .send({ error: `Messaging service returned ${response.status}` });
     }
 
     const payload = (await response.json()) as { items: unknown[] };
@@ -126,17 +130,69 @@ app.post('/messaging/messages', async (request, reply) => {
     const response = await fetch(`${messagingServiceBaseUrl}/messages`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', accept: 'application/json' },
-      body: JSON.stringify(request.body ?? {})
+      body: JSON.stringify(request.body ?? {}),
     });
     if (!response.ok) {
       const payload = (await response.json().catch(() => ({}))) as { error?: string };
-      return reply.status(response.status).send({ error: payload.error ?? `Messaging service returned ${response.status}` });
+      return reply
+        .status(response.status)
+        .send({ error: payload.error ?? `Messaging service returned ${response.status}` });
     }
 
     const payload = (await response.json()) as { item: unknown };
     return reply.status(201).send({ item: payload.item });
   } catch (error) {
     app.log.error({ error }, 'Failed to create message in messaging service');
+    return reply.status(502).send({ error: 'Messaging service unavailable' });
+  }
+});
+
+// Vendor admin routes — proxied to messaging service
+app.get('/vendors', async (_request, reply) => {
+  try {
+    const response = await fetch(`${messagingServiceBaseUrl}/vendors`);
+    if (!response.ok) {
+      return reply
+        .status(response.status)
+        .send({ error: `Messaging service returned ${response.status}` });
+    }
+    return reply.send(await response.json());
+  } catch (error) {
+    app.log.error({ error }, 'Failed to load vendors from messaging service');
+    return reply.status(502).send({ error: 'Messaging service unavailable' });
+  }
+});
+
+app.get('/vendors/:id/history', async (request, reply) => {
+  try {
+    const { id } = request.params as { id: string };
+    const response = await fetch(`${messagingServiceBaseUrl}/vendors/${id}/history`);
+    if (!response.ok) {
+      return reply
+        .status(response.status)
+        .send({ error: `Messaging service returned ${response.status}` });
+    }
+    return reply.send(await response.json());
+  } catch (error) {
+    app.log.error({ error }, 'Failed to load vendor history from messaging service');
+    return reply.status(502).send({ error: 'Messaging service unavailable' });
+  }
+});
+
+app.patch('/vendors/:id/disable', async (request, reply) => {
+  try {
+    const { id } = request.params as { id: string };
+    const response = await fetch(`${messagingServiceBaseUrl}/vendors/${id}/disable`, {
+      method: 'PATCH',
+    });
+    if (!response.ok) {
+      return reply
+        .status(response.status)
+        .send({ error: `Messaging service returned ${response.status}` });
+    }
+    return reply.send(await response.json());
+  } catch (error) {
+    app.log.error({ error }, 'Failed to disable vendor in messaging service');
     return reply.status(502).send({ error: 'Messaging service unavailable' });
   }
 });
