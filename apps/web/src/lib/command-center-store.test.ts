@@ -3264,7 +3264,10 @@ void test('creates pending qa suggestion from inbound message and exposes notifi
   );
   assert.equal(ingress.status, 202);
 
-  const notifications = await getQaSuggestionNotifications();
+  const notifications = await getQaSuggestionNotifications(
+    new Request('http://localhost/api/command-center/qa-suggestions/notifications'),
+    {},
+  );
   const notificationsBody = (await notifications.json()) as { pendingCount: number };
   assert.equal(notifications.status, 200);
   assert.equal(notificationsBody.pendingCount > 0, true);

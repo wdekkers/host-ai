@@ -991,6 +991,14 @@ const classifyQuestionReusability = (
   return { label: 'unclear', confidence: 0.52 };
 };
 
+const toPublicQaSuggestion = (
+  suggestion: PropertyQaSuggestion & { normalizedQuestionHash: string },
+): PropertyQaSuggestion => {
+  const clone = { ...suggestion } as PropertyQaSuggestion & { normalizedQuestionHash?: string };
+  delete clone.normalizedQuestionHash;
+  return clone;
+};
+
 const propertyNotesByIntent: Record<string, string> = {
   'early-check-in-request':
     'Check cleaning completion and lock readiness before offering early check-in.',
@@ -1438,7 +1446,8 @@ export const createStore = (options: StoreOptions = {}): Store => {
     const proposedAnswer =
       defaultPoliciesByIntent[item.intent] ??
       policiesByIntent[item.intent] ??
-      defaultPoliciesByIntent['guest-message'];
+      defaultPoliciesByIntent['guest-message'] ??
+      'Acknowledge guest message and confirm details before final response.';
     const ts = nowIso();
     const suggestion: PropertyQaSuggestion & { normalizedQuestionHash: string } = {
       id: nextPropertyQaSuggestionId(),
@@ -3143,7 +3152,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
       return propertyQaSuggestions
         .filter((suggestion) => suggestion.propertyId === propertyId)
         .filter((suggestion) => !status || suggestion.status === status)
-        .map(({ normalizedQuestionHash: _normalizedQuestionHash, ...suggestion }) => suggestion)
+        .map((suggestion) => toPublicQaSuggestion(suggestion))
         .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
     },
 
@@ -3206,8 +3215,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
         { entryId: entry.id },
       );
 
-      const { normalizedQuestionHash: _normalizedQuestionHash, ...withoutHash } = suggestion;
-      return { suggestion: withoutHash, entry };
+      return { suggestion: toPublicQaSuggestion(suggestion), entry };
     },
 
     rejectPropertyQaSuggestion: (suggestionId, input) => {
@@ -3226,8 +3234,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
       emitPropertyQaSuggestionEvent(suggestion.id, 'rejected', input.actorId, {
         reason: input.reason ?? '',
       });
-      const { normalizedQuestionHash: _normalizedQuestionHash, ...withoutHash } = suggestion;
-      return withoutHash;
+      return toPublicQaSuggestion(suggestion);
     },
 
     getPropertyQaSuggestionNotifications: () => {
