@@ -1,22 +1,17 @@
-import { asc, eq } from 'drizzle-orm';
+import { count, desc, eq } from 'drizzle-orm';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { messages, reservations } from '@walt/db';
 import { db } from '@/lib/db';
 
+import { MessageThread } from './MessageThread';
+import type { SerializedMessage } from './MessageThread';
+
+const INITIAL_COUNT = 5;
+
 function formatDate(date: Date | null) {
   if (!date) return '—';
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function formatTime(date: Date) {
-  return date.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
 }
 
 export default async function ThreadPage({
@@ -33,11 +28,34 @@ export default async function ThreadPage({
 
   if (!reservation) notFound();
 
-  const msgs = await db
+  // Total count for the header
+  const countResult = await db
+    .select({ value: count() })
+    .from(messages)
+    .where(eq(messages.reservationId, reservationId));
+  const totalCount = countResult[0]?.value ?? 0;
+
+  // Fetch INITIAL_COUNT + 1 to know if there are older messages
+  const recent = await db
     .select()
     .from(messages)
     .where(eq(messages.reservationId, reservationId))
-    .orderBy(asc(messages.createdAt));
+    .orderBy(desc(messages.createdAt))
+    .limit(INITIAL_COUNT + 1);
+
+  const hasMore = recent.length > INITIAL_COUNT;
+  const initialMessages: SerializedMessage[] = recent
+    .slice(0, INITIAL_COUNT)
+    .reverse()
+    .map((m) => ({
+      id: m.id,
+      reservationId: m.reservationId,
+      body: m.body,
+      senderType: m.senderType,
+      senderFullName: m.senderFullName,
+      createdAt: m.createdAt.toISOString(),
+      suggestion: m.suggestion,
+    }));
 
   const guestName =
     [reservation.guestFirstName, reservation.guestLastName].filter(Boolean).join(' ') || 'Guest';
@@ -83,49 +101,22 @@ export default async function ThreadPage({
           )}
           <div>
             <span className="text-xs font-medium text-gray-400 uppercase tracking-wide block">Messages</span>
-            {msgs.length}
+            {totalCount}
           </div>
         </div>
       </div>
 
       {/* Messages */}
-      {msgs.length === 0 ? (
+      {totalCount === 0 ? (
         <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-gray-500 text-sm">
           No messages for this reservation.
         </div>
       ) : (
-        <div className="space-y-3">
-          {msgs.map((msg) => {
-            const isHost = msg.senderType === 'host';
-            return (
-              <div key={msg.id} className={`flex ${isHost ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[75%] ${isHost ? 'items-end' : 'items-start'} flex flex-col`}>
-                  <div className={`rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap ${
-                    isHost
-                      ? 'bg-gray-900 text-white rounded-br-sm'
-                      : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm'
-                  }`}>
-                    {msg.body}
-                  </div>
-                  <div className={`flex items-center gap-2 mt-1 px-1 ${isHost ? 'flex-row-reverse' : ''}`}>
-                    <span className="text-xs text-gray-400">{formatTime(msg.createdAt)}</span>
-                    {msg.senderFullName && (
-                      <span className="text-xs text-gray-400">{msg.senderFullName}</span>
-                    )}
-                  </div>
-
-                  {/* AI suggestion */}
-                  {!isHost && msg.suggestion && (
-                    <div className="mt-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 max-w-full">
-                      <p className="text-xs font-medium text-blue-600 mb-1">Suggested reply</p>
-                      <p className="text-sm text-blue-900 whitespace-pre-wrap">{msg.suggestion}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <MessageThread
+          reservationId={reservationId}
+          initialMessages={initialMessages}
+          initialHasMore={hasMore}
+        />
       )}
     </div>
   );
