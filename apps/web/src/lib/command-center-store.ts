@@ -5,7 +5,7 @@ import type {
   PropertyQaSuggestion,
   PropertyQaSuggestionStatus,
   QueueItem,
-  UpdatePropertyQaEntryInput
+  UpdatePropertyQaEntryInput,
 } from '@walt/contracts';
 
 type DraftEventType =
@@ -104,7 +104,12 @@ type NormalizedMessage = {
   createdAt: string;
 };
 
-type IncidentState = 'active' | 'negotiation' | 'resolution-accepted' | 'recovery-closed' | 'normalized';
+type IncidentState =
+  | 'active'
+  | 'negotiation'
+  | 'resolution-accepted'
+  | 'recovery-closed'
+  | 'normalized';
 
 type Incident = {
   id: string;
@@ -339,8 +344,16 @@ type PropertyBrainProfile = {
     houseRules: string[];
   };
   earlyLatePolicy: {
-    earlyCheckIn?: { earliestTime: string; latestTime: string; priceTiers: Array<{ fromHour: number; toHour: number; amountUsd: number }> };
-    lateCheckout?: { earliestTime: string; latestTime: string; priceTiers: Array<{ fromHour: number; toHour: number; amountUsd: number }> };
+    earlyCheckIn?: {
+      earliestTime: string;
+      latestTime: string;
+      priceTiers: Array<{ fromHour: number; toHour: number; amountUsd: number }>;
+    };
+    lateCheckout?: {
+      earliestTime: string;
+      latestTime: string;
+      priceTiers: Array<{ fromHour: number; toHour: number; amountUsd: number }>;
+    };
   };
   arrivalGuide: {
     entryMethod?: string;
@@ -355,7 +368,12 @@ type PropertyBrainProfile = {
     escalationAfterMinutes?: number;
   };
   amenityPolicies: {
-    poolHeating?: { available: boolean; temperatureRangeF?: string; leadTimeHours?: number; caveats: string[] };
+    poolHeating?: {
+      available: boolean;
+      temperatureRangeF?: string;
+      leadTimeHours?: number;
+      caveats: string[];
+    };
     hotTub?: { available: boolean; maxOccupancy?: number; safetyNotes: string[] };
     sauna?: { available: boolean; safetyNotes: string[] };
   };
@@ -434,8 +452,16 @@ type PropertyBrainProfileUpdateInput = {
     houseRules?: string[];
   };
   earlyLatePolicy?: {
-    earlyCheckIn?: { earliestTime: string; latestTime: string; priceTiers: Array<{ fromHour: number; toHour: number; amountUsd: number }> };
-    lateCheckout?: { earliestTime: string; latestTime: string; priceTiers: Array<{ fromHour: number; toHour: number; amountUsd: number }> };
+    earlyCheckIn?: {
+      earliestTime: string;
+      latestTime: string;
+      priceTiers: Array<{ fromHour: number; toHour: number; amountUsd: number }>;
+    };
+    lateCheckout?: {
+      earliestTime: string;
+      latestTime: string;
+      priceTiers: Array<{ fromHour: number; toHour: number; amountUsd: number }>;
+    };
   };
   arrivalGuide?: {
     entryMethod?: string;
@@ -450,7 +476,12 @@ type PropertyBrainProfileUpdateInput = {
     escalationAfterMinutes?: number;
   };
   amenityPolicies?: {
-    poolHeating?: { available: boolean; temperatureRangeF?: string; leadTimeHours?: number; caveats: string[] };
+    poolHeating?: {
+      available: boolean;
+      temperatureRangeF?: string;
+      leadTimeHours?: number;
+      caveats: string[];
+    };
     hotTub?: { available: boolean; maxOccupancy?: number; safetyNotes: string[] };
     sauna?: { available: boolean; safetyNotes: string[] };
   };
@@ -480,7 +511,11 @@ type AutopilotAction = {
   updatedAt: string;
 };
 
-type MonitoringCategory = 'upcoming-check-in' | 'missing-confirmation' | 'vendor-window' | 'amenity-issue';
+type MonitoringCategory =
+  | 'upcoming-check-in'
+  | 'missing-confirmation'
+  | 'vendor-window'
+  | 'amenity-issue';
 type MonitoringSeverity = 'low' | 'medium' | 'high';
 type MonitoringStatus = 'open' | 'acknowledged' | 'resolved';
 
@@ -558,9 +593,20 @@ type Store = {
   sendDraft: (id: string, actorId: string) => QueueItem;
   rejectDraft: (id: string, actorId: string) => QueueItem;
   listEvents: () => DraftEvent[];
-  listEventRecords: (filters?: { type?: DraftEventType; actorId?: string; limit?: number }) => EventRecord[];
-  listOutboxRecords: (filters?: { destination?: OutboxDestination; status?: OutboxStatus; limit?: number }) => OutboxRecord[];
-  retryOutboxByDestination: (input: { destination: OutboxDestination; limit?: number }) => OutboxRecord[];
+  listEventRecords: (filters?: {
+    type?: DraftEventType;
+    actorId?: string;
+    limit?: number;
+  }) => EventRecord[];
+  listOutboxRecords: (filters?: {
+    destination?: OutboxDestination;
+    status?: OutboxStatus;
+    limit?: number;
+  }) => OutboxRecord[];
+  retryOutboxByDestination: (input: {
+    destination: OutboxDestination;
+    limit?: number;
+  }) => OutboxRecord[];
   getApprovalQueueProjection: (limit?: number) => ApprovalQueueProjection;
   getPropertyStateProjection: (limit?: number) => PropertyStateProjection;
   getNormalizedEntities: (kind?: 'properties' | 'guests' | 'reservations' | 'messages' | 'all') => {
@@ -574,19 +620,21 @@ type Store = {
   transitionIncident: (id: string, next: IncidentState) => Incident;
   listIncidents: () => Incident[];
   listCleanerJitPings: (reservationId?: string) => CleanerJitPing[];
-  createCleanerJitPing: (input: { reservationId: string; cleanerId: string; reason: string }) => CleanerJitPing;
+  createCleanerJitPing: (input: {
+    reservationId: string;
+    cleanerId: string;
+    reason: string;
+  }) => CleanerJitPing;
   updateCleanerJitPing: (
     id: string,
-    input: { status: Exclude<CleanerJitStatus, 'requested'>; note?: string; etaMinutes?: number }
+    input: { status: Exclude<CleanerJitStatus, 'requested'>; note?: string; etaMinutes?: number },
   ) => CleanerJitPing;
   getRolloutState: () => RolloutState;
   completeInternalValidation: () => RolloutState;
   onboardHost: (hostId: string) => HostOnboarding;
   listTrainingSignals: () => TrainingSignal[];
   listAuditTimeline: (filters?: AuditTimelineFilters) => AuditTimelineEntry[];
-  ingestHospitableMessage: (
-    input: HospitableMessageInput
-  ) => {
+  ingestHospitableMessage: (input: HospitableMessageInput) => {
     item: QueueItem;
     duplicated: boolean;
   };
@@ -617,7 +665,11 @@ type Store = {
     responseQuality: number;
     explicitRuleAcceptance: number;
   }) => RiskTrustAssessment;
-  evaluateAutopilotAction: (input: { reservationId: string; intent: string; body: string }) => AutopilotAction;
+  evaluateAutopilotAction: (input: {
+    reservationId: string;
+    intent: string;
+    body: string;
+  }) => AutopilotAction;
   rollbackAutopilotAction: (input: { actionId: string; reason: string }) => AutopilotAction;
   listAutopilotActions: () => AutopilotAction[];
   runMonitoringAgents: () => MonitoringAlert[];
@@ -630,7 +682,10 @@ type Store = {
     limit?: number;
   }) => MonitoringAlert[];
   getMonitoringAgentStatus: () => MonitoringAgentStatus;
-  runJitChecks: (input: { reservationId: string; requestType: 'early-check-in' | 'late-checkout' }) => JitCheckResult;
+  runJitChecks: (input: {
+    reservationId: string;
+    requestType: 'early-check-in' | 'late-checkout';
+  }) => JitCheckResult;
   getIncidentResponsePlan: (incidentId: string) => IncidentResponsePlan;
   getIncidentTimeline: (incidentId: string) => IncidentTimelineEntry[];
   getPropertyState: (propertyId: string) => PropertyStateSnapshot;
@@ -638,7 +693,7 @@ type Store = {
   updatePropertyBrainProfile: (
     propertyId: string,
     input: PropertyBrainProfileUpdateInput,
-    actorId: string
+    actorId: string,
   ) => PropertyBrainProfile;
   getPropertyBrainCompleteness: (propertyId: string) => PropertyBrainCompleteness;
   resolvePropertyPolicy: (input: {
@@ -657,13 +712,23 @@ type Store = {
   listPropertyQaEntries: (propertyId: string, status?: 'active' | 'archived') => PropertyQaEntry[];
   createPropertyQaEntry: (propertyId: string, input: CreatePropertyQaEntryInput) => PropertyQaEntry;
   updatePropertyQaEntry: (id: string, input: UpdatePropertyQaEntryInput) => PropertyQaEntry;
-  listPropertyQaSuggestions: (propertyId: string, status?: PropertyQaSuggestionStatus) => PropertyQaSuggestion[];
+  listPropertyQaSuggestions: (
+    propertyId: string,
+    status?: PropertyQaSuggestionStatus,
+  ) => PropertyQaSuggestion[];
   approvePropertyQaSuggestion: (
     suggestionId: string,
-    input: { actorId: string; question?: string; answer?: string }
+    input: { actorId: string; question?: string; answer?: string },
   ) => { suggestion: PropertyQaSuggestion; entry: PropertyQaEntry };
-  rejectPropertyQaSuggestion: (suggestionId: string, input: { actorId: string; reason?: string }) => PropertyQaSuggestion;
-  getPropertyQaSuggestionNotifications: () => { pendingCount: number; newlyReadyCount: number; generatedAt: string };
+  rejectPropertyQaSuggestion: (
+    suggestionId: string,
+    input: { actorId: string; reason?: string },
+  ) => PropertyQaSuggestion;
+  getPropertyQaSuggestionNotifications: () => {
+    pendingCount: number;
+    newlyReadyCount: number;
+    generatedAt: string;
+  };
 };
 
 type StoreOptions = {
@@ -738,14 +803,21 @@ const slugify = (value: string) =>
 const defaultPoliciesByIntent: Record<string, string> = {
   'check-in-reminder': 'Check-in starts at 4:00 PM. Early check-in requires host approval.',
   'first-morning-check': 'Send first-morning check before 9:00 AM local time.',
-  'early-check-in-request': 'Early check-in before 4:00 PM is based on readiness and may require a fee.',
-  'late-checkout-request': 'Late checkout requests must be approved in advance based on turnover constraints.',
-  'arrival-checkin': 'Arrival messages should include check-in time, access method, and parking instructions.',
+  'early-check-in-request':
+    'Early check-in before 4:00 PM is based on readiness and may require a fee.',
+  'late-checkout-request':
+    'Late checkout requests must be approved in advance based on turnover constraints.',
+  'arrival-checkin':
+    'Arrival messages should include check-in time, access method, and parking instructions.',
   'checkout-guidance': 'Checkout messages should include checkout time and departure checklist.',
-  'wifi-help': 'Wi-Fi details are shared after booking confirmation and should not include private credentials.',
-  'parking-help': 'Parking instructions depend on property and local restrictions; share only validated instructions.',
-  'booking-inquiry': 'Booking inquiries should confirm availability, occupancy limits, and key house rules.',
-  'rules-acknowledgment': 'Rules acknowledgments should summarize quiet hours and core house rules.',
+  'wifi-help':
+    'Wi-Fi details are shared after booking confirmation and should not include private credentials.',
+  'parking-help':
+    'Parking instructions depend on property and local restrictions; share only validated instructions.',
+  'booking-inquiry':
+    'Booking inquiries should confirm availability, occupancy limits, and key house rules.',
+  'rules-acknowledgment':
+    'Rules acknowledgments should summarize quiet hours and core house rules.',
   'pool-help': 'Pool responses should include availability, safety, and heating caveats.',
   'spa-help': 'Spa responses should include usage boundaries and safety guidance.',
   'sauna-help': 'Sauna responses should include availability and safety guidance.',
@@ -753,7 +825,8 @@ const defaultPoliciesByIntent: Record<string, string> = {
   threat: 'Threat scenarios must be escalated immediately for manual handling.',
   injury: 'Injury scenarios must be escalated immediately for manual handling.',
   accusation: 'Accusation scenarios must be escalated for manual handling and legal review.',
-  'guest-message': 'Acknowledge the guest request and ask clarifying questions when details are incomplete.'
+  'guest-message':
+    'Acknowledge the guest request and ask clarifying questions when details are incomplete.',
 };
 
 const messagingIntentV1Taxonomy: MessagingIntentV1[] = [
@@ -769,10 +842,15 @@ const messagingIntentV1Taxonomy: MessagingIntentV1[] = [
   'refund-request',
   'threat',
   'injury',
-  'accusation'
+  'accusation',
 ];
 
-const highStakesManualOnlyIntents = new Set<MessagingIntentV1>(['refund-request', 'threat', 'injury', 'accusation']);
+const highStakesManualOnlyIntents = new Set<MessagingIntentV1>([
+  'refund-request',
+  'threat',
+  'injury',
+  'accusation',
+]);
 
 const buildDraftBody = (input: CreateDraftInput, policyText: string) => {
   const guest = typeof input.context.guestName === 'string' ? input.context.guestName : 'there';
@@ -786,7 +864,7 @@ const buildSources = (input: CreateDraftInput, policyText: string) => [
     snippet: policyText,
     confidence: 'high' as const,
     referenceUrl: `https://docs.walt.local/policies/${input.intent}`,
-    referenceId: `policy:${input.intent}`
+    referenceId: `policy:${input.intent}`,
   },
   {
     type: 'reservation' as const,
@@ -794,8 +872,8 @@ const buildSources = (input: CreateDraftInput, policyText: string) => [
     snippet: JSON.stringify(input.context),
     confidence: 'medium' as const,
     referenceUrl: `https://docs.walt.local/reservations/${input.reservationId}`,
-    referenceId: `reservation:${input.reservationId}`
-  }
+    referenceId: `reservation:${input.reservationId}`,
+  },
 ];
 
 const makeSeedItem = (): QueueItem => {
@@ -815,16 +893,16 @@ const makeSeedItem = (): QueueItem => {
         snippet: 'Check-in is available after 4:00 PM.',
         confidence: 'high',
         referenceUrl: 'https://docs.walt.local/policies/check-in-reminder',
-        referenceId: 'policy:check-in-reminder'
-      }
+        referenceId: 'policy:check-in-reminder',
+      },
     ],
     auditLog: [
       {
         action: 'created',
         actorId: 'system',
-        timestamp: ts
-      }
-    ]
+        timestamp: ts,
+      },
+    ],
   };
 };
 
@@ -833,14 +911,14 @@ const transitionMap: Record<IncidentState, IncidentState[]> = {
   negotiation: ['resolution-accepted'],
   'resolution-accepted': ['recovery-closed'],
   'recovery-closed': ['normalized'],
-  normalized: []
+  normalized: [],
 };
 
 const internalRolloutProperties: RolloutProperty[] = [
   { propertyId: 'prop-str-001', name: 'Oak Garden STR', type: 'STR' },
   { propertyId: 'prop-str-002', name: 'Ridge View STR', type: 'STR' },
   { propertyId: 'prop-str-003', name: 'Cedar Point STR', type: 'STR' },
-  { propertyId: 'prop-mtr-001', name: 'Harbor MTR', type: 'MTR' }
+  { propertyId: 'prop-mtr-001', name: 'Harbor MTR', type: 'MTR' },
 ];
 
 const detectIntentFromGuestMessage = (message: string): string => {
@@ -875,7 +953,9 @@ const normalizeQuestionForHash = (question: string) =>
     .replace(/\s+/g, ' ')
     .trim();
 
-const classifyQuestionReusability = (message: string): { label: 'likely-reusable' | 'one-off' | 'unclear'; confidence: number } => {
+const classifyQuestionReusability = (
+  message: string,
+): { label: 'likely-reusable' | 'one-off' | 'unclear'; confidence: number } => {
   const normalized = message.toLowerCase();
   const reusableKeywords = [
     'wifi',
@@ -888,11 +968,21 @@ const classifyQuestionReusability = (message: string): { label: 'likely-reusable
     'hot tub',
     'sauna',
     'pet',
-    'quiet hours'
+    'quiet hours',
   ];
-  const oneOffCues = ['my reservation', 'tonight', 'tomorrow', 'this weekend', 'reservation id', 'confirmation code'];
+  const oneOffCues = [
+    'my reservation',
+    'tonight',
+    'tomorrow',
+    'this weekend',
+    'reservation id',
+    'confirmation code',
+  ];
 
-  if (reusableKeywords.some((keyword) => normalized.includes(keyword)) && normalized.includes('?')) {
+  if (
+    reusableKeywords.some((keyword) => normalized.includes(keyword)) &&
+    normalized.includes('?')
+  ) {
     return { label: 'likely-reusable', confidence: 0.86 };
   }
   if (oneOffCues.some((cue) => normalized.includes(cue))) {
@@ -901,18 +991,28 @@ const classifyQuestionReusability = (message: string): { label: 'likely-reusable
   return { label: 'unclear', confidence: 0.52 };
 };
 
+const toPublicQaSuggestion = (
+  suggestion: PropertyQaSuggestion & { normalizedQuestionHash: string },
+): PropertyQaSuggestion => {
+  const clone = { ...suggestion } as PropertyQaSuggestion & { normalizedQuestionHash?: string };
+  delete clone.normalizedQuestionHash;
+  return clone;
+};
+
 const propertyNotesByIntent: Record<string, string> = {
-  'early-check-in-request': 'Check cleaning completion and lock readiness before offering early check-in.',
-  'late-checkout-request': 'Verify same-day turnover and cleaner schedule before confirming late checkout.',
+  'early-check-in-request':
+    'Check cleaning completion and lock readiness before offering early check-in.',
+  'late-checkout-request':
+    'Verify same-day turnover and cleaner schedule before confirming late checkout.',
   'wifi-help': 'Use the latest network details from property profile.',
   'parking-help': 'Confirm parking zone rules and permit requirements.',
-  'booking-inquiry': 'Confirm occupancy rules and quiet hours in first response.'
+  'booking-inquiry': 'Confirm occupancy rules and quiet hours in first response.',
 };
 
 const confidenceRank: Record<'low' | 'medium' | 'high', number> = {
   low: 0,
   medium: 1,
-  high: 2
+  high: 2,
 };
 
 export const getRiskTrustIndicator = (input: {
@@ -924,12 +1024,19 @@ export const getRiskTrustIndicator = (input: {
   reason: string;
 } => {
   const normalized = input.body.toLowerCase();
-  const suspiciousTerms = ['party', 'cash', 'offline', 'off-platform', 'wire transfer', 'outside app'];
+  const suspiciousTerms = [
+    'party',
+    'cash',
+    'offline',
+    'off-platform',
+    'wire transfer',
+    'outside app',
+  ];
   if (suspiciousTerms.some((term) => normalized.includes(term))) {
     return {
       risk: 'high',
       trust: 'low',
-      reason: 'Message contains high-risk booking cues.'
+      reason: 'Message contains high-risk booking cues.',
     };
   }
 
@@ -937,14 +1044,14 @@ export const getRiskTrustIndicator = (input: {
     return {
       risk: 'medium',
       trust: 'medium',
-      reason: 'Booking inquiry requires normal trust review.'
+      reason: 'Booking inquiry requires normal trust review.',
     };
   }
 
   return {
     risk: 'low',
     trust: 'high',
-    reason: 'Routine operational message.'
+    reason: 'Routine operational message.',
   };
 };
 
@@ -987,12 +1094,13 @@ export const createStore = (options: StoreOptions = {}): Store => {
     compensationCapUsd: 150,
     economicSensitivity: 50,
     propertyRiskTolerance: {},
-    updatedAt: nowIso()
+    updatedAt: nowIso(),
   };
   const propertyBrainProfiles = new Map<string, PropertyBrainProfile>();
   const hospitableByEventId = new Map<string, string>();
   const propertyQaEntries: PropertyQaEntry[] = [];
-  const propertyQaSuggestions: Array<PropertyQaSuggestion & { normalizedQuestionHash: string }> = [];
+  const propertyQaSuggestions: Array<PropertyQaSuggestion & { normalizedQuestionHash: string }> =
+    [];
   const propertyQaSuggestionEvents: PropertyQaSuggestionEvent[] = [];
   const qaRetentionDays = Number(process.env.PROPERTY_QA_RETENTION_DAYS ?? '30');
   let lastMonitoringRunAt = nowIso();
@@ -1008,7 +1116,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
     voiceProfile: {},
     escalationMatrix: { alwaysManualScenarios: [] },
     auditLog: [],
-    updatedAt: nowIso()
+    updatedAt: nowIso(),
   });
 
   const getOrCreatePropertyBrain = (propertyId: string): PropertyBrainProfile => {
@@ -1024,23 +1132,39 @@ export const createStore = (options: StoreOptions = {}): Store => {
   const propertyBrainCompleteness = (profile: PropertyBrainProfile): PropertyBrainCompleteness => ({
     coreRules: Boolean(
       profile.coreRules.checkInTime &&
-        profile.coreRules.checkOutTime &&
-        profile.coreRules.maxOccupancy &&
-        profile.coreRules.quietHours &&
-        profile.coreRules.houseRules.length > 0
+      profile.coreRules.checkOutTime &&
+      profile.coreRules.maxOccupancy &&
+      profile.coreRules.quietHours &&
+      profile.coreRules.houseRules.length > 0,
     ),
-    earlyLatePolicy: Boolean(profile.earlyLatePolicy.earlyCheckIn && profile.earlyLatePolicy.lateCheckout),
-    arrivalGuide: Boolean(profile.arrivalGuide.entryMethod && profile.arrivalGuide.lockInstructions && profile.arrivalGuide.parkingInstructions),
-    cleanerPreferences: Boolean(profile.cleanerPreferences.channel && profile.cleanerPreferences.contact && profile.cleanerPreferences.requiredFormat),
-    amenityPolicies: Boolean(profile.amenityPolicies.poolHeating || profile.amenityPolicies.hotTub || profile.amenityPolicies.sauna),
-    voiceProfile: Boolean(profile.voiceProfile.tone || profile.voiceProfile.emojiUse || profile.voiceProfile.strictness),
-    escalationMatrix: profile.escalationMatrix.alwaysManualScenarios.length > 0
+    earlyLatePolicy: Boolean(
+      profile.earlyLatePolicy.earlyCheckIn && profile.earlyLatePolicy.lateCheckout,
+    ),
+    arrivalGuide: Boolean(
+      profile.arrivalGuide.entryMethod &&
+      profile.arrivalGuide.lockInstructions &&
+      profile.arrivalGuide.parkingInstructions,
+    ),
+    cleanerPreferences: Boolean(
+      profile.cleanerPreferences.channel &&
+      profile.cleanerPreferences.contact &&
+      profile.cleanerPreferences.requiredFormat,
+    ),
+    amenityPolicies: Boolean(
+      profile.amenityPolicies.poolHeating ||
+      profile.amenityPolicies.hotTub ||
+      profile.amenityPolicies.sauna,
+    ),
+    voiceProfile: Boolean(
+      profile.voiceProfile.tone || profile.voiceProfile.emojiUse || profile.voiceProfile.strictness,
+    ),
+    escalationMatrix: profile.escalationMatrix.alwaysManualScenarios.length > 0,
   });
 
   const emit = (
     type: DraftEventType,
     payload: Record<string, unknown>,
-    metadata: { aggregateType: EventRecord['aggregateType']; aggregateId: string; actorId: string }
+    metadata: { aggregateType: EventRecord['aggregateType']; aggregateId: string; actorId: string },
   ) => {
     const timestamp = nowIso();
     const sequence = eventSequence + 1;
@@ -1053,7 +1177,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
       timestamp,
       aggregateType: metadata.aggregateType,
       aggregateId: metadata.aggregateId,
-      actorId: metadata.actorId
+      actorId: metadata.actorId,
     });
     const destinations: OutboxDestination[] = ['audit-log', 'projection-updater'];
     if (type === 'message.ingested') {
@@ -1070,10 +1194,10 @@ export const createStore = (options: StoreOptions = {}): Store => {
           type,
           aggregateType: metadata.aggregateType,
           aggregateId: metadata.aggregateId,
-          actorId: metadata.actorId
+          actorId: metadata.actorId,
         },
         createdAt: timestamp,
-        updatedAt: timestamp
+        updatedAt: timestamp,
       });
     }
   };
@@ -1085,11 +1209,14 @@ export const createStore = (options: StoreOptions = {}): Store => {
     reviewAverage:
       guestReviews.length > 0
         ? guestReviews.reduce((total, score) => total + score, 0) / guestReviews.length
-        : 0
+        : 0,
   });
 
   const getRollout = (): RolloutState => {
-    const progressPercent = Math.min(100, Math.round((onboardedHosts.length / targetHostCount) * 100));
+    const progressPercent = Math.min(
+      100,
+      Math.round((onboardedHosts.length / targetHostCount) * 100),
+    );
     const phase: RolloutState['phase'] =
       progressPercent >= 100
         ? 'ready-to-scale'
@@ -1104,7 +1231,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
       onboardedHosts: [...onboardedHosts],
       targetHostCount,
       progressPercent,
-      phase
+      phase,
     };
   };
 
@@ -1153,35 +1280,41 @@ export const createStore = (options: StoreOptions = {}): Store => {
       policiesByIntent[item.intent] ??
       defaultPoliciesByIntent['guest-message'] ??
       'Acknowledge guest message and confirm details before final response.';
-    const propertyNote = propertyNotesByIntent[item.intent] ?? 'Use property profile and reservation context for response.';
-    const qaSources = activeQaEntriesForProperty(propertyId).slice(0, 5).map((entry) => ({
-      type: 'property-qa' as const,
-      label: `Q&A: ${entry.question}`,
-      snippet: entry.answer,
-      confidence: 'medium' as const,
-      referenceUrl: `https://docs.walt.local/properties/${propertyId}/qa/${entry.id}`,
-      referenceId: `property-qa:${entry.id}`
-    }));
-    const knowledgeSources = ([
-      {
-        type: 'policy',
-        label: `${item.intent} policy`,
-        snippet: policy,
-        confidence: 'high',
-        referenceUrl: `https://docs.walt.local/policies/${item.intent}`,
-        referenceId: `policy:${item.intent}`
-      },
-      ...item.sources,
-      ...qaSources,
-      {
-        type: 'property-note',
-        label: 'Property knowledge',
-        snippet: propertyNote,
-        confidence: 'low',
-        referenceUrl: `https://docs.walt.local/properties/${item.reservationId}/knowledge`,
-        referenceId: `property-note:${item.reservationId}`
-      }
-    ] as QueueItem['sources']).sort((left, right) => {
+    const propertyNote =
+      propertyNotesByIntent[item.intent] ??
+      'Use property profile and reservation context for response.';
+    const qaSources = activeQaEntriesForProperty(propertyId)
+      .slice(0, 5)
+      .map((entry) => ({
+        type: 'property-qa' as const,
+        label: `Q&A: ${entry.question}`,
+        snippet: entry.answer,
+        confidence: 'medium' as const,
+        referenceUrl: `https://docs.walt.local/properties/${propertyId}/qa/${entry.id}`,
+        referenceId: `property-qa:${entry.id}`,
+      }));
+    const knowledgeSources = (
+      [
+        {
+          type: 'policy',
+          label: `${item.intent} policy`,
+          snippet: policy,
+          confidence: 'high',
+          referenceUrl: `https://docs.walt.local/policies/${item.intent}`,
+          referenceId: `policy:${item.intent}`,
+        },
+        ...item.sources,
+        ...qaSources,
+        {
+          type: 'property-note',
+          label: 'Property knowledge',
+          snippet: propertyNote,
+          confidence: 'low',
+          referenceUrl: `https://docs.walt.local/properties/${item.reservationId}/knowledge`,
+          referenceId: `property-note:${item.reservationId}`,
+        },
+      ] as QueueItem['sources']
+    ).sort((left, right) => {
       const leftRank = left.confidence ? confidenceRank[left.confidence] : 3;
       const rightRank = right.confidence ? confidenceRank[right.confidence] : 3;
       return leftRank - rightRank;
@@ -1194,7 +1327,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
       guestName: parseGuestName(item),
       policy,
       knowledgeSources,
-      reviewRequired: knowledgeSources.some((source) => source.confidence === 'low')
+      reviewRequired: knowledgeSources.some((source) => source.confidence === 'low'),
     };
   };
 
@@ -1225,7 +1358,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
         alert.reservationId === input.reservationId &&
         alert.category === input.category &&
         alert.summary === input.summary &&
-        alert.status !== 'resolved'
+        alert.status !== 'resolved',
     );
     if (existing) {
       return existing;
@@ -1240,7 +1373,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
       status: 'open',
       summary: input.summary,
       detectedAt: ts,
-      updatedAt: ts
+      updatedAt: ts,
     };
     monitoringAlerts.unshift(created);
     return created;
@@ -1252,7 +1385,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
     suggestionId: string,
     eventType: PropertyQaSuggestionEvent['eventType'],
     actorId: string,
-    payload: Record<string, unknown> = {}
+    payload: Record<string, unknown> = {},
   ) => {
     propertyQaSuggestionEvents.unshift({
       id: nextPropertyQaSuggestionEventId(),
@@ -1260,7 +1393,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
       eventType,
       actorId,
       payload,
-      createdAt: nowIso()
+      createdAt: nowIso(),
     });
   };
 
@@ -1277,7 +1410,9 @@ export const createStore = (options: StoreOptions = {}): Store => {
       }
       suggestion.status = 'invalid_output';
       suggestion.updatedAt = nowIso();
-      emitPropertyQaSuggestionEvent(suggestion.id, 'archived', 'system', { reason: 'stale_pending' });
+      emitPropertyQaSuggestionEvent(suggestion.id, 'archived', 'system', {
+        reason: 'stale_pending',
+      });
     }
   };
 
@@ -1302,7 +1437,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
       (suggestion) =>
         suggestion.propertyId === propertyId &&
         suggestion.normalizedQuestionHash === normalizedQuestionHash &&
-        (suggestion.status === 'pending' || suggestion.status === 'approved')
+        (suggestion.status === 'pending' || suggestion.status === 'approved'),
     );
     if (duplicate) {
       return;
@@ -1311,7 +1446,8 @@ export const createStore = (options: StoreOptions = {}): Store => {
     const proposedAnswer =
       defaultPoliciesByIntent[item.intent] ??
       policiesByIntent[item.intent] ??
-      defaultPoliciesByIntent['guest-message'];
+      defaultPoliciesByIntent['guest-message'] ??
+      'Acknowledge guest message and confirm details before final response.';
     const ts = nowIso();
     const suggestion: PropertyQaSuggestion & { normalizedQuestionHash: string } = {
       id: nextPropertyQaSuggestionId(),
@@ -1326,13 +1462,13 @@ export const createStore = (options: StoreOptions = {}): Store => {
       reviewedAt: null,
       createdAt: ts,
       updatedAt: ts,
-      normalizedQuestionHash
+      normalizedQuestionHash,
     };
     propertyQaSuggestions.unshift(suggestion);
     emitPropertyQaSuggestionEvent(suggestion.id, 'created', 'qa-analyzer', {
       sourceMessageId: suggestion.sourceMessageId,
       classifierLabel: suggestion.classifierLabel,
-      confidence: suggestion.confidence
+      confidence: suggestion.confidence,
     });
   };
 
@@ -1359,12 +1495,16 @@ export const createStore = (options: StoreOptions = {}): Store => {
           {
             action: 'created',
             actorId: 'system',
-            timestamp: ts
-          }
-        ]
+            timestamp: ts,
+          },
+        ],
       };
       queue.unshift(item);
-      emit('draft.created', { id: item.id, intent: item.intent }, { aggregateType: 'draft', aggregateId: item.id, actorId: 'system' });
+      emit(
+        'draft.created',
+        { id: item.id, intent: item.intent },
+        { aggregateType: 'draft', aggregateId: item.id, actorId: 'system' },
+      );
       return item;
     },
 
@@ -1387,16 +1527,20 @@ export const createStore = (options: StoreOptions = {}): Store => {
         actorId,
         timestamp: ts,
         before: { body: before, status: beforeStatus },
-        after: { body, status: 'edited' }
+        after: { body, status: 'edited' },
       });
       trainingSignals.push({
         draftId: item.id,
         intent: item.intent,
         before,
         after: body,
-        capturedAt: ts
+        capturedAt: ts,
       });
-      emit('draft.edited', { id: item.id }, { aggregateType: 'draft', aggregateId: item.id, actorId });
+      emit(
+        'draft.edited',
+        { id: item.id },
+        { aggregateType: 'draft', aggregateId: item.id, actorId },
+      );
       return item;
     },
 
@@ -1417,9 +1561,13 @@ export const createStore = (options: StoreOptions = {}): Store => {
         actorId,
         timestamp: ts,
         before: { status: beforeStatus },
-        after: { status: 'approved' }
+        after: { status: 'approved' },
       });
-      emit('draft.approved', { id: item.id, actorId }, { aggregateType: 'draft', aggregateId: item.id, actorId });
+      emit(
+        'draft.approved',
+        { id: item.id, actorId },
+        { aggregateType: 'draft', aggregateId: item.id, actorId },
+      );
       return item;
     },
 
@@ -1437,9 +1585,13 @@ export const createStore = (options: StoreOptions = {}): Store => {
         actorId,
         timestamp: ts,
         before: { status: beforeStatus },
-        after: { status: 'sent' }
+        after: { status: 'sent' },
       });
-      emit('draft.sent', { id: item.id, actorId }, { aggregateType: 'draft', aggregateId: item.id, actorId });
+      emit(
+        'draft.sent',
+        { id: item.id, actorId },
+        { aggregateType: 'draft', aggregateId: item.id, actorId },
+      );
       return item;
     },
 
@@ -1460,9 +1612,13 @@ export const createStore = (options: StoreOptions = {}): Store => {
         actorId,
         timestamp: ts,
         before: { status: beforeStatus },
-        after: { status: 'rejected' }
+        after: { status: 'rejected' },
       });
-      emit('draft.rejected', { id: item.id, actorId }, { aggregateType: 'draft', aggregateId: item.id, actorId });
+      emit(
+        'draft.rejected',
+        { id: item.id, actorId },
+        { aggregateType: 'draft', aggregateId: item.id, actorId },
+      );
       return item;
     },
 
@@ -1509,7 +1665,10 @@ export const createStore = (options: StoreOptions = {}): Store => {
 
     getApprovalQueueProjection: (limit = 20) => {
       const items = sortedQueue()
-        .filter((item) => item.status === 'pending' || item.status === 'edited' || item.status === 'approved')
+        .filter(
+          (item) =>
+            item.status === 'pending' || item.status === 'edited' || item.status === 'approved',
+        )
         .slice(0, Math.max(1, Math.min(100, limit)))
         .map((item) => {
           const risk = getRiskTrustIndicator({ intent: item.intent, body: item.body }).risk;
@@ -1521,15 +1680,18 @@ export const createStore = (options: StoreOptions = {}): Store => {
             intent: item.intent,
             status: item.status,
             updatedAt: item.updatedAt,
-            priority
+            priority,
           };
         });
 
       return {
         kind: 'approval-queue' as const,
         generatedAt: nowIso(),
-        total: queue.filter((item) => item.status === 'pending' || item.status === 'edited' || item.status === 'approved').length,
-        items
+        total: queue.filter(
+          (item) =>
+            item.status === 'pending' || item.status === 'edited' || item.status === 'approved',
+        ).length,
+        items,
       };
     },
 
@@ -1548,22 +1710,28 @@ export const createStore = (options: StoreOptions = {}): Store => {
       const snapshots = [...propertyIds]
         .map((propertyId) => {
           const openAlerts = monitoringAlerts.filter(
-            (alert) => alert.propertyId === propertyId && alert.status === 'open'
+            (alert) => alert.propertyId === propertyId && alert.status === 'open',
           );
           const highSeverityAlerts = openAlerts.filter((alert) => alert.severity === 'high').length;
           const pendingCleanerPings = cleanerJitPings.filter(
             (ping) =>
               propertyIdFromReservation(ping.reservationId) === propertyId &&
-              (ping.status === 'requested' || ping.status === 'NOT_READY')
+              (ping.status === 'requested' || ping.status === 'NOT_READY'),
           ).length;
-          const vendorConflicts = openAlerts.filter((alert) => alert.category === 'vendor-window').length;
+          const vendorConflicts = openAlerts.filter(
+            (alert) => alert.category === 'vendor-window',
+          ).length;
           const maintenanceIssues = incidents.filter(
-            (incident) => incident.state !== 'normalized' && incident.summary.toLowerCase().includes('maintenance')
+            (incident) =>
+              incident.state !== 'normalized' &&
+              incident.summary.toLowerCase().includes('maintenance'),
           ).length;
           const criticalAmenityIssues = openAlerts.filter(
-            (alert) => alert.category === 'amenity-issue' && alert.severity === 'high'
+            (alert) => alert.category === 'amenity-issue' && alert.severity === 'high',
           ).length;
-          const blockers = openAlerts.filter((alert) => alert.severity === 'high').map((alert) => alert.summary);
+          const blockers = openAlerts
+            .filter((alert) => alert.severity === 'high')
+            .map((alert) => alert.summary);
           const readiness: PropertyReadiness =
             highSeverityAlerts > 0 || pendingCleanerPings > 0 || criticalAmenityIssues > 0
               ? 'blocked'
@@ -1581,9 +1749,9 @@ export const createStore = (options: StoreOptions = {}): Store => {
               pendingCleanerPings,
               vendorConflicts,
               maintenanceIssues,
-              criticalAmenityIssues
+              criticalAmenityIssues,
             },
-            updatedAt: nowIso()
+            updatedAt: nowIso(),
           };
         })
         .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
@@ -1592,7 +1760,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
         kind: 'property-state' as const,
         generatedAt: nowIso(),
         total: snapshots.length,
-        items: snapshots.slice(0, Math.max(1, Math.min(100, limit)))
+        items: snapshots.slice(0, Math.max(1, Math.min(100, limit))),
       };
     },
 
@@ -1602,14 +1770,20 @@ export const createStore = (options: StoreOptions = {}): Store => {
       const guestsMap = new Map<string, NormalizedGuest>();
       const messages: NormalizedMessage[] = [];
 
-      const activeIncidentCount = incidents.filter((incident) => incident.state !== 'normalized').length;
+      const activeIncidentCount = incidents.filter(
+        (incident) => incident.state !== 'normalized',
+      ).length;
 
       for (const item of queue) {
         const propertyId = propertyIdFromReservation(item.reservationId);
         const guestName = parseGuestName(item);
         const guestId = `guest:${slugify(guestName)}:${item.reservationId}`;
         const messageId = `message:${item.id}`;
-        const direction: NormalizedMessage['direction'] = item.body.toLowerCase().startsWith('guest ') ? 'inbound' : 'outbound';
+        const direction: NormalizedMessage['direction'] = item.body
+          .toLowerCase()
+          .startsWith('guest ')
+          ? 'inbound'
+          : 'outbound';
 
         const existingProperty = propertiesMap.get(propertyId);
         propertiesMap.set(propertyId, {
@@ -1618,7 +1792,9 @@ export const createStore = (options: StoreOptions = {}): Store => {
           messageCount: (existingProperty?.messageCount ?? 0) + 1,
           activeIncidentCount,
           lastActivityAt:
-            existingProperty && existingProperty.lastActivityAt > item.updatedAt ? existingProperty.lastActivityAt : item.updatedAt
+            existingProperty && existingProperty.lastActivityAt > item.updatedAt
+              ? existingProperty.lastActivityAt
+              : item.updatedAt,
         });
 
         const existingReservation = reservationsMap.get(item.reservationId);
@@ -1629,17 +1805,21 @@ export const createStore = (options: StoreOptions = {}): Store => {
           draftCount: (existingReservation?.draftCount ?? 0) + 1,
           lastIntent: item.intent,
           status: item.status,
-          updatedAt: item.updatedAt
+          updatedAt: item.updatedAt,
         });
 
         const existingGuest = guestsMap.get(guestId);
         guestsMap.set(guestId, {
           guestId,
           guestName,
-          reservationIds: existingGuest ? Array.from(new Set([...existingGuest.reservationIds, item.reservationId])) : [item.reservationId],
+          reservationIds: existingGuest
+            ? Array.from(new Set([...existingGuest.reservationIds, item.reservationId]))
+            : [item.reservationId],
           messageCount: (existingGuest?.messageCount ?? 0) + 1,
           lastMessageAt:
-            existingGuest && existingGuest.lastMessageAt > item.updatedAt ? existingGuest.lastMessageAt : item.updatedAt
+            existingGuest && existingGuest.lastMessageAt > item.updatedAt
+              ? existingGuest.lastMessageAt
+              : item.updatedAt,
         });
 
         messages.push({
@@ -1649,15 +1829,21 @@ export const createStore = (options: StoreOptions = {}): Store => {
           direction,
           body: item.body,
           intent: item.intent,
-          createdAt: item.createdAt
+          createdAt: item.createdAt,
         });
       }
 
       const all = {
-        properties: [...propertiesMap.values()].sort((left, right) => right.lastActivityAt.localeCompare(left.lastActivityAt)),
-        guests: [...guestsMap.values()].sort((left, right) => right.lastMessageAt.localeCompare(left.lastMessageAt)),
-        reservations: [...reservationsMap.values()].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
-        messages: messages.sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+        properties: [...propertiesMap.values()].sort((left, right) =>
+          right.lastActivityAt.localeCompare(left.lastActivityAt),
+        ),
+        guests: [...guestsMap.values()].sort((left, right) =>
+          right.lastMessageAt.localeCompare(left.lastMessageAt),
+        ),
+        reservations: [...reservationsMap.values()].sort((left, right) =>
+          right.updatedAt.localeCompare(left.updatedAt),
+        ),
+        messages: messages.sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
       };
 
       if (kind === 'all') {
@@ -1668,15 +1854,16 @@ export const createStore = (options: StoreOptions = {}): Store => {
         properties: kind === 'properties' ? all.properties : [],
         guests: kind === 'guests' ? all.guests : [],
         reservations: kind === 'reservations' ? all.reservations : [],
-        messages: kind === 'messages' ? all.messages : []
+        messages: kind === 'messages' ? all.messages : [],
       };
     },
 
     getOperationalAwareness: () => ({
-      pendingCount: queue.filter((entry) => entry.status === 'pending' || entry.status === 'edited').length,
+      pendingCount: queue.filter((entry) => entry.status === 'pending' || entry.status === 'edited')
+        .length,
       approvedCount: queue.filter((entry) => entry.status === 'approved').length,
       sentCount: queue.filter((entry) => entry.status === 'sent').length,
-      lastEventType: events.length > 0 ? events[events.length - 1]?.type ?? null : null
+      lastEventType: events.length > 0 ? (events[events.length - 1]?.type ?? null) : null,
     }),
 
     createIncident: (summary) => {
@@ -1686,7 +1873,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
         summary,
         state: 'active',
         createdAt: ts,
-        updatedAt: ts
+        updatedAt: ts,
       };
       incidents.push(incident);
       incidentTimeline.push({
@@ -1694,9 +1881,13 @@ export const createStore = (options: StoreOptions = {}): Store => {
         state: 'active',
         actorId: 'system',
         timestamp: ts,
-        note: summary
+        note: summary,
       });
-      emit('incident.created', { incidentId: incident.id, summary }, { aggregateType: 'incident', aggregateId: incident.id, actorId: 'system' });
+      emit(
+        'incident.created',
+        { incidentId: incident.id, summary },
+        { aggregateType: 'incident', aggregateId: incident.id, actorId: 'system' },
+      );
       return incident;
     },
 
@@ -1713,9 +1904,13 @@ export const createStore = (options: StoreOptions = {}): Store => {
         state: next,
         actorId: 'system',
         timestamp: incident.updatedAt,
-        note: `Transitioned to ${next}`
+        note: `Transitioned to ${next}`,
       });
-      emit('incident.transitioned', { incidentId: id, next }, { aggregateType: 'incident', aggregateId: id, actorId: 'system' });
+      emit(
+        'incident.transitioned',
+        { incidentId: id, next },
+        { aggregateType: 'incident', aggregateId: id, actorId: 'system' },
+      );
       return incident;
     },
 
@@ -1735,7 +1930,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
         reason: input.reason,
         status: 'requested',
         createdAt: ts,
-        updatedAt: ts
+        updatedAt: ts,
       };
       cleanerJitPings.unshift(ping);
       return ping;
@@ -1748,7 +1943,10 @@ export const createStore = (options: StoreOptions = {}): Store => {
           throw new Error('etaMinutes is required when status is ETA.');
         }
       }
-      if ((input.status === 'READY' || input.status === 'NOT_READY') && input.etaMinutes !== undefined) {
+      if (
+        (input.status === 'READY' || input.status === 'NOT_READY') &&
+        input.etaMinutes !== undefined
+      ) {
         throw new Error('etaMinutes is only allowed when status is ETA.');
       }
 
@@ -1779,7 +1977,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
       const record: HostOnboarding = {
         hostId,
         status: 'onboarded',
-        onboardedAt: nowIso()
+        onboardedAt: nowIso(),
       };
       onboardedHosts.push(record);
       return record;
@@ -1798,8 +1996,8 @@ export const createStore = (options: StoreOptions = {}): Store => {
             actorId: entry.actorId,
             timestamp: entry.timestamp,
             before: entry.before,
-            after: entry.after
-          }))
+            after: entry.after,
+          })),
         )
         .filter((entry) => !filters.draftId || entry.draftId === filters.draftId)
         .filter((entry) => !filters.actorId || entry.actorId === filters.actorId)
@@ -1830,7 +2028,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
             snippet: `Guest ${input.guestName}`,
             confidence: 'medium',
             referenceUrl: `https://docs.walt.local/reservations/${input.reservationId}`,
-            referenceId: `reservation:${input.reservationId}`
+            referenceId: `reservation:${input.reservationId}`,
           },
           {
             type: 'property-note',
@@ -1838,22 +2036,26 @@ export const createStore = (options: StoreOptions = {}): Store => {
             snippet: `eventId=${input.eventId}`,
             confidence: 'high',
             referenceUrl: `https://docs.walt.local/integrations/hospitable/events/${input.eventId}`,
-            referenceId: `hospitable:${input.eventId}`
-          }
+            referenceId: `hospitable:${input.eventId}`,
+          },
         ],
         auditLog: [
           {
             action: 'created',
             actorId: 'hospitable-webhook',
-            timestamp: ts
-          }
-        ]
+            timestamp: ts,
+          },
+        ],
       };
 
       hospitableByEventId.set(input.eventId, item.id);
       queue.unshift(item);
       createQaSuggestionFromInbound(item);
-      emit('message.ingested', { id: item.id, eventId: input.eventId }, { aggregateType: 'integration', aggregateId: input.eventId, actorId: 'hospitable-webhook' });
+      emit(
+        'message.ingested',
+        { id: item.id, eventId: input.eventId },
+        { aggregateType: 'integration', aggregateId: input.eventId, actorId: 'hospitable-webhook' },
+      );
       return { item, duplicated: false };
     },
 
@@ -1874,9 +2076,13 @@ export const createStore = (options: StoreOptions = {}): Store => {
         actorId: 'ai-orchestrator',
         timestamp: ts,
         before: { body: beforeBody, sourceCount: beforeSourceCount },
-        after: { body: item.body, sourceCount: item.sources.length }
+        after: { body: item.body, sourceCount: item.sources.length },
       });
-      emit('draft.edited', { id: item.id, actorId: 'ai-orchestrator' }, { aggregateType: 'draft', aggregateId: item.id, actorId: 'ai-orchestrator' });
+      emit(
+        'draft.edited',
+        { id: item.id, actorId: 'ai-orchestrator' },
+        { aggregateType: 'draft', aggregateId: item.id, actorId: 'ai-orchestrator' },
+      );
       return item;
     },
 
@@ -1900,14 +2106,25 @@ export const createStore = (options: StoreOptions = {}): Store => {
 
     getTodayPriorities: (limit = 5) =>
       sortedQueue()
-        .filter((item) => item.status === 'pending' || item.status === 'edited' || item.status === 'approved')
+        .filter(
+          (item) =>
+            item.status === 'pending' || item.status === 'edited' || item.status === 'approved',
+        )
         .slice(0, Math.max(1, Math.min(20, limit)))
         .map((item) => {
           const riskTrust = getRiskTrustIndicator({ intent: item.intent, body: item.body });
           const priority: TodayPriority['priority'] =
-            riskTrust.risk === 'high' ? 'critical' : riskTrust.risk === 'medium' ? 'high' : 'normal';
+            riskTrust.risk === 'high'
+              ? 'critical'
+              : riskTrust.risk === 'medium'
+                ? 'high'
+                : 'normal';
           const recommendedAction: TodayPriority['recommendedAction'] =
-            item.status === 'approved' ? 'send-now' : item.status === 'edited' ? 'approve-or-edit' : 'review-now';
+            item.status === 'approved'
+              ? 'send-now'
+              : item.status === 'edited'
+                ? 'approve-or-edit'
+                : 'review-now';
           return {
             draftId: item.id,
             reservationId: item.reservationId,
@@ -1919,13 +2136,16 @@ export const createStore = (options: StoreOptions = {}): Store => {
             priority,
             recommendedAction,
             createdAt: item.createdAt,
-            updatedAt: item.updatedAt
+            updatedAt: item.updatedAt,
           };
         }),
 
     getProactiveSuggestions: (limit = 5) =>
       sortedQueue()
-        .filter((item) => item.status === 'pending' || item.status === 'edited' || item.status === 'approved')
+        .filter(
+          (item) =>
+            item.status === 'pending' || item.status === 'edited' || item.status === 'approved',
+        )
         .slice(0, Math.max(1, Math.min(20, limit)))
         .map((item) => {
           const riskTrust = getRiskTrustIndicator({ intent: item.intent, body: item.body });
@@ -1940,7 +2160,8 @@ export const createStore = (options: StoreOptions = {}): Store => {
               intent: item.intent,
               priority,
               reason: 'Upcoming arrival communication is pending.',
-              suggestedMessage: 'Share check-in details and arrival instructions before arrival window.'
+              suggestedMessage:
+                'Share check-in details and arrival instructions before arrival window.',
             };
           }
 
@@ -1952,7 +2173,8 @@ export const createStore = (options: StoreOptions = {}): Store => {
               intent: item.intent,
               priority,
               reason: 'First-morning follow-up helps prevent avoidable issues.',
-              suggestedMessage: 'Send a quick first-morning check and offer fast support for amenities.'
+              suggestedMessage:
+                'Send a quick first-morning check and offer fast support for amenities.',
             };
           }
 
@@ -1964,7 +2186,8 @@ export const createStore = (options: StoreOptions = {}): Store => {
               intent: item.intent,
               priority,
               reason: 'Checkout expectations require proactive confirmation.',
-              suggestedMessage: 'Confirm checkout timing, fees, and turnover constraints before final approval.'
+              suggestedMessage:
+                'Confirm checkout timing, fees, and turnover constraints before final approval.',
             };
           }
 
@@ -1975,7 +2198,8 @@ export const createStore = (options: StoreOptions = {}): Store => {
             intent: item.intent,
             priority,
             reason: 'Potential guest friction detected; send a proactive clarification.',
-            suggestedMessage: 'Send a proactive heads-up to set expectations for early check-in readiness.'
+            suggestedMessage:
+              'Send a proactive heads-up to set expectations for early check-in readiness.',
           };
         }),
 
@@ -1996,17 +2220,21 @@ export const createStore = (options: StoreOptions = {}): Store => {
             urgency,
             guestChannel: 'in-app-message' as const,
             hostChannel: 'command-center-alert' as const,
-            updatedAt: incident.updatedAt
+            updatedAt: incident.updatedAt,
           };
         }),
 
     getPortfolioTrend: () => {
-      const unresolvedIncidents = incidents.filter((incident) => incident.state !== 'normalized').length;
+      const unresolvedIncidents = incidents.filter(
+        (incident) => incident.state !== 'normalized',
+      ).length;
       const refundPressure = totalRefundAmount;
       const reviewAverage =
-        guestReviews.length > 0 ? guestReviews.reduce((total, score) => total + score, 0) / guestReviews.length : 5;
+        guestReviews.length > 0
+          ? guestReviews.reduce((total, score) => total + score, 0) / guestReviews.length
+          : 5;
       const openAmenityAlerts = monitoringAlerts.filter(
-        (alert) => alert.category === 'amenity-issue' && alert.status === 'open'
+        (alert) => alert.category === 'amenity-issue' && alert.status === 'open',
       ).length;
 
       const incidentTrend: PortfolioTrend['incidentTrend'] =
@@ -2023,11 +2251,14 @@ export const createStore = (options: StoreOptions = {}): Store => {
         refundTrend,
         amenityReliability,
         reviewQualityTrend,
-        generatedAt: nowIso()
+        generatedAt: nowIso(),
       };
     },
 
-    getOperatingProfile: () => ({ ...operatingProfile, propertyRiskTolerance: { ...operatingProfile.propertyRiskTolerance } }),
+    getOperatingProfile: () => ({
+      ...operatingProfile,
+      propertyRiskTolerance: { ...operatingProfile.propertyRiskTolerance },
+    }),
 
     updateOperatingProfile: (input) => {
       if (input.strictness !== undefined) {
@@ -2063,35 +2294,53 @@ export const createStore = (options: StoreOptions = {}): Store => {
         operatingProfile.propertyRiskTolerance = { ...input.propertyRiskTolerance };
       }
       operatingProfile.updatedAt = nowIso();
-      return { ...operatingProfile, propertyRiskTolerance: { ...operatingProfile.propertyRiskTolerance } };
+      return {
+        ...operatingProfile,
+        propertyRiskTolerance: { ...operatingProfile.propertyRiskTolerance },
+      };
     },
 
     assessRiskTrustIntelligence: (input) => {
-      const propertyStrictness = operatingProfile.propertyRiskTolerance[input.propertyId] ?? operatingProfile.strictness;
+      const propertyStrictness =
+        operatingProfile.propertyRiskTolerance[input.propertyId] ?? operatingProfile.strictness;
       const riskScore = Math.round(
         input.bookingPatternSignals * 0.25 +
           input.profileQualitySignals * 0.2 +
           input.languageCues * 0.2 +
-          input.policyViolationFlags * 0.35
+          input.policyViolationFlags * 0.35,
       );
       const trustScore = Math.round(
-        input.positiveReviewHistory * 0.4 + input.responseQuality * 0.3 + input.explicitRuleAcceptance * 0.3
+        input.positiveReviewHistory * 0.4 +
+          input.responseQuality * 0.3 +
+          input.explicitRuleAcceptance * 0.3,
       );
 
       const economicPenalty = Math.round((operatingProfile.economicSensitivity / 100) * 15);
       const strictnessPenalty = Math.round((propertyStrictness / 100) * 20);
       const generosityCredit = Math.round((operatingProfile.generosity / 100) * 10);
-      const compensationPenalty = Math.round((100 - Math.min(100, (operatingProfile.compensationCapUsd / 500) * 100)) * 0.1);
-      const decisionIndex = riskScore + strictnessPenalty + economicPenalty + compensationPenalty - trustScore - generosityCredit;
+      const compensationPenalty = Math.round(
+        (100 - Math.min(100, (operatingProfile.compensationCapUsd / 500) * 100)) * 0.1,
+      );
+      const decisionIndex =
+        riskScore +
+        strictnessPenalty +
+        economicPenalty +
+        compensationPenalty -
+        trustScore -
+        generosityCredit;
 
       const recommendation: RiskTrustAssessment['recommendation'] =
-        decisionIndex >= 35 ? 'decline' : decisionIndex >= 5 ? 'manual-review' : 'approve-with-guardrails';
+        decisionIndex >= 35
+          ? 'decline'
+          : decisionIndex >= 5
+            ? 'manual-review'
+            : 'approve-with-guardrails';
 
       const rationale = [
         `Risk score ${riskScore} from booking/profile/language/policy signals.`,
         `Trust score ${trustScore} from reviews/response quality/rule acceptance.`,
         `Operating profile adjustments: strictness +${strictnessPenalty}, economic +${economicPenalty}, generosity -${generosityCredit}.`,
-        `Final decision index ${decisionIndex} -> ${recommendation}.`
+        `Final decision index ${decisionIndex} -> ${recommendation}.`,
       ];
 
       return {
@@ -2109,19 +2358,22 @@ export const createStore = (options: StoreOptions = {}): Store => {
           strictness: propertyStrictness,
           generosity: operatingProfile.generosity,
           compensationCapUsd: operatingProfile.compensationCapUsd,
-          economicSensitivity: operatingProfile.economicSensitivity
+          economicSensitivity: operatingProfile.economicSensitivity,
         },
-        rationale
+        rationale,
       };
     },
 
     evaluateAutopilotAction: (input) => {
       const propertyId = propertyIdFromReservation(input.reservationId);
       const riskTrust = getRiskTrustIndicator({ intent: input.intent, body: input.body });
-      const tolerance = operatingProfile.propertyRiskTolerance[propertyId] ?? operatingProfile.strictness;
+      const tolerance =
+        operatingProfile.propertyRiskTolerance[propertyId] ?? operatingProfile.strictness;
       const safeIntent = autopilotSafeIntents.has(input.intent);
       const decision: AutopilotAction['decision'] =
-        safeIntent && riskTrust.risk !== 'high' && tolerance <= 70 ? 'auto-allowed' : 'manual-required';
+        safeIntent && riskTrust.risk !== 'high' && tolerance <= 70
+          ? 'auto-allowed'
+          : 'manual-required';
 
       const ts = nowIso();
       const action: AutopilotAction = {
@@ -2136,7 +2388,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
             ? 'Intent is in safe autopilot category with acceptable risk.'
             : 'Manual review required due to intent category, risk, or profile strictness.',
         createdAt: ts,
-        updatedAt: ts
+        updatedAt: ts,
       };
       autopilotActions.unshift(action);
       return action;
@@ -2156,7 +2408,8 @@ export const createStore = (options: StoreOptions = {}): Store => {
       return action;
     },
 
-    listAutopilotActions: () => [...autopilotActions].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
+    listAutopilotActions: () =>
+      [...autopilotActions].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
 
     runMonitoringAgents: () => {
       lastMonitoringRunAt = nowIso();
@@ -2172,8 +2425,8 @@ export const createStore = (options: StoreOptions = {}): Store => {
               reservationId: item.reservationId,
               category: 'upcoming-check-in',
               severity: 'medium',
-              summary: `Upcoming arrival timing request needs confirmation (${item.intent}).`
-            })
+              summary: `Upcoming arrival timing request needs confirmation (${item.intent}).`,
+            }),
           );
         }
         if (riskTrust.risk === 'high') {
@@ -2183,8 +2436,8 @@ export const createStore = (options: StoreOptions = {}): Store => {
               reservationId: item.reservationId,
               category: 'missing-confirmation',
               severity: 'high',
-              summary: 'High-risk conversation cues require host confirmation before commitment.'
-            })
+              summary: 'High-risk conversation cues require host confirmation before commitment.',
+            }),
           );
         }
       }
@@ -2197,8 +2450,8 @@ export const createStore = (options: StoreOptions = {}): Store => {
               reservationId: ping.reservationId,
               category: 'vendor-window',
               severity: ping.status === 'NOT_READY' ? 'high' : 'medium',
-              summary: `Cleaner readiness is ${ping.status} for reservation ${ping.reservationId}.`
-            })
+              summary: `Cleaner readiness is ${ping.status} for reservation ${ping.reservationId}.`,
+            }),
           );
         }
       }
@@ -2210,8 +2463,8 @@ export const createStore = (options: StoreOptions = {}): Store => {
               propertyId: 'property:global',
               category: 'amenity-issue',
               severity: 'high',
-              summary: `Incident ${incident.id} remains ${incident.state}: ${incident.summary}`
-            })
+              summary: `Incident ${incident.id} remains ${incident.state}: ${incident.summary}`,
+            }),
           );
         }
       }
@@ -2237,8 +2490,8 @@ export const createStore = (options: StoreOptions = {}): Store => {
         'missing-confirmation',
         'vendor-conflict',
         'maintenance-risk',
-        'critical-amenity-risk'
-      ]
+        'critical-amenity-risk',
+      ],
     }),
 
     runJitChecks: (input) => {
@@ -2246,29 +2499,37 @@ export const createStore = (options: StoreOptions = {}): Store => {
       const reservationPropertyId = propertyIdFromReservation(input.reservationId);
       const pendingCleaner = cleanerJitPings.some(
         (ping) =>
-          ping.reservationId === input.reservationId && (ping.status === 'requested' || ping.status === 'NOT_READY')
+          ping.reservationId === input.reservationId &&
+          (ping.status === 'requested' || ping.status === 'NOT_READY'),
       );
       checks.push({
         check: 'cleaner-readiness',
         status: pendingCleaner ? 'warning' : 'ok',
-        detail: pendingCleaner ? 'Cleaner readiness is not confirmed.' : 'Cleaner readiness confirmed.'
+        detail: pendingCleaner
+          ? 'Cleaner readiness is not confirmed.'
+          : 'Cleaner readiness confirmed.',
       });
 
       const openAlerts = monitoringAlerts.filter(
-        (alert) => alert.propertyId === reservationPropertyId && alert.status === 'open'
+        (alert) => alert.propertyId === reservationPropertyId && alert.status === 'open',
       );
       const highSeverityAlerts = openAlerts.filter((alert) => alert.severity === 'high').length;
       checks.push({
         check: 'property-readiness',
         status: highSeverityAlerts > 0 ? 'failed' : openAlerts.length > 0 ? 'warning' : 'ok',
-        detail: highSeverityAlerts > 0 ? 'Property has blocking high-severity alerts.' : 'No blocking property alerts.'
+        detail:
+          highSeverityAlerts > 0
+            ? 'Property has blocking high-severity alerts.'
+            : 'No blocking property alerts.',
       });
 
       const overlapRisk = input.requestType === 'late-checkout' && pendingCleaner;
       checks.push({
         check: 'overlap-risk',
         status: overlapRisk ? 'failed' : 'ok',
-        detail: overlapRisk ? 'Late checkout overlaps with pending turnover operations.' : 'No overlap risk detected.'
+        detail: overlapRisk
+          ? 'Late checkout overlaps with pending turnover operations.'
+          : 'No overlap risk detected.',
       });
 
       const result: JitCheckResult['result'] = checks.some((check) => check.status === 'failed')
@@ -2281,19 +2542,22 @@ export const createStore = (options: StoreOptions = {}): Store => {
 
     getIncidentResponsePlan: (incidentId) => {
       const incident = byIncidentId(incidentId);
-      const severityMultiplier = incident.state === 'active' ? 1 : incident.state === 'negotiation' ? 0.8 : 0.6;
-      const compensationAmount = Math.round(Math.min(operatingProfile.compensationCapUsd, 120 * severityMultiplier));
+      const severityMultiplier =
+        incident.state === 'active' ? 1 : incident.state === 'negotiation' ? 0.8 : 0.6;
+      const compensationAmount = Math.round(
+        Math.min(operatingProfile.compensationCapUsd, 120 * severityMultiplier),
+      );
       return {
         hostAlert: `[IMMEDIATE] Incident ${incident.id} is ${incident.state}: ${incident.summary}`,
         guestDraft: {
           body: `Hi there, we are actively addressing "${incident.summary}" and will share an update shortly.`,
           requiresApproval: true,
-          channel: 'in-app-message'
+          channel: 'in-app-message',
         },
         compensationRecommendation: {
           amountUsd: compensationAmount,
-          rationale: 'Separate recommendation based on state severity and operating profile cap.'
-        }
+          rationale: 'Separate recommendation based on state severity and operating profile cap.',
+        },
       };
     },
 
@@ -2311,36 +2575,45 @@ export const createStore = (options: StoreOptions = {}): Store => {
           earlyCheckIn: profile.earlyLatePolicy.earlyCheckIn
             ? {
                 ...profile.earlyLatePolicy.earlyCheckIn,
-                priceTiers: [...profile.earlyLatePolicy.earlyCheckIn.priceTiers]
+                priceTiers: [...profile.earlyLatePolicy.earlyCheckIn.priceTiers],
               }
             : undefined,
           lateCheckout: profile.earlyLatePolicy.lateCheckout
             ? {
                 ...profile.earlyLatePolicy.lateCheckout,
-                priceTiers: [...profile.earlyLatePolicy.lateCheckout.priceTiers]
+                priceTiers: [...profile.earlyLatePolicy.lateCheckout.priceTiers],
               }
-            : undefined
+            : undefined,
         },
         arrivalGuide: { ...profile.arrivalGuide },
         cleanerPreferences: { ...profile.cleanerPreferences },
         amenityPolicies: {
           poolHeating: profile.amenityPolicies.poolHeating
-            ? { ...profile.amenityPolicies.poolHeating, caveats: [...profile.amenityPolicies.poolHeating.caveats] }
+            ? {
+                ...profile.amenityPolicies.poolHeating,
+                caveats: [...profile.amenityPolicies.poolHeating.caveats],
+              }
             : undefined,
           hotTub: profile.amenityPolicies.hotTub
-            ? { ...profile.amenityPolicies.hotTub, safetyNotes: [...profile.amenityPolicies.hotTub.safetyNotes] }
+            ? {
+                ...profile.amenityPolicies.hotTub,
+                safetyNotes: [...profile.amenityPolicies.hotTub.safetyNotes],
+              }
             : undefined,
           sauna: profile.amenityPolicies.sauna
-            ? { ...profile.amenityPolicies.sauna, safetyNotes: [...profile.amenityPolicies.sauna.safetyNotes] }
-            : undefined
+            ? {
+                ...profile.amenityPolicies.sauna,
+                safetyNotes: [...profile.amenityPolicies.sauna.safetyNotes],
+              }
+            : undefined,
         },
         amenityImportanceIndex: { ...profile.amenityImportanceIndex },
         voiceProfile: { ...profile.voiceProfile },
         escalationMatrix: {
           ...profile.escalationMatrix,
-          alwaysManualScenarios: [...profile.escalationMatrix.alwaysManualScenarios]
+          alwaysManualScenarios: [...profile.escalationMatrix.alwaysManualScenarios],
         },
-        auditLog: [...profile.auditLog]
+        auditLog: [...profile.auditLog],
       };
     },
 
@@ -2355,15 +2628,27 @@ export const createStore = (options: StoreOptions = {}): Store => {
         profile.coreRules = {
           ...profile.coreRules,
           ...input.coreRules,
-          houseRules: input.coreRules.houseRules ? [...input.coreRules.houseRules] : profile.coreRules.houseRules
+          houseRules: input.coreRules.houseRules
+            ? [...input.coreRules.houseRules]
+            : profile.coreRules.houseRules,
         };
       }
 
       if (input.earlyLatePolicy) {
-        const validateTier = (tiers: Array<{ fromHour: number; toHour: number; amountUsd: number }>) => {
+        const validateTier = (
+          tiers: Array<{ fromHour: number; toHour: number; amountUsd: number }>,
+        ) => {
           for (const tier of tiers) {
-            if (tier.fromHour < 0 || tier.fromHour > 23 || tier.toHour < 0 || tier.toHour > 23 || tier.amountUsd < 0) {
-              throw new Error('earlyLatePolicy price tiers must have valid hour ranges and non-negative pricing.');
+            if (
+              tier.fromHour < 0 ||
+              tier.fromHour > 23 ||
+              tier.toHour < 0 ||
+              tier.toHour > 23 ||
+              tier.amountUsd < 0
+            ) {
+              throw new Error(
+                'earlyLatePolicy price tiers must have valid hour ranges and non-negative pricing.',
+              );
             }
           }
         };
@@ -2379,11 +2664,17 @@ export const createStore = (options: StoreOptions = {}): Store => {
           ...profile.earlyLatePolicy,
           ...input.earlyLatePolicy,
           earlyCheckIn: input.earlyLatePolicy.earlyCheckIn
-            ? { ...input.earlyLatePolicy.earlyCheckIn, priceTiers: [...input.earlyLatePolicy.earlyCheckIn.priceTiers] }
+            ? {
+                ...input.earlyLatePolicy.earlyCheckIn,
+                priceTiers: [...input.earlyLatePolicy.earlyCheckIn.priceTiers],
+              }
             : profile.earlyLatePolicy.earlyCheckIn,
           lateCheckout: input.earlyLatePolicy.lateCheckout
-            ? { ...input.earlyLatePolicy.lateCheckout, priceTiers: [...input.earlyLatePolicy.lateCheckout.priceTiers] }
-            : profile.earlyLatePolicy.lateCheckout
+            ? {
+                ...input.earlyLatePolicy.lateCheckout,
+                priceTiers: [...input.earlyLatePolicy.lateCheckout.priceTiers],
+              }
+            : profile.earlyLatePolicy.lateCheckout,
         };
       }
 
@@ -2400,19 +2691,31 @@ export const createStore = (options: StoreOptions = {}): Store => {
           ...profile.amenityPolicies,
           ...input.amenityPolicies,
           poolHeating: input.amenityPolicies.poolHeating
-            ? { ...input.amenityPolicies.poolHeating, caveats: [...input.amenityPolicies.poolHeating.caveats] }
+            ? {
+                ...input.amenityPolicies.poolHeating,
+                caveats: [...input.amenityPolicies.poolHeating.caveats],
+              }
             : profile.amenityPolicies.poolHeating,
           hotTub: input.amenityPolicies.hotTub
-            ? { ...input.amenityPolicies.hotTub, safetyNotes: [...input.amenityPolicies.hotTub.safetyNotes] }
+            ? {
+                ...input.amenityPolicies.hotTub,
+                safetyNotes: [...input.amenityPolicies.hotTub.safetyNotes],
+              }
             : profile.amenityPolicies.hotTub,
           sauna: input.amenityPolicies.sauna
-            ? { ...input.amenityPolicies.sauna, safetyNotes: [...input.amenityPolicies.sauna.safetyNotes] }
-            : profile.amenityPolicies.sauna
+            ? {
+                ...input.amenityPolicies.sauna,
+                safetyNotes: [...input.amenityPolicies.sauna.safetyNotes],
+              }
+            : profile.amenityPolicies.sauna,
         };
       }
 
       if (input.amenityImportanceIndex) {
-        profile.amenityImportanceIndex = { ...profile.amenityImportanceIndex, ...input.amenityImportanceIndex };
+        profile.amenityImportanceIndex = {
+          ...profile.amenityImportanceIndex,
+          ...input.amenityImportanceIndex,
+        };
       }
 
       if (input.voiceProfile) {
@@ -2425,7 +2728,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
           ...input.escalationMatrix,
           alwaysManualScenarios: input.escalationMatrix.alwaysManualScenarios
             ? [...input.escalationMatrix.alwaysManualScenarios]
-            : profile.escalationMatrix.alwaysManualScenarios
+            : profile.escalationMatrix.alwaysManualScenarios,
         };
       }
 
@@ -2435,13 +2738,14 @@ export const createStore = (options: StoreOptions = {}): Store => {
         actorId,
         timestamp: profile.updatedAt,
         before,
-        after: JSON.parse(JSON.stringify(profile))
+        after: JSON.parse(JSON.stringify(profile)),
       });
 
       return profile;
     },
 
-    getPropertyBrainCompleteness: (propertyId) => propertyBrainCompleteness(getOrCreatePropertyBrain(propertyId)),
+    getPropertyBrainCompleteness: (propertyId) =>
+      propertyBrainCompleteness(getOrCreatePropertyBrain(propertyId)),
 
     resolvePropertyPolicy: (input) => {
       const profile = getOrCreatePropertyBrain(input.propertyId);
@@ -2451,7 +2755,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
         profile.voiceProfile.tone || profile.voiceProfile.emojiUse
           ? {
               tone: profile.voiceProfile.tone ?? 'neutral',
-              emojiUse: profile.voiceProfile.emojiUse ?? 'none'
+              emojiUse: profile.voiceProfile.emojiUse ?? 'none',
             }
           : undefined;
 
@@ -2463,7 +2767,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
           sources: [{ section: 'escalationMatrix', confidence: 'high' }],
           manualOnly: true,
           escalation: { required: true, channel: profile.escalationMatrix.escalationChannel },
-          styleApplied
+          styleApplied,
         };
       }
 
@@ -2477,7 +2781,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
             requiresClarification: true,
             missingFields,
             sources,
-            styleApplied
+            styleApplied,
           };
         }
         const policy = profile.earlyLatePolicy.earlyCheckIn;
@@ -2488,7 +2792,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
           requiresClarification: false,
           missingFields,
           sources,
-          styleApplied
+          styleApplied,
         };
       }
 
@@ -2500,7 +2804,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
             requiresClarification: true,
             missingFields,
             sources,
-            styleApplied
+            styleApplied,
           };
         }
         const priority = profile.amenityImportanceIndex[input.amenity] ?? 'enhancer';
@@ -2510,7 +2814,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
           missingFields,
           sources: [{ section: 'amenityImportanceIndex', confidence: 'high' }],
           incidentPriority: priority,
-          styleApplied
+          styleApplied,
         };
       }
 
@@ -2522,7 +2826,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
             requiresClarification: true,
             missingFields,
             sources,
-            styleApplied
+            styleApplied,
           };
         }
         sources.push({ section: 'arrivalGuide.parkingInstructions', confidence: 'high' });
@@ -2531,7 +2835,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
           requiresClarification: false,
           missingFields,
           sources,
-          styleApplied
+          styleApplied,
         };
       }
 
@@ -2543,7 +2847,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
             requiresClarification: true,
             missingFields,
             sources,
-            styleApplied
+            styleApplied,
           };
         }
         if (input.amenity === 'poolHeating') {
@@ -2555,7 +2859,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
               requiresClarification: true,
               missingFields,
               sources,
-              styleApplied
+              styleApplied,
             };
           }
           sources.push({ section: 'amenityPolicies.poolHeating', confidence: 'high' });
@@ -2564,7 +2868,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
             requiresClarification: false,
             missingFields,
             sources,
-            styleApplied
+            styleApplied,
           };
         }
       }
@@ -2576,7 +2880,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
           requiresClarification: true,
           missingFields,
           sources,
-          styleApplied
+          styleApplied,
         };
       }
       sources.push({ section: 'coreRules', confidence: 'high' });
@@ -2585,7 +2889,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
         requiresClarification: false,
         missingFields,
         sources,
-        styleApplied
+        styleApplied,
       };
     },
 
@@ -2604,7 +2908,12 @@ export const createStore = (options: StoreOptions = {}): Store => {
         input.intent === 'checkout-guidance' ||
         input.intent === 'rules-acknowledgment' ||
         input.intent === 'booking-inquiry';
-      if (needsCoreRules && (!profile.coreRules.checkInTime || !profile.coreRules.checkOutTime || !profile.coreRules.quietHours)) {
+      if (
+        needsCoreRules &&
+        (!profile.coreRules.checkInTime ||
+          !profile.coreRules.checkOutTime ||
+          !profile.coreRules.quietHours)
+      ) {
         if (!profile.coreRules.checkInTime) {
           missingFields.push('coreRules.checkInTime');
         }
@@ -2647,7 +2956,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
                     ? 'your arrival timing'
                     : field.includes('checkOutTime')
                       ? 'your checkout timing'
-                      : 'a few missing details'
+                      : 'a few missing details',
             )
             .join(', ');
           return `Before I confirm details, could you confirm ${questions}?`;
@@ -2713,8 +3022,8 @@ export const createStore = (options: StoreOptions = {}): Store => {
             snippet: `templateSections=${templateSections.join('|')}`,
             confidence: 'high',
             referenceUrl: `https://docs.walt.local/templates/${input.intent}`,
-            referenceId: `template:${input.intent}`
-          }
+            referenceId: `template:${input.intent}`,
+          },
         ],
         auditLog: [
           {
@@ -2726,39 +3035,50 @@ export const createStore = (options: StoreOptions = {}): Store => {
               manualOnly,
               requiresClarification,
               missingFields,
-              templateSections
-            }
-          }
-        ]
+              templateSections,
+            },
+          },
+        ],
       };
       queue.unshift(item);
-      emit('draft.created', { id: item.id, intent: item.intent }, { aggregateType: 'draft', aggregateId: item.id, actorId });
+      emit(
+        'draft.created',
+        { id: item.id, intent: item.intent },
+        { aggregateType: 'draft', aggregateId: item.id, actorId },
+      );
       return {
         mode: 'draft-only',
         manualOnly,
         requiresClarification,
         missingFields,
         templateSections,
-        item
+        item,
       };
     },
 
     getPropertyState: (propertyId) => {
-      const openAlerts = monitoringAlerts.filter((alert) => alert.propertyId === propertyId && alert.status === 'open');
+      const openAlerts = monitoringAlerts.filter(
+        (alert) => alert.propertyId === propertyId && alert.status === 'open',
+      );
       const highSeverityAlerts = openAlerts.filter((alert) => alert.severity === 'high').length;
       const pendingCleanerPings = cleanerJitPings.filter(
         (ping) =>
           propertyIdFromReservation(ping.reservationId) === propertyId &&
-          (ping.status === 'requested' || ping.status === 'NOT_READY')
+          (ping.status === 'requested' || ping.status === 'NOT_READY'),
       ).length;
-      const vendorConflicts = openAlerts.filter((alert) => alert.category === 'vendor-window').length;
+      const vendorConflicts = openAlerts.filter(
+        (alert) => alert.category === 'vendor-window',
+      ).length;
       const maintenanceIssues = incidents.filter(
-        (incident) => incident.state !== 'normalized' && incident.summary.toLowerCase().includes('maintenance')
+        (incident) =>
+          incident.state !== 'normalized' && incident.summary.toLowerCase().includes('maintenance'),
       ).length;
       const criticalAmenityIssues = openAlerts.filter(
-        (alert) => alert.category === 'amenity-issue' && alert.severity === 'high'
+        (alert) => alert.category === 'amenity-issue' && alert.severity === 'high',
       ).length;
-      const blockers = openAlerts.filter((alert) => alert.severity === 'high').map((alert) => alert.summary);
+      const blockers = openAlerts
+        .filter((alert) => alert.severity === 'high')
+        .map((alert) => alert.summary);
 
       const readiness: PropertyReadiness =
         highSeverityAlerts > 0 || pendingCleanerPings > 0 || criticalAmenityIssues > 0
@@ -2777,9 +3097,9 @@ export const createStore = (options: StoreOptions = {}): Store => {
           pendingCleanerPings,
           vendorConflicts,
           maintenanceIssues,
-          criticalAmenityIssues
+          criticalAmenityIssues,
         },
-        updatedAt: nowIso()
+        updatedAt: nowIso(),
       };
     },
 
@@ -2802,7 +3122,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
         createdBy: actorId,
         updatedBy: actorId,
         createdAt: ts,
-        updatedAt: ts
+        updatedAt: ts,
       };
       propertyQaEntries.unshift(entry);
       return entry;
@@ -2832,7 +3152,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
       return propertyQaSuggestions
         .filter((suggestion) => suggestion.propertyId === propertyId)
         .filter((suggestion) => !status || suggestion.status === status)
-        .map(({ normalizedQuestionHash: _normalizedQuestionHash, ...suggestion }) => suggestion)
+        .map((suggestion) => toPublicQaSuggestion(suggestion))
         .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
     },
 
@@ -2854,7 +3174,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
         (entry) =>
           entry.propertyId === suggestion.propertyId &&
           normalizeQuestionForHash(entry.question) === normalizedQuestionHash &&
-          entry.status === 'active'
+          entry.status === 'active',
       );
 
       let entry: PropertyQaEntry;
@@ -2875,7 +3195,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
           createdBy: input.actorId,
           updatedBy: input.actorId,
           createdAt: ts,
-          updatedAt: ts
+          updatedAt: ts,
         };
         propertyQaEntries.unshift(entry);
       }
@@ -2892,11 +3212,10 @@ export const createStore = (options: StoreOptions = {}): Store => {
         suggestion.id,
         input.question || input.answer ? 'edited_approved' : 'approved',
         input.actorId,
-        { entryId: entry.id }
+        { entryId: entry.id },
       );
 
-      const { normalizedQuestionHash: _normalizedQuestionHash, ...withoutHash } = suggestion;
-      return { suggestion: withoutHash, entry };
+      return { suggestion: toPublicQaSuggestion(suggestion), entry };
     },
 
     rejectPropertyQaSuggestion: (suggestionId, input) => {
@@ -2912,9 +3231,10 @@ export const createStore = (options: StoreOptions = {}): Store => {
       suggestion.reviewedBy = input.actorId;
       suggestion.reviewedAt = nowIso();
       suggestion.updatedAt = suggestion.reviewedAt;
-      emitPropertyQaSuggestionEvent(suggestion.id, 'rejected', input.actorId, { reason: input.reason ?? '' });
-      const { normalizedQuestionHash: _normalizedQuestionHash, ...withoutHash } = suggestion;
-      return withoutHash;
+      emitPropertyQaSuggestionEvent(suggestion.id, 'rejected', input.actorId, {
+        reason: input.reason ?? '',
+      });
+      return toPublicQaSuggestion(suggestion);
     },
 
     getPropertyQaSuggestionNotifications: () => {
@@ -2922,13 +3242,15 @@ export const createStore = (options: StoreOptions = {}): Store => {
       const nowMs = Date.now();
       const oneDayMs = 24 * 60 * 60 * 1000;
       const pending = propertyQaSuggestions.filter((suggestion) => suggestion.status === 'pending');
-      const newlyReady = pending.filter((suggestion) => nowMs - new Date(suggestion.createdAt).getTime() <= oneDayMs);
+      const newlyReady = pending.filter(
+        (suggestion) => nowMs - new Date(suggestion.createdAt).getTime() <= oneDayMs,
+      );
       return {
         pendingCount: pending.length,
         newlyReadyCount: newlyReady.length,
-        generatedAt: nowIso()
+        generatedAt: nowIso(),
       };
-    }
+    },
   };
 };
 
@@ -2937,59 +3259,70 @@ const singletonStore = createStore();
 export const listQueue = () => singletonStore.listQueue();
 
 export const createDraft = (store: Store, input: CreateDraftInput) => store.createDraft(input);
-export const editDraft = (store: Store, id: string, body: string, actorId?: string) => store.editDraft(id, body, actorId);
-export const approveDraft = (store: Store, id: string, actorId: string) => store.approveDraft(id, actorId);
-export const sendDraft = (store: Store, id: string, actorId: string) => store.sendDraft(id, actorId);
-export const rejectDraft = (store: Store, id: string, actorId: string) => store.rejectDraft(id, actorId);
+export const editDraft = (store: Store, id: string, body: string, actorId?: string) =>
+  store.editDraft(id, body, actorId);
+export const approveDraft = (store: Store, id: string, actorId: string) =>
+  store.approveDraft(id, actorId);
+export const sendDraft = (store: Store, id: string, actorId: string) =>
+  store.sendDraft(id, actorId);
+export const rejectDraft = (store: Store, id: string, actorId: string) =>
+  store.rejectDraft(id, actorId);
 
 export const listEvents = (store: Store) => store.listEvents();
 export const listEventRecords = (
   store: Store,
-  filters?: { type?: DraftEventType; actorId?: string; limit?: number }
+  filters?: { type?: DraftEventType; actorId?: string; limit?: number },
 ) => store.listEventRecords(filters);
 export const listOutboxRecords = (
   store: Store,
-  filters?: { destination?: OutboxDestination; status?: OutboxStatus; limit?: number }
+  filters?: { destination?: OutboxDestination; status?: OutboxStatus; limit?: number },
 ) => store.listOutboxRecords(filters);
 export const retryOutboxByDestination = (
   store: Store,
-  input: { destination: OutboxDestination; limit?: number }
+  input: { destination: OutboxDestination; limit?: number },
 ) => store.retryOutboxByDestination(input);
-export const getApprovalQueueProjection = (store: Store, limit?: number) => store.getApprovalQueueProjection(limit);
-export const getPropertyStateProjection = (store: Store, limit?: number) => store.getPropertyStateProjection(limit);
+export const getApprovalQueueProjection = (store: Store, limit?: number) =>
+  store.getApprovalQueueProjection(limit);
+export const getPropertyStateProjection = (store: Store, limit?: number) =>
+  store.getPropertyStateProjection(limit);
 export const getNormalizedEntities = (
   store: Store,
-  kind?: 'properties' | 'guests' | 'reservations' | 'messages' | 'all'
+  kind?: 'properties' | 'guests' | 'reservations' | 'messages' | 'all',
 ) => store.getNormalizedEntities(kind);
 export const getOperationalAwareness = (store: Store) => store.getOperationalAwareness();
 export const createIncident = (store: Store, summary: string) => store.createIncident(summary);
 export const transitionIncident = (store: Store, id: string, next: IncidentState) =>
   store.transitionIncident(id, next);
 export const listIncidents = (store: Store) => store.listIncidents();
-export const listCleanerJitPings = (store: Store, reservationId?: string) => store.listCleanerJitPings(reservationId);
+export const listCleanerJitPings = (store: Store, reservationId?: string) =>
+  store.listCleanerJitPings(reservationId);
 export const createCleanerJitPing = (
   store: Store,
-  input: { reservationId: string; cleanerId: string; reason: string }
+  input: { reservationId: string; cleanerId: string; reason: string },
 ) => store.createCleanerJitPing(input);
 export const updateCleanerJitPing = (
   store: Store,
   id: string,
-  input: { status: Exclude<CleanerJitStatus, 'requested'>; note?: string; etaMinutes?: number }
+  input: { status: Exclude<CleanerJitStatus, 'requested'>; note?: string; etaMinutes?: number },
 ) => store.updateCleanerJitPing(id, input);
 export const getRolloutState = (store: Store) => store.getRolloutState();
 export const completeInternalValidation = (store: Store) => store.completeInternalValidation();
 export const onboardHost = (store: Store, hostId: string) => store.onboardHost(hostId);
 export const listTrainingSignals = (store: Store) => store.listTrainingSignals();
-export const listAuditTimeline = (store: Store, filters?: AuditTimelineFilters) => store.listAuditTimeline(filters);
+export const listAuditTimeline = (store: Store, filters?: AuditTimelineFilters) =>
+  store.listAuditTimeline(filters);
 export const ingestHospitableMessage = (store: Store, input: HospitableMessageInput) =>
   store.ingestHospitableMessage(input);
-export const assembleContextByDraftId = (store: Store, draftId: string) => store.assembleContextByDraftId(draftId);
-export const regenerateDraftFromInbound = (store: Store, draftId: string) => store.regenerateDraftFromInbound(draftId);
+export const assembleContextByDraftId = (store: Store, draftId: string) =>
+  store.assembleContextByDraftId(draftId);
+export const regenerateDraftFromInbound = (store: Store, draftId: string) =>
+  store.regenerateDraftFromInbound(draftId);
 export const recordRefund = (store: Store, amount: number) => store.recordRefund(amount);
 export const recordGuestReview = (store: Store, rating: number) => store.recordGuestReview(rating);
 export const getRoiMetrics = (store: Store) => store.getRoiMetrics();
 export const getTodayPriorities = (store: Store, limit?: number) => store.getTodayPriorities(limit);
-export const getProactiveSuggestions = (store: Store, limit?: number) => store.getProactiveSuggestions(limit);
+export const getProactiveSuggestions = (store: Store, limit?: number) =>
+  store.getProactiveSuggestions(limit);
 export const listIncidentAlertDrafts = (store: Store) => store.listIncidentAlertDrafts();
 export const getPortfolioTrend = (store: Store) => store.getPortfolioTrend();
 export const getOperatingProfile = (store: Store) => store.getOperatingProfile();
@@ -3001,7 +3334,7 @@ export const updateOperatingProfile = (
     compensationCapUsd?: number;
     economicSensitivity?: number;
     propertyRiskTolerance?: Record<string, number>;
-  }
+  },
 ) => store.updateOperatingProfile(input);
 export const assessRiskTrustIntelligence = (
   store: Store,
@@ -3014,14 +3347,16 @@ export const assessRiskTrustIntelligence = (
     positiveReviewHistory: number;
     responseQuality: number;
     explicitRuleAcceptance: number;
-  }
+  },
 ) => store.assessRiskTrustIntelligence(input);
 export const evaluateAutopilotAction = (
   store: Store,
-  input: { reservationId: string; intent: string; body: string }
+  input: { reservationId: string; intent: string; body: string },
 ) => store.evaluateAutopilotAction(input);
-export const rollbackAutopilotAction = (store: Store, input: { actionId: string; reason: string }) =>
-  store.rollbackAutopilotAction(input);
+export const rollbackAutopilotAction = (
+  store: Store,
+  input: { actionId: string; reason: string },
+) => store.rollbackAutopilotAction(input);
 export const listAutopilotActions = (store: Store) => store.listAutopilotActions();
 export const runMonitoringAgents = (store: Store) => store.runMonitoringAgents();
 export const listMonitoringAlerts = (
@@ -3033,28 +3368,36 @@ export const listMonitoringAlerts = (
     severity?: MonitoringSeverity;
     category?: MonitoringCategory;
     limit?: number;
-  }
+  },
 ) => store.listMonitoringAlerts(filters);
 export const getMonitoringAgentStatus = (store: Store) => store.getMonitoringAgentStatus();
 export const runJitChecks = (
   store: Store,
-  input: { reservationId: string; requestType: 'early-check-in' | 'late-checkout' }
+  input: { reservationId: string; requestType: 'early-check-in' | 'late-checkout' },
 ) => store.runJitChecks(input);
-export const getIncidentResponsePlan = (store: Store, incidentId: string) => store.getIncidentResponsePlan(incidentId);
-export const getIncidentTimeline = (store: Store, incidentId: string) => store.getIncidentTimeline(incidentId);
-export const getPropertyState = (store: Store, propertyId: string) => store.getPropertyState(propertyId);
-export const getPropertyBrainProfile = (store: Store, propertyId: string) => store.getPropertyBrainProfile(propertyId);
+export const getIncidentResponsePlan = (store: Store, incidentId: string) =>
+  store.getIncidentResponsePlan(incidentId);
+export const getIncidentTimeline = (store: Store, incidentId: string) =>
+  store.getIncidentTimeline(incidentId);
+export const getPropertyState = (store: Store, propertyId: string) =>
+  store.getPropertyState(propertyId);
+export const getPropertyBrainProfile = (store: Store, propertyId: string) =>
+  store.getPropertyBrainProfile(propertyId);
 export const updatePropertyBrainProfile = (
   store: Store,
   propertyId: string,
   input: PropertyBrainProfileUpdateInput,
-  actorId: string
+  actorId: string,
 ) => store.updatePropertyBrainProfile(propertyId, input, actorId);
 export const getPropertyBrainCompleteness = (store: Store, propertyId: string) =>
   store.getPropertyBrainCompleteness(propertyId);
 export const resolvePropertyPolicy = (
   store: Store,
-  input: { propertyId: string; intent: string; amenity?: 'poolHeating' | 'hotTub' | 'sauna' | 'wifi' | 'bbq' }
+  input: {
+    propertyId: string;
+    intent: string;
+    amenity?: 'poolHeating' | 'hotTub' | 'sauna' | 'wifi' | 'bbq';
+  },
 ) => store.resolvePropertyPolicy(input);
 export const getIntentTaxonomy = (store: Store) => store.getIntentTaxonomy();
 export const createIntentDraft = (
@@ -3065,27 +3408,40 @@ export const createIntentDraft = (
     intent: MessagingIntentV1;
     guestName: string;
     actorId?: string;
-  }
+  },
 ) => store.createIntentDraft(input);
-export const listPropertyQaEntries = (store: Store, propertyId: string, status?: 'active' | 'archived') =>
-  store.listPropertyQaEntries(propertyId, status);
-export const createPropertyQaEntry = (store: Store, propertyId: string, input: CreatePropertyQaEntryInput) =>
-  store.createPropertyQaEntry(propertyId, input);
-export const updatePropertyQaEntry = (store: Store, id: string, input: UpdatePropertyQaEntryInput) =>
-  store.updatePropertyQaEntry(id, input);
-export const listPropertyQaSuggestions = (store: Store, propertyId: string, status?: PropertyQaSuggestionStatus) =>
-  store.listPropertyQaSuggestions(propertyId, status);
+export const listPropertyQaEntries = (
+  store: Store,
+  propertyId: string,
+  status?: 'active' | 'archived',
+) => store.listPropertyQaEntries(propertyId, status);
+export const createPropertyQaEntry = (
+  store: Store,
+  propertyId: string,
+  input: CreatePropertyQaEntryInput,
+) => store.createPropertyQaEntry(propertyId, input);
+export const updatePropertyQaEntry = (
+  store: Store,
+  id: string,
+  input: UpdatePropertyQaEntryInput,
+) => store.updatePropertyQaEntry(id, input);
+export const listPropertyQaSuggestions = (
+  store: Store,
+  propertyId: string,
+  status?: PropertyQaSuggestionStatus,
+) => store.listPropertyQaSuggestions(propertyId, status);
 export const approvePropertyQaSuggestion = (
   store: Store,
   suggestionId: string,
-  input: { actorId: string; question?: string; answer?: string }
+  input: { actorId: string; question?: string; answer?: string },
 ) => store.approvePropertyQaSuggestion(suggestionId, input);
 export const rejectPropertyQaSuggestion = (
   store: Store,
   suggestionId: string,
-  input: { actorId: string; reason?: string }
+  input: { actorId: string; reason?: string },
 ) => store.rejectPropertyQaSuggestion(suggestionId, input);
-export const getPropertyQaSuggestionNotifications = (store: Store) => store.getPropertyQaSuggestionNotifications();
+export const getPropertyQaSuggestionNotifications = (store: Store) =>
+  store.getPropertyQaSuggestionNotifications();
 
 export const getRiskRecommendation = (input: RiskRecommendationInput): RiskRecommendation => {
   const baseRisk = 100 - input.globalTrustScore;
@@ -3095,31 +3451,34 @@ export const getRiskRecommendation = (input: RiskRecommendationInput): RiskRecom
   if (total >= 90) {
     return {
       decision: 'decline',
-      reasons: ['Local incident pressure is high for this property.', 'Global trust is insufficient for auto-accept.']
+      reasons: [
+        'Local incident pressure is high for this property.',
+        'Global trust is insufficient for auto-accept.',
+      ],
     };
   }
 
   if (total >= 50) {
     return {
       decision: 'review',
-      reasons: ['Recommendation requires host review due to mixed trust and local risk.']
+      reasons: ['Recommendation requires host review due to mixed trust and local risk.'],
     };
   }
 
   return {
     decision: 'accept',
-    reasons: ['Global trust and local property risk are within acceptable range.']
+    reasons: ['Global trust and local property risk are within acceptable range.'],
   };
 };
 
 export const getStrategyRecommendation = (
-  input: StrategyRecommendationInput
+  input: StrategyRecommendationInput,
 ): StrategyRecommendation => {
   if (input.localSeverity >= 70) {
     return {
       action: 'escalate-now',
       primaryDriver: 'local',
-      note: 'Local context dominates this decision despite portfolio trend.'
+      note: 'Local context dominates this decision despite portfolio trend.',
     };
   }
 
@@ -3127,20 +3486,24 @@ export const getStrategyRecommendation = (
     return {
       action: 'monitor-tightly',
       primaryDriver: 'portfolio',
-      note: 'Portfolio trend suggests elevated caution.'
+      note: 'Portfolio trend suggests elevated caution.',
     };
   }
 
   return {
     action: 'routine-handle',
     primaryDriver: 'local',
-    note: 'No severe local issue and no strong adverse portfolio trend.'
+    note: 'No severe local issue and no strong adverse portfolio trend.',
   };
 };
 
-export const getExperienceRiskAssessment = (input: ExperienceRiskInput): ExperienceRiskAssessment => {
+export const getExperienceRiskAssessment = (
+  input: ExperienceRiskInput,
+): ExperienceRiskAssessment => {
   const nightsFactor = Math.min(100, input.nightsRemaining * 10);
-  const weighted = Math.round(input.fixImpact * 0.55 + input.guestSensitivity * 0.35 + nightsFactor * 0.1);
+  const weighted = Math.round(
+    input.fixImpact * 0.55 + input.guestSensitivity * 0.35 + nightsFactor * 0.1,
+  );
 
   const communicationUrgency: ExperienceRiskAssessment['communicationUrgency'] =
     weighted >= 75 ? 'immediate' : weighted >= 45 ? 'same-day' : 'routine';
@@ -3150,64 +3513,87 @@ export const getExperienceRiskAssessment = (input: ExperienceRiskInput): Experie
   const rationale = [
     `Fix impact contributes ${Math.round(input.fixImpact * 0.55)} points.`,
     `Guest sensitivity contributes ${Math.round(input.guestSensitivity * 0.35)} points.`,
-    `Remaining nights contribute ${Math.round(nightsFactor * 0.1)} points.`
+    `Remaining nights contribute ${Math.round(nightsFactor * 0.1)} points.`,
   ];
 
   return {
     score: weighted,
     communicationUrgency,
     compensationGuidance,
-    rationale
+    rationale,
   };
 };
 
-export const createDraftInSingleton = (input: CreateDraftInput) => singletonStore.createDraft(input);
+export const createDraftInSingleton = (input: CreateDraftInput) =>
+  singletonStore.createDraft(input);
 export const editDraftInSingleton = (id: string, body: string, actorId?: string) =>
   singletonStore.editDraft(id, body, actorId);
-export const approveDraftInSingleton = (id: string, actorId: string) => singletonStore.approveDraft(id, actorId);
-export const sendDraftInSingleton = (id: string, actorId: string) => singletonStore.sendDraft(id, actorId);
-export const rejectDraftInSingleton = (id: string, actorId: string) => singletonStore.rejectDraft(id, actorId);
+export const approveDraftInSingleton = (id: string, actorId: string) =>
+  singletonStore.approveDraft(id, actorId);
+export const sendDraftInSingleton = (id: string, actorId: string) =>
+  singletonStore.sendDraft(id, actorId);
+export const rejectDraftInSingleton = (id: string, actorId: string) =>
+  singletonStore.rejectDraft(id, actorId);
 export const listEventsInSingleton = () => singletonStore.listEvents();
-export const listEventRecordsInSingleton = (filters?: { type?: DraftEventType; actorId?: string; limit?: number }) =>
-  singletonStore.listEventRecords(filters);
+export const listEventRecordsInSingleton = (filters?: {
+  type?: DraftEventType;
+  actorId?: string;
+  limit?: number;
+}) => singletonStore.listEventRecords(filters);
 export const listOutboxRecordsInSingleton = (filters?: {
   destination?: OutboxDestination;
   status?: OutboxStatus;
   limit?: number;
 }) => singletonStore.listOutboxRecords(filters);
-export const retryOutboxByDestinationInSingleton = (input: { destination: OutboxDestination; limit?: number }) =>
-  singletonStore.retryOutboxByDestination(input);
-export const getApprovalQueueProjectionInSingleton = (limit?: number) => singletonStore.getApprovalQueueProjection(limit);
-export const getPropertyStateProjectionInSingleton = (limit?: number) => singletonStore.getPropertyStateProjection(limit);
+export const retryOutboxByDestinationInSingleton = (input: {
+  destination: OutboxDestination;
+  limit?: number;
+}) => singletonStore.retryOutboxByDestination(input);
+export const getApprovalQueueProjectionInSingleton = (limit?: number) =>
+  singletonStore.getApprovalQueueProjection(limit);
+export const getPropertyStateProjectionInSingleton = (limit?: number) =>
+  singletonStore.getPropertyStateProjection(limit);
 export const getNormalizedEntitiesInSingleton = (
-  kind?: 'properties' | 'guests' | 'reservations' | 'messages' | 'all'
+  kind?: 'properties' | 'guests' | 'reservations' | 'messages' | 'all',
 ) => singletonStore.getNormalizedEntities(kind);
 export const getOperationalAwarenessInSingleton = () => singletonStore.getOperationalAwareness();
-export const createIncidentInSingleton = (summary: string) => singletonStore.createIncident(summary);
+export const createIncidentInSingleton = (summary: string) =>
+  singletonStore.createIncident(summary);
 export const transitionIncidentInSingleton = (id: string, next: IncidentState) =>
   singletonStore.transitionIncident(id, next);
 export const listIncidentsInSingleton = () => singletonStore.listIncidents();
-export const listCleanerJitPingsInSingleton = (reservationId?: string) => singletonStore.listCleanerJitPings(reservationId);
-export const createCleanerJitPingInSingleton = (input: { reservationId: string; cleanerId: string; reason: string }) =>
-  singletonStore.createCleanerJitPing(input);
+export const listCleanerJitPingsInSingleton = (reservationId?: string) =>
+  singletonStore.listCleanerJitPings(reservationId);
+export const createCleanerJitPingInSingleton = (input: {
+  reservationId: string;
+  cleanerId: string;
+  reason: string;
+}) => singletonStore.createCleanerJitPing(input);
 export const updateCleanerJitPingInSingleton = (
   id: string,
-  input: { status: Exclude<CleanerJitStatus, 'requested'>; note?: string; etaMinutes?: number }
+  input: { status: Exclude<CleanerJitStatus, 'requested'>; note?: string; etaMinutes?: number },
 ) => singletonStore.updateCleanerJitPing(id, input);
 export const getRolloutStateInSingleton = () => singletonStore.getRolloutState();
-export const completeInternalValidationInSingleton = () => singletonStore.completeInternalValidation();
+export const completeInternalValidationInSingleton = () =>
+  singletonStore.completeInternalValidation();
 export const onboardHostInSingleton = (hostId: string) => singletonStore.onboardHost(hostId);
 export const listTrainingSignalsInSingleton = () => singletonStore.listTrainingSignals();
-export const listAuditTimelineInSingleton = (filters?: AuditTimelineFilters) => singletonStore.listAuditTimeline(filters);
+export const listAuditTimelineInSingleton = (filters?: AuditTimelineFilters) =>
+  singletonStore.listAuditTimeline(filters);
 export const ingestHospitableMessageInSingleton = (input: HospitableMessageInput) =>
   singletonStore.ingestHospitableMessage(input);
-export const assembleContextByDraftIdInSingleton = (draftId: string) => singletonStore.assembleContextByDraftId(draftId);
-export const regenerateDraftFromInboundInSingleton = (draftId: string) => singletonStore.regenerateDraftFromInbound(draftId);
+export const assembleContextByDraftIdInSingleton = (draftId: string) =>
+  singletonStore.assembleContextByDraftId(draftId);
+export const regenerateDraftFromInboundInSingleton = (draftId: string) =>
+  singletonStore.regenerateDraftFromInbound(draftId);
 export const recordRefundInSingleton = (amount: number) => singletonStore.recordRefund(amount);
-export const recordGuestReviewInSingleton = (rating: number) => singletonStore.recordGuestReview(rating);
+export const recordGuestReviewInSingleton = (rating: number) =>
+  singletonStore.recordGuestReview(rating);
 export const getRoiMetricsInSingleton = () => singletonStore.getRoiMetrics();
-export const getTodayPrioritiesInSingleton = (limit?: number) => singletonStore.getTodayPriorities(limit);
-export const getProactiveSuggestionsInSingleton = (limit?: number) => singletonStore.getProactiveSuggestions(limit);
+export const getTodayPrioritiesInSingleton = (limit?: number) =>
+  singletonStore.getTodayPriorities(limit);
+export const getProactiveSuggestionsInSingleton = (limit?: number) =>
+  singletonStore.getProactiveSuggestions(limit);
 export const listIncidentAlertDraftsInSingleton = () => singletonStore.listIncidentAlertDrafts();
 export const getPortfolioTrendInSingleton = () => singletonStore.getPortfolioTrend();
 export const getOperatingProfileInSingleton = () => singletonStore.getOperatingProfile();
@@ -3228,8 +3614,11 @@ export const assessRiskTrustIntelligenceInSingleton = (input: {
   responseQuality: number;
   explicitRuleAcceptance: number;
 }) => singletonStore.assessRiskTrustIntelligence(input);
-export const evaluateAutopilotActionInSingleton = (input: { reservationId: string; intent: string; body: string }) =>
-  singletonStore.evaluateAutopilotAction(input);
+export const evaluateAutopilotActionInSingleton = (input: {
+  reservationId: string;
+  intent: string;
+  body: string;
+}) => singletonStore.evaluateAutopilotAction(input);
 export const rollbackAutopilotActionInSingleton = (input: { actionId: string; reason: string }) =>
   singletonStore.rollbackAutopilotAction(input);
 export const listAutopilotActionsInSingleton = () => singletonStore.listAutopilotActions();
@@ -3243,16 +3632,22 @@ export const listMonitoringAlertsInSingleton = (filters?: {
   limit?: number;
 }) => singletonStore.listMonitoringAlerts(filters);
 export const getMonitoringAgentStatusInSingleton = () => singletonStore.getMonitoringAgentStatus();
-export const runJitChecksInSingleton = (input: { reservationId: string; requestType: 'early-check-in' | 'late-checkout' }) =>
-  singletonStore.runJitChecks(input);
-export const getIncidentResponsePlanInSingleton = (incidentId: string) => singletonStore.getIncidentResponsePlan(incidentId);
-export const getIncidentTimelineInSingleton = (incidentId: string) => singletonStore.getIncidentTimeline(incidentId);
-export const getPropertyStateInSingleton = (propertyId: string) => singletonStore.getPropertyState(propertyId);
-export const getPropertyBrainProfileInSingleton = (propertyId: string) => singletonStore.getPropertyBrainProfile(propertyId);
+export const runJitChecksInSingleton = (input: {
+  reservationId: string;
+  requestType: 'early-check-in' | 'late-checkout';
+}) => singletonStore.runJitChecks(input);
+export const getIncidentResponsePlanInSingleton = (incidentId: string) =>
+  singletonStore.getIncidentResponsePlan(incidentId);
+export const getIncidentTimelineInSingleton = (incidentId: string) =>
+  singletonStore.getIncidentTimeline(incidentId);
+export const getPropertyStateInSingleton = (propertyId: string) =>
+  singletonStore.getPropertyState(propertyId);
+export const getPropertyBrainProfileInSingleton = (propertyId: string) =>
+  singletonStore.getPropertyBrainProfile(propertyId);
 export const updatePropertyBrainProfileInSingleton = (
   propertyId: string,
   input: PropertyBrainProfileUpdateInput,
-  actorId: string
+  actorId: string,
 ) => singletonStore.updatePropertyBrainProfile(propertyId, input, actorId);
 export const getPropertyBrainCompletenessInSingleton = (propertyId: string) =>
   singletonStore.getPropertyBrainCompleteness(propertyId);
@@ -3269,18 +3664,27 @@ export const createIntentDraftInSingleton = (input: {
   guestName: string;
   actorId?: string;
 }) => singletonStore.createIntentDraft(input);
-export const listPropertyQaEntriesInSingleton = (propertyId: string, status?: 'active' | 'archived') =>
-  singletonStore.listPropertyQaEntries(propertyId, status);
-export const createPropertyQaEntryInSingleton = (propertyId: string, input: CreatePropertyQaEntryInput) =>
-  singletonStore.createPropertyQaEntry(propertyId, input);
+export const listPropertyQaEntriesInSingleton = (
+  propertyId: string,
+  status?: 'active' | 'archived',
+) => singletonStore.listPropertyQaEntries(propertyId, status);
+export const createPropertyQaEntryInSingleton = (
+  propertyId: string,
+  input: CreatePropertyQaEntryInput,
+) => singletonStore.createPropertyQaEntry(propertyId, input);
 export const updatePropertyQaEntryInSingleton = (id: string, input: UpdatePropertyQaEntryInput) =>
   singletonStore.updatePropertyQaEntry(id, input);
-export const listPropertyQaSuggestionsInSingleton = (propertyId: string, status?: PropertyQaSuggestionStatus) =>
-  singletonStore.listPropertyQaSuggestions(propertyId, status);
+export const listPropertyQaSuggestionsInSingleton = (
+  propertyId: string,
+  status?: PropertyQaSuggestionStatus,
+) => singletonStore.listPropertyQaSuggestions(propertyId, status);
 export const approvePropertyQaSuggestionInSingleton = (
   suggestionId: string,
-  input: { actorId: string; question?: string; answer?: string }
+  input: { actorId: string; question?: string; answer?: string },
 ) => singletonStore.approvePropertyQaSuggestion(suggestionId, input);
-export const rejectPropertyQaSuggestionInSingleton = (suggestionId: string, input: { actorId: string; reason?: string }) =>
-  singletonStore.rejectPropertyQaSuggestion(suggestionId, input);
-export const getPropertyQaSuggestionNotificationsInSingleton = () => singletonStore.getPropertyQaSuggestionNotifications();
+export const rejectPropertyQaSuggestionInSingleton = (
+  suggestionId: string,
+  input: { actorId: string; reason?: string },
+) => singletonStore.rejectPropertyQaSuggestion(suggestionId, input);
+export const getPropertyQaSuggestionNotificationsInSingleton = () =>
+  singletonStore.getPropertyQaSuggestionNotifications();

@@ -91,7 +91,10 @@ import { GET as getContextByDraftId } from '@/app/api/command-center/context/[id
 import { POST as postDraftFromInbound } from '@/app/api/command-center/drafts/from-inbound/route';
 import { GET as getRoiDashboard } from '@/app/api/command-center/metrics/roi/route';
 import { GET as getAdoptionMetrics } from '@/app/api/command-center/metrics/adoption/route';
-import { GET as getPropertyQaEntries, POST as postPropertyQaEntry } from '@/app/api/command-center/qa/[propertyId]/route';
+import {
+  GET as getPropertyQaEntries,
+  POST as postPropertyQaEntry,
+} from '@/app/api/command-center/qa/[propertyId]/route';
 import { PATCH as patchPropertyQaEntry } from '@/app/api/command-center/qa/entry/[id]/route';
 import { GET as getQaSuggestionsByProperty } from '@/app/api/command-center/qa-suggestions/[propertyId]/route';
 import { POST as postApproveQaSuggestion } from '@/app/api/command-center/qa-suggestions/[id]/approve/route';
@@ -3255,20 +3258,25 @@ void test('creates pending qa suggestion from inbound message and exposes notifi
         eventId,
         reservationId: 'res-qa-001',
         guestName: 'Alex',
-        message: 'What is the wifi password?'
-      })
-    })
+        message: 'What is the wifi password?',
+      }),
+    }),
   );
   assert.equal(ingress.status, 202);
 
-  const notifications = await getQaSuggestionNotifications();
+  const notifications = await getQaSuggestionNotifications(
+    new Request('http://localhost/api/command-center/qa-suggestions/notifications'),
+    {},
+  );
   const notificationsBody = (await notifications.json()) as { pendingCount: number };
   assert.equal(notifications.status, 200);
   assert.equal(notificationsBody.pendingCount > 0, true);
 
   const suggestions = await getQaSuggestionsByProperty(
-    new Request('http://localhost/api/command-center/qa-suggestions/property:res-qa-001?status=pending'),
-    { params: Promise.resolve({ propertyId: 'property:res-qa-001' }) }
+    new Request(
+      'http://localhost/api/command-center/qa-suggestions/property:res-qa-001?status=pending',
+    ),
+    { params: Promise.resolve({ propertyId: 'property:res-qa-001' }) },
   );
   const suggestionsBody = (await suggestions.json()) as {
     items: Array<{ id: string; status: string; classifierLabel: string; sourceMessageId: string }>;
@@ -3289,16 +3297,18 @@ void test('approves qa suggestion and includes approved qa source in regenerated
         eventId,
         reservationId: 'res-qa-approve-001',
         guestName: 'Avery',
-        message: 'Do you have parking available?'
-      })
-    })
+        message: 'Do you have parking available?',
+      }),
+    }),
   );
   const ingressBody = (await ingress.json()) as { item: { id: string } };
   assert.equal(ingress.status, 202);
 
   const suggestions = await getQaSuggestionsByProperty(
-    new Request('http://localhost/api/command-center/qa-suggestions/property:res-qa-approve-001?status=pending'),
-    { params: Promise.resolve({ propertyId: 'property:res-qa-approve-001' }) }
+    new Request(
+      'http://localhost/api/command-center/qa-suggestions/property:res-qa-approve-001?status=pending',
+    ),
+    { params: Promise.resolve({ propertyId: 'property:res-qa-approve-001' }) },
   );
   const suggestionsBody = (await suggestions.json()) as { items: Array<{ id: string }> };
   const suggestionId = suggestionsBody.items[0]?.id;
@@ -3308,9 +3318,9 @@ void test('approves qa suggestion and includes approved qa source in regenerated
     new Request(`http://localhost/api/command-center/qa-suggestions/${suggestionId}/approve`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ actorId: 'qa-reviewer-1' })
+      body: JSON.stringify({ actorId: 'qa-reviewer-1' }),
     }),
-    { params: Promise.resolve({ id: String(suggestionId) }) }
+    { params: Promise.resolve({ id: String(suggestionId) }) },
   );
   assert.equal(approved.status, 200);
 
@@ -3318,14 +3328,14 @@ void test('approves qa suggestion and includes approved qa source in regenerated
     new Request('http://localhost/api/command-center/drafts/from-inbound', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ draftId: ingressBody.item.id })
-    })
+      body: JSON.stringify({ draftId: ingressBody.item.id }),
+    }),
   );
   assert.equal(regenerated.status, 200);
 
   const context = await getContextByDraftId(
     new Request(`http://localhost/api/command-center/context/${ingressBody.item.id}`),
-    { params: Promise.resolve({ id: ingressBody.item.id }) }
+    { params: Promise.resolve({ id: ingressBody.item.id }) },
   );
   const contextBody = (await context.json()) as {
     context: { knowledgeSources: Array<{ type: string; referenceId?: string }> };
@@ -3333,11 +3343,11 @@ void test('approves qa suggestion and includes approved qa source in regenerated
   assert.equal(context.status, 200);
   assert.equal(
     contextBody.context.knowledgeSources.some((source) => source.type === 'policy'),
-    true
+    true,
   );
   assert.equal(
     contextBody.context.knowledgeSources.some((source) => source.type === 'property-qa'),
-    true
+    true,
   );
 });
 
@@ -3353,9 +3363,9 @@ void test('deduplicates near-identical qa suggestions by normalized question has
         eventId: eventA,
         reservationId: 'res-qa-dedupe-001',
         guestName: 'Sam',
-        message: 'What is the wifi password?'
-      })
-    })
+        message: 'What is the wifi password?',
+      }),
+    }),
   );
 
   await postHospitableWebhook(
@@ -3366,14 +3376,16 @@ void test('deduplicates near-identical qa suggestions by normalized question has
         eventId: eventB,
         reservationId: 'res-qa-dedupe-001',
         guestName: 'Sam',
-        message: 'What is the WI-FI password'
-      })
-    })
+        message: 'What is the WI-FI password',
+      }),
+    }),
   );
 
   const suggestions = await getQaSuggestionsByProperty(
-    new Request('http://localhost/api/command-center/qa-suggestions/property:res-qa-dedupe-001?status=pending'),
-    { params: Promise.resolve({ propertyId: 'property:res-qa-dedupe-001' }) }
+    new Request(
+      'http://localhost/api/command-center/qa-suggestions/property:res-qa-dedupe-001?status=pending',
+    ),
+    { params: Promise.resolve({ propertyId: 'property:res-qa-dedupe-001' }) },
   );
   const body = (await suggestions.json()) as { items: Array<{ id: string }> };
   assert.equal(suggestions.status, 200);
@@ -3388,10 +3400,10 @@ void test('supports manual property qa add and archive flow', async () => {
       body: JSON.stringify({
         question: 'Is the hot tub open all year?',
         answer: 'Yes, but quiet hours start at 10 PM.',
-        createdBy: 'host-manual-1'
-      })
+        createdBy: 'host-manual-1',
+      }),
     }),
-    { params: Promise.resolve({ propertyId: 'property:manual-001' }) }
+    { params: Promise.resolve({ propertyId: 'property:manual-001' }) },
   );
   const createdBody = (await created.json()) as { item: { id: string; status: string } };
   assert.equal(created.status, 200);
@@ -3403,20 +3415,23 @@ void test('supports manual property qa add and archive flow', async () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         status: 'archived',
-        updatedBy: 'host-manual-1'
-      })
+        updatedBy: 'host-manual-1',
+      }),
     }),
-    { params: Promise.resolve({ id: createdBody.item.id }) }
+    { params: Promise.resolve({ id: createdBody.item.id }) },
   );
   assert.equal(archived.status, 200);
 
   const entries = await getPropertyQaEntries(
     new Request('http://localhost/api/command-center/qa/property:manual-001'),
-    { params: Promise.resolve({ propertyId: 'property:manual-001' }) }
+    { params: Promise.resolve({ propertyId: 'property:manual-001' }) },
   );
   const entriesBody = (await entries.json()) as { items: Array<{ id: string; status: string }> };
   assert.equal(entries.status, 200);
-  assert.equal(entriesBody.items.some((item) => item.id === createdBody.item.id && item.status === 'archived'), true);
+  assert.equal(
+    entriesBody.items.some((item) => item.id === createdBody.item.id && item.status === 'archived'),
+    true,
+  );
 });
 
 void test('rejects qa suggestion and updates status', async () => {
@@ -3429,14 +3444,16 @@ void test('rejects qa suggestion and updates status', async () => {
         eventId,
         reservationId: 'res-qa-reject-001',
         guestName: 'Riley',
-        message: 'Can I check in at 7am?'
-      })
-    })
+        message: 'Can I check in at 7am?',
+      }),
+    }),
   );
 
   const pending = await getQaSuggestionsByProperty(
-    new Request('http://localhost/api/command-center/qa-suggestions/property:res-qa-reject-001?status=pending'),
-    { params: Promise.resolve({ propertyId: 'property:res-qa-reject-001' }) }
+    new Request(
+      'http://localhost/api/command-center/qa-suggestions/property:res-qa-reject-001?status=pending',
+    ),
+    { params: Promise.resolve({ propertyId: 'property:res-qa-reject-001' }) },
   );
   const pendingBody = (await pending.json()) as { items: Array<{ id: string }> };
   const suggestionId = String(pendingBody.items[0]?.id);
@@ -3445,17 +3462,24 @@ void test('rejects qa suggestion and updates status', async () => {
     new Request(`http://localhost/api/command-center/qa-suggestions/${suggestionId}/reject`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ actorId: 'qa-reviewer-2', reason: 'one-off question' })
+      body: JSON.stringify({ actorId: 'qa-reviewer-2', reason: 'one-off question' }),
     }),
-    { params: Promise.resolve({ id: suggestionId }) }
+    { params: Promise.resolve({ id: suggestionId }) },
   );
   assert.equal(rejected.status, 200);
 
   const rejectedList = await getQaSuggestionsByProperty(
-    new Request('http://localhost/api/command-center/qa-suggestions/property:res-qa-reject-001?status=rejected'),
-    { params: Promise.resolve({ propertyId: 'property:res-qa-reject-001' }) }
+    new Request(
+      'http://localhost/api/command-center/qa-suggestions/property:res-qa-reject-001?status=rejected',
+    ),
+    { params: Promise.resolve({ propertyId: 'property:res-qa-reject-001' }) },
   );
-  const rejectedBody = (await rejectedList.json()) as { items: Array<{ id: string; status: string }> };
+  const rejectedBody = (await rejectedList.json()) as {
+    items: Array<{ id: string; status: string }>;
+  };
   assert.equal(rejectedList.status, 200);
-  assert.equal(rejectedBody.items.some((item) => item.id === suggestionId && item.status === 'rejected'), true);
+  assert.equal(
+    rejectedBody.items.some((item) => item.id === suggestionId && item.status === 'rejected'),
+    true,
+  );
 });
