@@ -4,6 +4,13 @@ declare module '@clerk/nextjs' {
   export function ClerkProvider(props: { children: ReactNode }): JSX.Element;
   export function SignIn(): JSX.Element;
   export function UserButton(): JSX.Element;
+
+  type UseAuthReturn = {
+    getToken: () => Promise<string | null>;
+    userId: string | null;
+    isSignedIn: boolean;
+  };
+  export function useAuth(): UseAuthReturn;
 }
 
 declare module '@clerk/nextjs/server' {
