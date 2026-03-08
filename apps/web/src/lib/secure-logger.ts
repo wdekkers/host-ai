@@ -103,6 +103,16 @@ export function redactForLogs(value: unknown, depth = 0): unknown {
   return String(value);
 }
 
+export function log(level: 'info' | 'warn', event: string, data?: Record<string, unknown>): void {
+  const payload = {
+    level,
+    event,
+    ...(redactForLogs(data ?? {}) as Record<string, unknown>),
+    timestamp: new Date().toISOString(),
+  };
+  console.log(JSON.stringify(payload));
+}
+
 type ApiErrorInput = {
   route: string;
   error: unknown;
