@@ -3,7 +3,11 @@ import { NextResponse } from 'next/server';
 
 import { handleApiError } from '@/lib/secure-logger';
 
-import { getRoiMetricsInSingleton, recordGuestReviewInSingleton, recordRefundInSingleton } from '@/lib/command-center-store';
+import {
+  getRoiMetricsInSingleton,
+  recordGuestReviewInSingleton,
+  recordRefundInSingleton,
+} from '@/lib/command-center-store';
 
 export async function GET() {
   return NextResponse.json({ metrics: getRoiMetricsInSingleton() });

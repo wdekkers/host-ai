@@ -9,7 +9,7 @@ export async function GET() {
     queueSummary: {
       total: items.length,
       pending: items.filter((item) => item.status === 'pending' || item.status === 'edited').length,
-      approved: items.filter((item) => item.status === 'approved').length
-    }
+      approved: items.filter((item) => item.status === 'approved').length,
+    },
   });
 }

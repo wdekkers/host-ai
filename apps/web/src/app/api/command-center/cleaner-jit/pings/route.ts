@@ -3,12 +3,15 @@ import { NextResponse } from 'next/server';
 
 import { handleApiError } from '@/lib/secure-logger';
 
-import { createCleanerJitPingInSingleton, listCleanerJitPingsInSingleton } from '@/lib/command-center-store';
+import {
+  createCleanerJitPingInSingleton,
+  listCleanerJitPingsInSingleton,
+} from '@/lib/command-center-store';
 
 const createCleanerPingSchema = z.object({
   reservationId: z.string().min(1),
   cleanerId: z.string().min(1),
-  reason: z.string().min(1)
+  reason: z.string().min(1),
 });
 
 export async function GET(request: Request) {

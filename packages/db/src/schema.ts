@@ -1,4 +1,13 @@
-import { integer, jsonb, pgSchema, primaryKey, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import {
+  integer,
+  jsonb,
+  pgSchema,
+  primaryKey,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
 
 export const waltSchema = pgSchema('walt');
 
@@ -9,13 +18,13 @@ export const events = waltSchema.table('events', {
   propertyId: uuid('property_id'),
   aggregateId: text('aggregate_id').notNull(),
   payload: jsonb('payload').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull()
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
 });
 
 export const organizations = waltSchema.table('organizations', {
   id: uuid('id').primaryKey(),
   name: text('name').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull()
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
 });
 
 export const organizationMemberships = waltSchema.table(
@@ -26,11 +35,11 @@ export const organizationMemberships = waltSchema.table(
       .references(() => organizations.id),
     userId: text('user_id').notNull(),
     role: text('role').notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull()
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
   },
   (table) => ({
-    pk: primaryKey({ columns: [table.organizationId, table.userId] })
-  })
+    pk: primaryKey({ columns: [table.organizationId, table.userId] }),
+  }),
 );
 
 export const propertyAccess = waltSchema.table(
@@ -41,11 +50,11 @@ export const propertyAccess = waltSchema.table(
       .references(() => organizations.id),
     userId: text('user_id').notNull(),
     propertyId: text('property_id').notNull(),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull()
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
   },
   (table) => ({
-    pk: primaryKey({ columns: [table.organizationId, table.userId, table.propertyId] })
-  })
+    pk: primaryKey({ columns: [table.organizationId, table.userId, table.propertyId] }),
+  }),
 );
 
 export const properties = waltSchema.table('properties', {
@@ -55,7 +64,7 @@ export const properties = waltSchema.table('properties', {
   city: text('city'),
   status: text('status'),
   raw: jsonb('raw').notNull(),
-  syncedAt: timestamp('synced_at', { withTimezone: true }).notNull()
+  syncedAt: timestamp('synced_at', { withTimezone: true }).notNull(),
 });
 
 export const reservations = waltSchema.table('reservations', {
@@ -78,7 +87,7 @@ export const reservations = waltSchema.table('reservations', {
   propertyId: text('property_id'),
   propertyName: text('property_name'),
   raw: jsonb('raw').notNull(),
-  syncedAt: timestamp('synced_at', { withTimezone: true }).notNull()
+  syncedAt: timestamp('synced_at', { withTimezone: true }).notNull(),
 });
 
 export const propertyFaqs = waltSchema.table(
@@ -91,11 +100,11 @@ export const propertyFaqs = waltSchema.table(
     answer: text('answer'),
     examples: jsonb('examples').$type<string[]>(),
     analysedAt: timestamp('analysed_at', { withTimezone: true }).notNull(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull()
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
   },
   (table) => ({
-    uniq: uniqueIndex('property_faqs_property_category_idx').on(table.propertyId, table.category)
-  })
+    uniq: uniqueIndex('property_faqs_property_category_idx').on(table.propertyId, table.category),
+  }),
 );
 
 export const messages = waltSchema.table(
@@ -112,9 +121,12 @@ export const messages = waltSchema.table(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
     suggestion: text('suggestion'),
     suggestionGeneratedAt: timestamp('suggestion_generated_at', { withTimezone: true }),
-    raw: jsonb('raw').notNull()
+    raw: jsonb('raw').notNull(),
   },
   (table) => ({
-    uniq: uniqueIndex('messages_reservation_created_at_idx').on(table.reservationId, table.createdAt)
-  })
+    uniq: uniqueIndex('messages_reservation_created_at_idx').on(
+      table.reservationId,
+      table.createdAt,
+    ),
+  }),
 );

@@ -11,7 +11,9 @@ const outputDir = join(__dirname, '..', 'src', 'generated');
 
 await mkdir(outputDir, { recursive: true });
 
-const files = (await readdir(specsDir)).filter((name) => name.endsWith('.yaml') || name.endsWith('.yml'));
+const files = (await readdir(specsDir)).filter(
+  (name) => name.endsWith('.yaml') || name.endsWith('.yml'),
+);
 if (files.length === 0) {
   console.log('No third-party OpenAPI YAML files found.');
   process.exit(0);

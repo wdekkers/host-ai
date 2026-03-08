@@ -45,7 +45,7 @@ type ReservationFetchResult = {
 
 async function fetchReservationsForProperty(
   config: { apiKey: string; baseUrl: string },
-  propertyId: string
+  propertyId: string,
 ): Promise<ReservationFetchResult> {
   const all: Record<string, unknown>[] = [];
   let pages = 0;
@@ -87,7 +87,7 @@ async function fetchReservationsForProperty(
 
 async function fetchMessagesForReservation(
   config: { apiKey: string; baseUrl: string },
-  reservationId: string
+  reservationId: string,
 ): Promise<Record<string, unknown>[]> {
   const url = new URL(`/v2/reservations/${reservationId}/messages`, config.baseUrl);
   url.searchParams.set('per_page', '100');
@@ -131,7 +131,13 @@ export async function POST() {
   let propertyCount = 0;
   let reservationCount = 0;
   let messageCount = 0;
-  const propertyDetails: { id: string; name: string; reservationsFetched: number; pages: number; apiTotal: number | null }[] = [];
+  const propertyDetails: {
+    id: string;
+    name: string;
+    reservationsFetched: number;
+    pages: number;
+    apiTotal: number | null;
+  }[] = [];
 
   for (const rawProp of rawProperties) {
     const normalizedProp = normalizeProperty(rawProp);
@@ -142,12 +148,22 @@ export async function POST() {
       .values({ ...normalizedProp, syncedAt: now })
       .onConflictDoUpdate({
         target: properties.id,
-        set: { ...normalizedProp, syncedAt: now }
+        set: { ...normalizedProp, syncedAt: now },
       });
     propertyCount++;
 
-    const { reservations: rawReservations, pages, apiTotal } = await fetchReservationsForProperty(config, normalizedProp.id);
-    propertyDetails.push({ id: normalizedProp.id, name: normalizedProp.name, reservationsFetched: rawReservations.length, pages, apiTotal });
+    const {
+      reservations: rawReservations,
+      pages,
+      apiTotal,
+    } = await fetchReservationsForProperty(config, normalizedProp.id);
+    propertyDetails.push({
+      id: normalizedProp.id,
+      name: normalizedProp.name,
+      reservationsFetched: rawReservations.length,
+      pages,
+      apiTotal,
+    });
 
     for (const raw of rawReservations) {
       const rawMessages = await fetchMessagesForReservation(config, String(raw.id));
@@ -157,7 +173,7 @@ export async function POST() {
       const enriched: Record<string, unknown> = {
         ...raw,
         properties: [{ id: normalizedProp.id, name: normalizedProp.name }],
-        guest: { ...guest, id: null, email: null }
+        guest: { ...guest, id: null, email: null },
       };
 
       const normalized = normalizeReservation(enriched);
@@ -166,7 +182,7 @@ export async function POST() {
         .values({ ...normalized, syncedAt: now })
         .onConflictDoUpdate({
           target: reservations.id,
-          set: { ...normalized, syncedAt: now }
+          set: { ...normalized, syncedAt: now },
         });
       reservationCount++;
 
@@ -182,5 +198,10 @@ export async function POST() {
     }
   }
 
-  return NextResponse.json({ properties: propertyCount, reservations: reservationCount, messages: messageCount, debug: propertyDetails });
+  return NextResponse.json({
+    properties: propertyCount,
+    reservations: reservationCount,
+    messages: messageCount,
+    debug: propertyDetails,
+  });
 }

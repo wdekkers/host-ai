@@ -3,6 +3,7 @@
 Generated on 2026-02-28 from `docs/gpt-planning/AI_STR_OS_Full_Plan_v1.pdf` and `docs/plan/AI_STR_OS_Epics_and_Stories.md`.
 
 ## Epics
+
 - [Epic 1: Product North Star and Operating Principles](epics/E01-product-north-star-and-operating-principles.md)
   - [Story 1.1: A control-tower dashboard that shows what matters today](stories/E01/S01-a-control-tower-dashboard-that-shows-what-matters-today.md)
   - [Story 1.2: AI to draft responses with visible context and sources](stories/E01/S02-ai-to-draft-responses-with-visible-context-and-sources.md)

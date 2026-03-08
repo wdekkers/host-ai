@@ -5,7 +5,7 @@ import { getHospitableApiConfig } from '@/lib/integrations-env';
 
 const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(25),
-  status: z.string().optional()
+  status: z.string().optional(),
 });
 
 type Reservation = {
@@ -44,15 +44,18 @@ export async function GET(request: Request) {
   const config = getHospitableApiConfig();
   if (!config) {
     return NextResponse.json(
-      { error: 'Hospitable outbound API is not configured. Set HOSPITABLE_API_KEY and HOSPITABLE_BASE_URL.' },
-      { status: 503 }
+      {
+        error:
+          'Hospitable outbound API is not configured. Set HOSPITABLE_API_KEY and HOSPITABLE_BASE_URL.',
+      },
+      { status: 503 },
     );
   }
 
   const url = new URL(request.url);
   const parsedQuery = querySchema.safeParse({
     limit: url.searchParams.get('limit') ?? '25',
-    status: url.searchParams.get('status') ?? undefined
+    status: url.searchParams.get('status') ?? undefined,
   });
 
   if (!parsedQuery.success) {
@@ -69,17 +72,17 @@ export async function GET(request: Request) {
     method: 'GET',
     headers: {
       accept: 'application/json',
-      authorization: `Bearer ${config.apiKey}`
-    }
+      authorization: `Bearer ${config.apiKey}`,
+    },
   });
 
   if (!providerResponse.ok) {
     return NextResponse.json(
       {
         error: `Hospitable API request failed with ${providerResponse.status}.`,
-        providerStatus: providerResponse.status
+        providerStatus: providerResponse.status,
       },
-      { status: 502 }
+      { status: 502 },
     );
   }
 
@@ -103,6 +106,6 @@ export async function GET(request: Request) {
   return NextResponse.json({
     source: 'hospitable-api',
     count: items.length,
-    items
+    items,
   });
 }

@@ -16,6 +16,9 @@ void test('manager can execute automation but cannot configure platform', () => 
 void test('maps route + method to permission', () => {
   assert.equal(getPermissionForApiRoute('/api/command-center/queue', 'GET'), 'dashboard.read');
   assert.equal(getPermissionForApiRoute('/api/command-center/queue/123', 'PATCH'), 'drafts.write');
-  assert.equal(getPermissionForApiRoute('/api/command-center/autopilot/rollback', 'POST'), 'automation.execute');
+  assert.equal(
+    getPermissionForApiRoute('/api/command-center/autopilot/rollback', 'POST'),
+    'automation.execute',
+  );
   assert.equal(getPermissionForApiRoute('/api/integrations/hospitable', 'POST'), null);
 });

@@ -11,13 +11,13 @@ export async function GET() {
         inboundChannel: 'webhook',
         status: 'live',
         mode: 'v1',
-        outboundApiConfigured: hospitableApiConfigured
+        outboundApiConfigured: hospitableApiConfigured,
       },
       airbnb: {
         status: 'in-progress',
         mode: 'partner-track',
-        blocksV1: false
-      }
-    }
+        blocksV1: false,
+      },
+    },
   });
 }

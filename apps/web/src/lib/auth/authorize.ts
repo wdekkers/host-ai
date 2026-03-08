@@ -5,7 +5,11 @@ import { hasPermission } from './permissions';
 
 import type { AuthContext, Permission } from '@walt/contracts';
 
-type RouteHandler<TContext> = (request: Request, context: TContext, authContext: AuthContext) => Promise<Response>;
+type RouteHandler<TContext> = (
+  request: Request,
+  context: TContext,
+  authContext: AuthContext,
+) => Promise<Response>;
 
 export async function requireAuth(request: Request): Promise<AuthContext | Response> {
   const authContext = await getAuthContext(request);
@@ -15,7 +19,10 @@ export async function requireAuth(request: Request): Promise<AuthContext | Respo
   return authContext;
 }
 
-export async function requirePermission(request: Request, permission: Permission): Promise<AuthContext | Response> {
+export async function requirePermission(
+  request: Request,
+  permission: Permission,
+): Promise<AuthContext | Response> {
   const authContext = await getAuthContext(request);
   if (!authContext) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

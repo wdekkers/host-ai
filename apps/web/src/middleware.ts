@@ -28,7 +28,10 @@ async function getUserRole(userId: string): Promise<Role> {
 export default clerkMiddleware(async (auth, request) => {
   const pathname = request.nextUrl.pathname;
 
-  if (isPublicRoute(request) || (pathname === '/api/integrations/hospitable' && request.method === 'POST')) {
+  if (
+    isPublicRoute(request) ||
+    (pathname === '/api/integrations/hospitable' && request.method === 'POST')
+  ) {
     return NextResponse.next();
   }
 
@@ -57,5 +60,7 @@ export default clerkMiddleware(async (auth, request) => {
 });
 
 export const config = {
-  matcher: ['/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)']
+  matcher: [
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+  ],
 };

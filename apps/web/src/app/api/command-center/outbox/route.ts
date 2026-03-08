@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 
-import { listOutboxRecordsInSingleton, retryOutboxByDestinationInSingleton } from '@/lib/command-center-store';
+import {
+  listOutboxRecordsInSingleton,
+  retryOutboxByDestinationInSingleton,
+} from '@/lib/command-center-store';
 
 const validDestinations = new Set(['audit-log', 'projection-updater', 'notifications']);
 const validStatuses = new Set(['pending', 'retrying', 'delivered', 'failed']);
@@ -32,34 +35,38 @@ export async function GET(request: Request) {
     items: listOutboxRecordsInSingleton({
       destination: destination as 'audit-log' | 'projection-updater' | 'notifications' | undefined,
       status: status as 'pending' | 'retrying' | 'delivered' | 'failed' | undefined,
-      limit
-    })
+      limit,
+    }),
   });
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => null)) as
-    | {
-        destination?: 'audit-log' | 'projection-updater' | 'notifications';
-        limit?: number;
-      }
-    | null;
+  const body = (await request.json().catch(() => null)) as {
+    destination?: 'audit-log' | 'projection-updater' | 'notifications';
+    limit?: number;
+  } | null;
 
   if (!body || !body.destination || !validDestinations.has(body.destination)) {
-    return NextResponse.json({ error: 'destination is required and must be valid.' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'destination is required and must be valid.' },
+      { status: 400 },
+    );
   }
 
-  if (body.limit !== undefined && (!Number.isInteger(body.limit) || body.limit < 1 || body.limit > 200)) {
+  if (
+    body.limit !== undefined &&
+    (!Number.isInteger(body.limit) || body.limit < 1 || body.limit > 200)
+  ) {
     return NextResponse.json({ error: 'limit must be between 1 and 200.' }, { status: 400 });
   }
 
   const items = retryOutboxByDestinationInSingleton({
     destination: body.destination,
-    limit: body.limit
+    limit: body.limit,
   });
 
   return NextResponse.json({
     processed: items.length,
-    items
+    items,
   });
 }
