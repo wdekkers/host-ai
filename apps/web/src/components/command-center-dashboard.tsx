@@ -64,7 +64,12 @@ type MonitoringAlertsResponse = {
 type IncidentAlertsResponse = {
   items: Array<{
     incidentId: string;
-    incidentState: 'active' | 'negotiation' | 'resolution-accepted' | 'recovery-closed' | 'normalized';
+    incidentState:
+      | 'active'
+      | 'negotiation'
+      | 'resolution-accepted'
+      | 'recovery-closed'
+      | 'normalized';
     hostAlert: string;
     guestDraft: string;
     urgency: 'immediate' | 'high' | 'normal';
@@ -161,7 +166,12 @@ type PropertyOverviewResponse = {
 
 type IntegrationStatusResponse = {
   integrations: {
-    hospitable: { inboundChannel: string; status: string; mode: string; outboundApiConfigured?: boolean };
+    hospitable: {
+      inboundChannel: string;
+      status: string;
+      mode: string;
+      outboundApiConfigured?: boolean;
+    };
     airbnb: { status: string; mode: string; blocksV1: boolean };
   };
 };
@@ -219,7 +229,13 @@ type HospitableMessagesResponse = {
 type PropertyBrainProfileResponse = {
   profile: {
     propertyId: string;
-    coreRules: { checkInTime?: string; checkOutTime?: string; maxOccupancy?: number; quietHours?: string; houseRules: string[] };
+    coreRules: {
+      checkInTime?: string;
+      checkOutTime?: string;
+      maxOccupancy?: number;
+      quietHours?: string;
+      houseRules: string[];
+    };
     cleanerPreferences: { channel?: string; contact?: string };
     amenityImportanceIndex?: Record<string, 'critical' | 'important' | 'enhancer'>;
     voiceProfile?: { tone?: string; emojiUse?: string; strictness?: string; apologyStyle?: string };
@@ -330,7 +346,7 @@ const statusColor: Record<QueueItem['status'], string> = {
   edited: '#6366f1',
   approved: '#059669',
   sent: '#0ea5e9',
-  rejected: '#b91c1c'
+  rejected: '#b91c1c',
 };
 
 const nextIncidentState: Record<Incident['state'], Incident['state'] | null> = {
@@ -338,38 +354,53 @@ const nextIncidentState: Record<Incident['state'], Incident['state'] | null> = {
   negotiation: 'resolution-accepted',
   'resolution-accepted': 'recovery-closed',
   'recovery-closed': 'normalized',
-  normalized: null
+  normalized: null,
 };
 
 export function CommandCenterDashboard() {
   const [items, setItems] = useState<QueueItem[]>([]);
   const [landing, setLanding] = useState<LandingResponse | null>(null);
   const [todayPriorities, setTodayPriorities] = useState<TodayPrioritiesResponse['items']>([]);
-  const [proactiveSuggestions, setProactiveSuggestions] = useState<ProactiveSuggestionsResponse['items']>([]);
+  const [proactiveSuggestions, setProactiveSuggestions] = useState<
+    ProactiveSuggestionsResponse['items']
+  >([]);
   const [cleanerJitPings, setCleanerJitPings] = useState<CleanerJitResponse['items']>([]);
   const [monitoringAlerts, setMonitoringAlerts] = useState<MonitoringAlertsResponse['items']>([]);
   const [incidentAlerts, setIncidentAlerts] = useState<IncidentAlertsResponse['items']>([]);
   const [outboxItems, setOutboxItems] = useState<OutboxResponse['items']>([]);
   const [approvalProjectionTotal, setApprovalProjectionTotal] = useState(0);
   const [propertyProjectionTotal, setPropertyProjectionTotal] = useState(0);
-  const [entityCounts, setEntityCounts] = useState({ properties: 0, guests: 0, reservations: 0, messages: 0 });
+  const [entityCounts, setEntityCounts] = useState({
+    properties: 0,
+    guests: 0,
+    reservations: 0,
+    messages: 0,
+  });
   const [propertyOverview, setPropertyOverview] = useState<PropertyOverviewResponse['items']>([]);
-  const [integrationStatus, setIntegrationStatus] = useState<IntegrationStatusResponse['integrations'] | null>(null);
+  const [integrationStatus, setIntegrationStatus] = useState<
+    IntegrationStatusResponse['integrations'] | null
+  >(null);
   const [roiDashboard, setRoiDashboard] = useState<RoiDashboardResponse['metrics'] | null>(null);
-  const [adoptionMetrics, setAdoptionMetrics] = useState<AdoptionMetricsResponse['adoption'] | null>(null);
+  const [adoptionMetrics, setAdoptionMetrics] = useState<
+    AdoptionMetricsResponse['adoption'] | null
+  >(null);
   const [twilioOpsNumber, setTwilioOpsNumber] = useState('+15550000000');
   const [twilioThreads, setTwilioThreads] = useState<TwilioThreadsResponse['threads']>([]);
   const [twilioCleanerId, setTwilioCleanerId] = useState('cleaner-001');
   const [twilioCleanerPhone, setTwilioCleanerPhone] = useState('+15550001234');
   const [twilioReadinessSignal, setTwilioReadinessSignal] = useState('READY');
-  const [hospitableMessages, setHospitableMessages] = useState<HospitableMessagesResponse['items']>([]);
+  const [hospitableMessages, setHospitableMessages] = useState<HospitableMessagesResponse['items']>(
+    [],
+  );
   const [hospitableHasMoreOlder, setHospitableHasMoreOlder] = useState(false);
   const [hospitableBeforeCursor, setHospitableBeforeCursor] = useState<string | null>(null);
   const [isLoadingHospitableMessages, setIsLoadingHospitableMessages] = useState(false);
   const [isLoadingOlderHospitableMessages, setIsLoadingOlderHospitableMessages] = useState(false);
   const [propertyBrainPropertyId, setPropertyBrainPropertyId] = useState('property:res-demo-001');
   const [propertyBrain, setPropertyBrain] = useState<PropertyBrainProfileResponse | null>(null);
-  const [riskIntelligence, setRiskIntelligence] = useState<RiskIntelligenceResponse['assessment'] | null>(null);
+  const [riskIntelligence, setRiskIntelligence] = useState<
+    RiskIntelligenceResponse['assessment'] | null
+  >(null);
   const [riskIntelligenceInputs, setRiskIntelligenceInputs] = useState({
     bookingPatternSignals: 55,
     profileQualitySignals: 45,
@@ -377,15 +408,23 @@ export function CommandCenterDashboard() {
     policyViolationFlags: 30,
     positiveReviewHistory: 65,
     responseQuality: 70,
-    explicitRuleAcceptance: 75
+    explicitRuleAcceptance: 75,
   });
-  const [portfolioTrends, setPortfolioTrends] = useState<PortfolioTrendsResponse['trends'] | null>(null);
-  const [operatingProfile, setOperatingProfile] = useState<OperatingProfileResponse['profile'] | null>(null);
+  const [portfolioTrends, setPortfolioTrends] = useState<PortfolioTrendsResponse['trends'] | null>(
+    null,
+  );
+  const [operatingProfile, setOperatingProfile] = useState<
+    OperatingProfileResponse['profile'] | null
+  >(null);
   const [autopilotActions, setAutopilotActions] = useState<AutopilotActionsResponse['items']>([]);
-  const [selectedPropertyState, setSelectedPropertyState] = useState<PropertyStateResponse['state'] | null>(null);
+  const [selectedPropertyState, setSelectedPropertyState] = useState<
+    PropertyStateResponse['state'] | null
+  >(null);
   const [cleanerPingReservationId, setCleanerPingReservationId] = useState('res-demo-001');
   const [cleanerPingCleanerId, setCleanerPingCleanerId] = useState('cleaner-001');
-  const [cleanerPingReason, setCleanerPingReason] = useState('Early check-in request requires readiness confirmation.');
+  const [cleanerPingReason, setCleanerPingReason] = useState(
+    'Early check-in request requires readiness confirmation.',
+  );
   const [awareness, setAwareness] = useState<AwarenessResponse['awareness'] | null>(null);
   const [recentEvents, setRecentEvents] = useState<AwarenessResponse['recentEvents']>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -411,7 +450,9 @@ export function CommandCenterDashboard() {
   const [webhookMessage, setWebhookMessage] = useState('Can we check in early around 1pm?');
   const [queueIntentFilter, setQueueIntentFilter] = useState('all');
   const [queueRiskFilter, setQueueRiskFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
-  const [queueTrustFilter, setQueueTrustFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
+  const [queueTrustFilter, setQueueTrustFilter] = useState<'all' | 'low' | 'medium' | 'high'>(
+    'all',
+  );
   const [actionError, setActionError] = useState<string | null>(null);
   const [twilioError, setTwilioError] = useState<string | null>(null);
   const [hospitableMessagesError, setHospitableMessagesError] = useState<string | null>(null);
@@ -426,22 +467,24 @@ export function CommandCenterDashboard() {
   const [riskInputs, setRiskInputs] = useState({
     globalTrustScore: 82,
     localRiskTolerance: 35,
-    localIncidentSignals: 2
+    localIncidentSignals: 2,
   });
   const [riskRecommendation, setRiskRecommendation] = useState<RiskRecommendation | null>(null);
   const [experienceRiskInputs, setExperienceRiskInputs] = useState({
     fixImpact: 70,
     guestSensitivity: 65,
-    nightsRemaining: 2
+    nightsRemaining: 2,
   });
-  const [experienceRiskAssessment, setExperienceRiskAssessment] = useState<ExperienceRiskAssessment | null>(null);
+  const [experienceRiskAssessment, setExperienceRiskAssessment] =
+    useState<ExperienceRiskAssessment | null>(null);
 
   const [strategyInputs, setStrategyInputs] = useState({
     localSeverity: 90,
     portfolioTrend: 'low-risk' as 'low-risk' | 'high-risk',
-    portfolioConfidence: 95
+    portfolioConfidence: 95,
   });
-  const [strategyRecommendation, setStrategyRecommendation] = useState<StrategyRecommendation | null>(null);
+  const [strategyRecommendation, setStrategyRecommendation] =
+    useState<StrategyRecommendation | null>(null);
 
   const handleAuthStatus = (status: number) => {
     if (status === 401) {
@@ -457,7 +500,9 @@ export function CommandCenterDashboard() {
   };
 
   const priorities = useMemo(() => {
-    const pending = items.filter((item) => item.status === 'pending' || item.status === 'edited').length;
+    const pending = items.filter(
+      (item) => item.status === 'pending' || item.status === 'edited',
+    ).length;
     const approved = items.filter((item) => item.status === 'approved').length;
     const sentToday = items.filter((item) => item.status === 'sent').length;
     return { pending, approved, sentToday };
@@ -494,36 +539,37 @@ export function CommandCenterDashboard() {
         propertyBrainRes,
         portfolioTrendsRes,
         operatingProfileRes,
-        autopilotActionsRes
-      ] =
-        await Promise.all([
-          fetch(`/api/command-center/queue?${buildQueueFilterQuery(queueIntentFilter, queueRiskFilter, queueTrustFilter)}`),
-          fetch('/api/command-center/landing'),
-          fetch('/api/command-center/awareness'),
-          fetch('/api/command-center/incidents'),
-          fetch('/api/command-center/rollout'),
-          fetch('/api/command-center/training-signals'),
-          fetch('/api/command-center/roi'),
-          fetch('/api/command-center/audit'),
-          fetch('/api/command-center/priorities?limit=6'),
-          fetch('/api/command-center/proactive-suggestions?limit=6'),
-          fetch('/api/command-center/cleaner-jit/pings'),
-          fetch('/api/command-center/monitoring?limit=8'),
-          fetch('/api/command-center/incidents/alerts'),
-          fetch('/api/command-center/outbox?limit=10'),
-          fetch('/api/command-center/projections?kind=approval-queue&limit=10'),
-          fetch('/api/command-center/projections?kind=property-state&limit=10'),
-          fetch('/api/command-center/entities?kind=all'),
-          fetch('/api/command-center/properties/overview'),
-          fetch('/api/integrations/status'),
-          fetch('/api/command-center/metrics/roi'),
-          fetch('/api/command-center/metrics/adoption'),
-          fetch('/api/integrations/twilio/threads'),
-          fetch(`/api/command-center/property-brain/${encodeURIComponent(propertyBrainPropertyId)}`),
-          fetch('/api/command-center/portfolio-trends'),
-          fetch('/api/command-center/operating-profile'),
-          fetch('/api/command-center/autopilot')
-        ]);
+        autopilotActionsRes,
+      ] = await Promise.all([
+        fetch(
+          `/api/command-center/queue?${buildQueueFilterQuery(queueIntentFilter, queueRiskFilter, queueTrustFilter)}`,
+        ),
+        fetch('/api/command-center/landing'),
+        fetch('/api/command-center/awareness'),
+        fetch('/api/command-center/incidents'),
+        fetch('/api/command-center/rollout'),
+        fetch('/api/command-center/training-signals'),
+        fetch('/api/command-center/roi'),
+        fetch('/api/command-center/audit'),
+        fetch('/api/command-center/priorities?limit=6'),
+        fetch('/api/command-center/proactive-suggestions?limit=6'),
+        fetch('/api/command-center/cleaner-jit/pings'),
+        fetch('/api/command-center/monitoring?limit=8'),
+        fetch('/api/command-center/incidents/alerts'),
+        fetch('/api/command-center/outbox?limit=10'),
+        fetch('/api/command-center/projections?kind=approval-queue&limit=10'),
+        fetch('/api/command-center/projections?kind=property-state&limit=10'),
+        fetch('/api/command-center/entities?kind=all'),
+        fetch('/api/command-center/properties/overview'),
+        fetch('/api/integrations/status'),
+        fetch('/api/command-center/metrics/roi'),
+        fetch('/api/command-center/metrics/adoption'),
+        fetch('/api/integrations/twilio/threads'),
+        fetch(`/api/command-center/property-brain/${encodeURIComponent(propertyBrainPropertyId)}`),
+        fetch('/api/command-center/portfolio-trends'),
+        fetch('/api/command-center/operating-profile'),
+        fetch('/api/command-center/autopilot'),
+      ]);
 
       const responses = [
         queueRes,
@@ -551,10 +597,12 @@ export function CommandCenterDashboard() {
         propertyBrainRes,
         portfolioTrendsRes,
         operatingProfileRes,
-        autopilotActionsRes
+        autopilotActionsRes,
       ];
 
-      const denied = responses.find((response) => response.status === 401 || response.status === 403);
+      const denied = responses.find(
+        (response) => response.status === 401 || response.status === 403,
+      );
       if (denied) {
         handleAuthStatus(denied.status);
         return;
@@ -582,8 +630,10 @@ export function CommandCenterDashboard() {
       const approvalProjectionData = (await approvalProjectionRes.json()) as ProjectionsResponse;
       const propertyProjectionData = (await propertyProjectionRes.json()) as ProjectionsResponse;
       const entitiesData = (await entitiesRes.json()) as EntitiesResponse;
-      const propertiesOverviewData = (await propertiesOverviewRes.json()) as PropertyOverviewResponse;
-      const integrationStatusData = (await integrationStatusRes.json()) as IntegrationStatusResponse;
+      const propertiesOverviewData =
+        (await propertiesOverviewRes.json()) as PropertyOverviewResponse;
+      const integrationStatusData =
+        (await integrationStatusRes.json()) as IntegrationStatusResponse;
       const roiDashboardData = (await roiDashboardRes.json()) as RoiDashboardResponse;
       const adoptionMetricsData = (await adoptionMetricsRes.json()) as AdoptionMetricsResponse;
       const twilioThreadsData = (await twilioThreadsRes.json()) as TwilioThreadsResponse;
@@ -613,7 +663,7 @@ export function CommandCenterDashboard() {
         properties: entitiesData.entities?.properties?.length ?? 0,
         guests: entitiesData.entities?.guests?.length ?? 0,
         reservations: entitiesData.entities?.reservations?.length ?? 0,
-        messages: entitiesData.entities?.messages?.length ?? 0
+        messages: entitiesData.entities?.messages?.length ?? 0,
       });
       setPropertyOverview(propertiesOverviewData.items ?? []);
       setIntegrationStatus(integrationStatusData.integrations ?? null);
@@ -666,8 +716,8 @@ export function CommandCenterDashboard() {
       body: JSON.stringify({
         reservationId: `res-${Date.now()}`,
         intent: 'check-in-reminder',
-        context: { guestName: 'Guest', checkInTime: '4:00 PM' }
-      })
+        context: { guestName: 'Guest', checkInTime: '4:00 PM' },
+      }),
     });
     if (!response.ok) {
       handleAuthStatus(response.status);
@@ -676,14 +726,18 @@ export function CommandCenterDashboard() {
     await loadDashboard();
   };
 
-  const updateDraft = async (id: string, action: 'edit' | 'approve' | 'send' | 'reject', body?: string) => {
+  const updateDraft = async (
+    id: string,
+    action: 'edit' | 'approve' | 'send' | 'reject',
+    body?: string,
+  ) => {
     if (isReadOnly) {
       return;
     }
     const response = await fetch(`/api/command-center/queue/${id}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ action, body })
+      body: JSON.stringify({ action, body }),
     });
     if (response.status === 401 || response.status === 403) {
       handleAuthStatus(response.status);
@@ -701,7 +755,7 @@ export function CommandCenterDashboard() {
     await fetch('/api/command-center/drafts/from-inbound', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ draftId: id })
+      body: JSON.stringify({ draftId: id }),
     });
     await loadDashboard();
   };
@@ -710,7 +764,7 @@ export function CommandCenterDashboard() {
     await fetch('/api/command-center/incidents', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ summary: incidentSummary })
+      body: JSON.stringify({ summary: incidentSummary }),
     });
     await loadDashboard();
   };
@@ -724,7 +778,7 @@ export function CommandCenterDashboard() {
     await fetch(`/api/command-center/incidents/${incident.id}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ next })
+      body: JSON.stringify({ next }),
     });
     await loadDashboard();
   };
@@ -733,7 +787,7 @@ export function CommandCenterDashboard() {
     const response = await fetch('/api/command-center/risk', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(riskInputs)
+      body: JSON.stringify(riskInputs),
     });
     const data = (await response.json()) as { recommendation: RiskRecommendation };
     setRiskRecommendation(data.recommendation);
@@ -743,7 +797,7 @@ export function CommandCenterDashboard() {
     const response = await fetch('/api/command-center/strategy', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(strategyInputs)
+      body: JSON.stringify(strategyInputs),
     });
     const data = (await response.json()) as { recommendation: StrategyRecommendation };
     setStrategyRecommendation(data.recommendation);
@@ -756,7 +810,7 @@ export function CommandCenterDashboard() {
     const response = await fetch('/api/command-center/rollout', {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ action: 'complete-internal-validation' })
+      body: JSON.stringify({ action: 'complete-internal-validation' }),
     });
     if (!response.ok) {
       handleAuthStatus(response.status);
@@ -769,10 +823,12 @@ export function CommandCenterDashboard() {
     const response = await fetch('/api/command-center/onboarding', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ hostId: onboardHostId })
+      body: JSON.stringify({ hostId: onboardHostId }),
     });
     const body = (await response.json()) as { error?: string };
-    setOnboardingMessage(response.ok ? `Onboarded ${onboardHostId}` : body.error ?? 'Onboarding failed');
+    setOnboardingMessage(
+      response.ok ? `Onboarded ${onboardHostId}` : (body.error ?? 'Onboarding failed'),
+    );
     await loadDashboard();
   };
 
@@ -780,7 +836,7 @@ export function CommandCenterDashboard() {
     await fetch('/api/command-center/roi', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ action: 'refund', amount: roiRefundAmount })
+      body: JSON.stringify({ action: 'refund', amount: roiRefundAmount }),
     });
     await loadDashboard();
   };
@@ -789,7 +845,7 @@ export function CommandCenterDashboard() {
     await fetch('/api/command-center/roi', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ action: 'review', rating: roiReviewRating })
+      body: JSON.stringify({ action: 'review', rating: roiReviewRating }),
     });
     await loadDashboard();
   };
@@ -829,8 +885,8 @@ export function CommandCenterDashboard() {
         reservationId: webhookReservationId,
         guestName: webhookGuestName,
         message: webhookMessage,
-        sentAt: new Date().toISOString()
-      })
+        sentAt: new Date().toISOString(),
+      }),
     });
     await loadDashboard();
   };
@@ -838,8 +894,12 @@ export function CommandCenterDashboard() {
   const loadHospitableMessages = async () => {
     setIsLoadingHospitableMessages(true);
     try {
-      const response = await fetch(buildHospitableMessagesPath({ reservationId: webhookReservationId }));
-      const body = (await response.json()) as { error?: string } & Partial<HospitableMessagesResponse>;
+      const response = await fetch(
+        buildHospitableMessagesPath({ reservationId: webhookReservationId }),
+      );
+      const body = (await response.json()) as {
+        error?: string;
+      } & Partial<HospitableMessagesResponse>;
       if (!response.ok) {
         setHospitableMessagesError(body.error ?? 'Failed to load Hospitable messages.');
         return;
@@ -852,7 +912,8 @@ export function CommandCenterDashboard() {
         if (!hospitableMessagesContainerRef.current) {
           return;
         }
-        hospitableMessagesContainerRef.current.scrollTop = hospitableMessagesContainerRef.current.scrollHeight;
+        hospitableMessagesContainerRef.current.scrollTop =
+          hospitableMessagesContainerRef.current.scrollHeight;
       });
     } finally {
       setIsLoadingHospitableMessages(false);
@@ -873,10 +934,12 @@ export function CommandCenterDashboard() {
       const response = await fetch(
         buildHospitableMessagesPath({
           reservationId: webhookReservationId,
-          beforeCursor: hospitableBeforeCursor
-        })
+          beforeCursor: hospitableBeforeCursor,
+        }),
       );
-      const body = (await response.json()) as { error?: string } & Partial<HospitableMessagesResponse>;
+      const body = (await response.json()) as {
+        error?: string;
+      } & Partial<HospitableMessagesResponse>;
       if (!response.ok) {
         setHospitableMessagesError(body.error ?? 'Failed to load older Hospitable messages.');
         return;
@@ -910,7 +973,7 @@ export function CommandCenterDashboard() {
   const loadConversationDetail = async (draftId: string) => {
     const [contextRes, historyRes] = await Promise.all([
       fetch(`/api/command-center/context/${draftId}`),
-      fetch(`/api/command-center/history/${draftId}`)
+      fetch(`/api/command-center/history/${draftId}`),
     ]);
 
     const contextData = (await contextRes.json()) as { context?: ConversationContext };
@@ -920,7 +983,9 @@ export function CommandCenterDashboard() {
 
     if (contextData.context?.reservationId) {
       const propertyId = `property:${contextData.context.reservationId}`;
-      const propertyStateRes = await fetch(`/api/command-center/property-state/${encodeURIComponent(propertyId)}`);
+      const propertyStateRes = await fetch(
+        `/api/command-center/property-state/${encodeURIComponent(propertyId)}`,
+      );
       const propertyStateData = (await propertyStateRes.json()) as PropertyStateResponse;
       setSelectedPropertyState(propertyStateData.state ?? null);
     } else {
@@ -935,8 +1000,8 @@ export function CommandCenterDashboard() {
       body: JSON.stringify({
         reservationId: cleanerPingReservationId,
         cleanerId: cleanerPingCleanerId,
-        reason: cleanerPingReason
-      })
+        reason: cleanerPingReason,
+      }),
     });
     await loadDashboard();
   };
@@ -947,8 +1012,8 @@ export function CommandCenterDashboard() {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         status,
-        etaMinutes: status === 'ETA' ? 30 : undefined
-      })
+        etaMinutes: status === 'ETA' ? 30 : undefined,
+      }),
     });
     await loadDashboard();
   };
@@ -962,7 +1027,7 @@ export function CommandCenterDashboard() {
     const response = await fetch('/api/command-center/experience-risk', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(experienceRiskInputs)
+      body: JSON.stringify(experienceRiskInputs),
     });
     const data = (await response.json()) as ExperienceRiskAssessment;
     setExperienceRiskAssessment(data);
@@ -978,8 +1043,8 @@ export function CommandCenterDashboard() {
       body: JSON.stringify({
         reservationId: webhookReservationId,
         intent: 'wifi-help',
-        body: webhookMessage
-      })
+        body: webhookMessage,
+      }),
     });
     if (!response.ok) {
       handleAuthStatus(response.status);
@@ -995,7 +1060,7 @@ export function CommandCenterDashboard() {
     const response = await fetch('/api/command-center/autopilot/rollback', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ actionId, reason: 'Host override from command center' })
+      body: JSON.stringify({ actionId, reason: 'Host override from command center' }),
     });
     if (!response.ok) {
       handleAuthStatus(response.status);
@@ -1011,7 +1076,7 @@ export function CommandCenterDashboard() {
     const response = await fetch('/api/command-center/operating-profile', {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ strictness })
+      body: JSON.stringify({ strictness }),
     });
     if (!response.ok) {
       handleAuthStatus(response.status);
@@ -1026,8 +1091,8 @@ export function CommandCenterDashboard() {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         propertyId: propertyBrainPropertyId,
-        ...riskIntelligenceInputs
-      })
+        ...riskIntelligenceInputs,
+      }),
     });
     const body = (await response.json()) as RiskIntelligenceResponse;
     setRiskIntelligence(body.assessment ?? null);
@@ -1037,45 +1102,53 @@ export function CommandCenterDashboard() {
     if (isReadOnly) {
       return;
     }
-    const response = await fetch(`/api/command-center/property-brain/${encodeURIComponent(propertyBrainPropertyId)}`, {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        coreRules: {
-          checkInTime: '16:00',
-          checkOutTime: '10:00',
-          maxOccupancy: 6,
-          quietHours: '22:00-08:00',
-          houseRules: ['No events', 'No smoking']
-        },
-        earlyLatePolicy: {
-          earlyCheckIn: {
-            earliestTime: '12:00',
-            latestTime: '15:00',
-            priceTiers: [{ fromHour: 12, toHour: 14, amountUsd: 35 }]
+    const response = await fetch(
+      `/api/command-center/property-brain/${encodeURIComponent(propertyBrainPropertyId)}`,
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          coreRules: {
+            checkInTime: '16:00',
+            checkOutTime: '10:00',
+            maxOccupancy: 6,
+            quietHours: '22:00-08:00',
+            houseRules: ['No events', 'No smoking'],
           },
-          lateCheckout: {
-            earliestTime: '10:00',
-            latestTime: '13:00',
-            priceTiers: [{ fromHour: 11, toHour: 13, amountUsd: 45 }]
-          }
-        },
-        arrivalGuide: {
-          entryMethod: 'smart-lock',
-          lockInstructions: 'Use guest code and press Enter.',
-          parkingInstructions: 'Use assigned driveway only.'
-        },
-        cleanerPreferences: {
-          channel: 'sms',
-          contact: '+1-555-0102',
-          requiredFormat: 'READY | ETA:<minutes> | NOT_READY:<reason>',
-          escalationAfterMinutes: 15
-        },
-        amenityPolicies: {
-          poolHeating: { available: true, temperatureRangeF: '78-84', leadTimeHours: 4, caveats: ['Weather dependent'] }
-        }
-      })
-    });
+          earlyLatePolicy: {
+            earlyCheckIn: {
+              earliestTime: '12:00',
+              latestTime: '15:00',
+              priceTiers: [{ fromHour: 12, toHour: 14, amountUsd: 35 }],
+            },
+            lateCheckout: {
+              earliestTime: '10:00',
+              latestTime: '13:00',
+              priceTiers: [{ fromHour: 11, toHour: 13, amountUsd: 45 }],
+            },
+          },
+          arrivalGuide: {
+            entryMethod: 'smart-lock',
+            lockInstructions: 'Use guest code and press Enter.',
+            parkingInstructions: 'Use assigned driveway only.',
+          },
+          cleanerPreferences: {
+            channel: 'sms',
+            contact: '+1-555-0102',
+            requiredFormat: 'READY | ETA:<minutes> | NOT_READY:<reason>',
+            escalationAfterMinutes: 15,
+          },
+          amenityPolicies: {
+            poolHeating: {
+              available: true,
+              temperatureRangeF: '78-84',
+              leadTimeHours: 4,
+              caveats: ['Weather dependent'],
+            },
+          },
+        }),
+      },
+    );
     if (!response.ok) {
       handleAuthStatus(response.status);
       return;
@@ -1091,8 +1164,8 @@ export function CommandCenterDashboard() {
         opsNumber: twilioOpsNumber,
         cleanerId: twilioCleanerId,
         cleanerPhone: twilioCleanerPhone,
-        readinessSignal: twilioReadinessSignal
-      })
+        readinessSignal: twilioReadinessSignal,
+      }),
     });
 
     if (!response.ok) {
@@ -1111,15 +1184,16 @@ export function CommandCenterDashboard() {
     <main style={{ fontFamily: 'system-ui', margin: '2rem', maxWidth: 1180 }}>
       <h1 style={{ marginBottom: '0.5rem' }}>Walt Command Center</h1>
       <p style={{ marginTop: 0, color: '#475569' }}>
-        Control tower for communication, operational awareness, risk intelligence, and incident recovery.
+        Control tower for communication, operational awareness, risk intelligence, and incident
+        recovery.
       </p>
 
       {landing ? (
         <section style={{ ...panelStyle, marginBottom: '1rem' }}>
           <strong style={{ fontSize: 13 }}>Default Landing:</strong> {landing.defaultScreen}
           <span style={{ marginLeft: '0.75rem', fontSize: 13, color: '#475569' }}>
-            Queue {landing.queueSummary.total} total / {landing.queueSummary.pending} pending / {landing.queueSummary.approved}{' '}
-            approved
+            Queue {landing.queueSummary.total} total / {landing.queueSummary.pending} pending /{' '}
+            {landing.queueSummary.approved} approved
           </span>
         </section>
       ) : null}
@@ -1129,7 +1203,7 @@ export function CommandCenterDashboard() {
           display: 'grid',
           gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
           gap: '0.75rem',
-          marginBottom: '1rem'
+          marginBottom: '1rem',
         }}
       >
         <PriorityCard label="Pending / Edited" value={priorities.pending} />
@@ -1145,11 +1219,14 @@ export function CommandCenterDashboard() {
           marginBottom: '1rem',
           border: '1px solid #e2e8f0',
           borderRadius: 8,
-          padding: '0.6rem'
+          padding: '0.6rem',
         }}
       >
         <strong style={{ fontSize: 13 }}>Queue Filters</strong>
-        <select value={queueIntentFilter} onChange={(event) => setQueueIntentFilter(event.target.value)}>
+        <select
+          value={queueIntentFilter}
+          onChange={(event) => setQueueIntentFilter(event.target.value)}
+        >
           <option value="all">all intents</option>
           <option value="booking-inquiry">booking-inquiry</option>
           <option value="early-check-in-request">early-check-in-request</option>
@@ -1162,7 +1239,9 @@ export function CommandCenterDashboard() {
         </select>
         <select
           value={queueRiskFilter}
-          onChange={(event) => setQueueRiskFilter(event.target.value as 'all' | 'low' | 'medium' | 'high')}
+          onChange={(event) =>
+            setQueueRiskFilter(event.target.value as 'all' | 'low' | 'medium' | 'high')
+          }
         >
           <option value="all">all risk</option>
           <option value="low">low</option>
@@ -1171,7 +1250,9 @@ export function CommandCenterDashboard() {
         </select>
         <select
           value={queueTrustFilter}
-          onChange={(event) => setQueueTrustFilter(event.target.value as 'all' | 'low' | 'medium' | 'high')}
+          onChange={(event) =>
+            setQueueTrustFilter(event.target.value as 'all' | 'low' | 'medium' | 'high')
+          }
         >
           <option value="all">all trust</option>
           <option value="low">low</option>
@@ -1183,7 +1264,14 @@ export function CommandCenterDashboard() {
         </button>
       </section>
 
-      <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+      <section
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '1rem',
+          marginBottom: '1rem',
+        }}
+      >
         <article style={panelStyle}>
           <h2 style={{ marginTop: 0 }}>Hospitable Inbound Webhook</h2>
           <p style={{ margin: '0.2rem 0 0.5rem', color: '#475569', fontSize: 13 }}>
@@ -1245,7 +1333,8 @@ export function CommandCenterDashboard() {
           <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: 13 }}>
             {propertyOverview.slice(0, 8).map((property) => (
               <li key={property.propertyId}>
-                {property.propertyId} [{property.readiness}] pending={property.pendingCount} high-risk={property.highRiskCount}
+                {property.propertyId} [{property.readiness}] pending={property.pendingCount}{' '}
+                high-risk={property.highRiskCount}
                 {property.blockers.length > 0 ? ` blockers: ${property.blockers.join('; ')}` : ''}
               </li>
             ))}
@@ -1253,16 +1342,27 @@ export function CommandCenterDashboard() {
         )}
       </section>
 
-      <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+      <section
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '1rem',
+          marginBottom: '1rem',
+        }}
+      >
         <article style={panelStyle}>
           <h3 style={{ marginTop: 0, marginBottom: '0.5rem' }}>Integration Status</h3>
           {integrationStatus ? (
             <>
               <p style={{ margin: '0.2rem 0', fontSize: 13 }}>
-                Hospitable: {integrationStatus.hospitable.status} ({integrationStatus.hospitable.inboundChannel})
+                Hospitable: {integrationStatus.hospitable.status} (
+                {integrationStatus.hospitable.inboundChannel})
               </p>
               <p style={{ margin: '0.2rem 0', fontSize: 13 }}>
-                Hospitable outbound API: {integrationStatus.hospitable.outboundApiConfigured ? 'configured' : 'not configured'}
+                Hospitable outbound API:{' '}
+                {integrationStatus.hospitable.outboundApiConfigured
+                  ? 'configured'
+                  : 'not configured'}
               </p>
               <p style={{ margin: '0.2rem 0', fontSize: 13 }}>
                 Airbnb: {integrationStatus.airbnb.status} ({integrationStatus.airbnb.mode})
@@ -1278,7 +1378,8 @@ export function CommandCenterDashboard() {
           {roiDashboard ? (
             <>
               <p style={{ margin: '0.2rem 0', fontSize: 13 }}>
-                Response {roiDashboard.responseTimeMinutes}m | Throughput {roiDashboard.throughputPerDay}/day
+                Response {roiDashboard.responseTimeMinutes}m | Throughput{' '}
+                {roiDashboard.throughputPerDay}/day
               </p>
               <p style={{ margin: '0.2rem 0', fontSize: 13 }}>
                 Incident {roiDashboard.incidentRate}% | Recovery {roiDashboard.recoveryRate}%
@@ -1291,8 +1392,9 @@ export function CommandCenterDashboard() {
           ) : null}
           {adoptionMetrics ? (
             <p style={{ margin: '0.35rem 0 0', fontSize: 13, color: '#475569' }}>
-              Adoption {adoptionMetrics.workflowAdoptionRate}% | Command-center-first {adoptionMetrics.commandCenterFirstRate}% |
-              Anxiety index {adoptionMetrics.reducedAnxietyIndex}
+              Adoption {adoptionMetrics.workflowAdoptionRate}% | Command-center-first{' '}
+              {adoptionMetrics.commandCenterFirstRate}% | Anxiety index{' '}
+              {adoptionMetrics.reducedAnxietyIndex}
             </p>
           ) : null}
         </article>
@@ -1303,9 +1405,24 @@ export function CommandCenterDashboard() {
         <p style={{ margin: '0.2rem 0 0.5rem', color: '#475569', fontSize: 13 }}>
           Single ops number plus cleaner 1:1 readiness threads for JIT workflows.
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 1fr auto', gap: '0.4rem', marginBottom: '0.5rem' }}>
-          <input value={twilioOpsNumber} onChange={(event) => setTwilioOpsNumber(event.target.value)} placeholder="ops number" />
-          <input value={twilioCleanerId} onChange={(event) => setTwilioCleanerId(event.target.value)} placeholder="cleaner id" />
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1.2fr 1fr 1fr 1fr auto',
+            gap: '0.4rem',
+            marginBottom: '0.5rem',
+          }}
+        >
+          <input
+            value={twilioOpsNumber}
+            onChange={(event) => setTwilioOpsNumber(event.target.value)}
+            placeholder="ops number"
+          />
+          <input
+            value={twilioCleanerId}
+            onChange={(event) => setTwilioCleanerId(event.target.value)}
+            placeholder="cleaner id"
+          />
           <input
             value={twilioCleanerPhone}
             onChange={(event) => setTwilioCleanerPhone(event.target.value)}
@@ -1320,7 +1437,9 @@ export function CommandCenterDashboard() {
             Upsert
           </button>
         </div>
-        {twilioError ? <p style={{ margin: '0 0 0.5rem', color: '#b91c1c', fontSize: 13 }}>{twilioError}</p> : null}
+        {twilioError ? (
+          <p style={{ margin: '0 0 0.5rem', color: '#b91c1c', fontSize: 13 }}>{twilioError}</p>
+        ) : null}
         {twilioThreads.length === 0 ? (
           <p style={{ margin: 0, color: '#64748b' }}>No cleaner threads yet.</p>
         ) : (
@@ -1340,23 +1459,45 @@ export function CommandCenterDashboard() {
           Pulls recent messages from the configured Hospitable API.
         </p>
         <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.5rem' }}>
-          <button onClick={() => void loadHospitableMessages()} style={buttonStyle('#334155')} disabled={isLoadingHospitableMessages}>
+          <button
+            onClick={() => void loadHospitableMessages()}
+            style={buttonStyle('#334155')}
+            disabled={isLoadingHospitableMessages}
+          >
             Load Messages
           </button>
         </div>
-        {hospitableMessagesError ? <p style={{ margin: '0 0 0.5rem', color: '#b91c1c', fontSize: 13 }}>{hospitableMessagesError}</p> : null}
-        {isLoadingHospitableMessages ? <p style={{ margin: '0 0 0.5rem', color: '#64748b', fontSize: 13 }}>Loading latest messages...</p> : null}
+        {hospitableMessagesError ? (
+          <p style={{ margin: '0 0 0.5rem', color: '#b91c1c', fontSize: 13 }}>
+            {hospitableMessagesError}
+          </p>
+        ) : null}
+        {isLoadingHospitableMessages ? (
+          <p style={{ margin: '0 0 0.5rem', color: '#64748b', fontSize: 13 }}>
+            Loading latest messages...
+          </p>
+        ) : null}
         {hospitableMessages.length === 0 ? (
           <p style={{ margin: 0, color: '#64748b' }}>No messages loaded.</p>
         ) : (
           <div
             ref={hospitableMessagesContainerRef}
             onScroll={handleHospitableMessagesScroll}
-            style={{ maxHeight: 240, overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.5rem' }}
+            style={{
+              maxHeight: 240,
+              overflowY: 'auto',
+              border: '1px solid #e2e8f0',
+              borderRadius: 8,
+              padding: '0.5rem',
+            }}
           >
             {hospitableHasMoreOlder ? (
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem' }}>
-                <button onClick={() => void loadOlderHospitableMessages()} style={buttonStyle('#475569')} disabled={isLoadingOlderHospitableMessages}>
+                <button
+                  onClick={() => void loadOlderHospitableMessages()}
+                  style={buttonStyle('#475569')}
+                  disabled={isLoadingOlderHospitableMessages}
+                >
                   {isLoadingOlderHospitableMessages ? 'Loading older...' : 'Load older messages'}
                 </button>
               </div>
@@ -1372,7 +1513,14 @@ export function CommandCenterDashboard() {
         )}
       </section>
 
-      <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+      <section
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '1rem',
+          marginBottom: '1rem',
+        }}
+      >
         <article style={panelStyle}>
           <h2 style={{ marginTop: 0 }}>Event Backbone Snapshot</h2>
           <p style={{ margin: '0.2rem 0', fontSize: 13, color: '#475569' }}>
@@ -1395,14 +1543,29 @@ export function CommandCenterDashboard() {
 
         <article style={panelStyle}>
           <h2 style={{ marginTop: 0 }}>Normalized Entities</h2>
-          <p style={{ margin: '0.2rem 0', fontSize: 13, color: '#475569' }}>Properties: {entityCounts.properties}</p>
-          <p style={{ margin: '0.2rem 0', fontSize: 13, color: '#475569' }}>Guests: {entityCounts.guests}</p>
-          <p style={{ margin: '0.2rem 0', fontSize: 13, color: '#475569' }}>Reservations: {entityCounts.reservations}</p>
-          <p style={{ margin: '0.2rem 0', fontSize: 13, color: '#475569' }}>Messages: {entityCounts.messages}</p>
+          <p style={{ margin: '0.2rem 0', fontSize: 13, color: '#475569' }}>
+            Properties: {entityCounts.properties}
+          </p>
+          <p style={{ margin: '0.2rem 0', fontSize: 13, color: '#475569' }}>
+            Guests: {entityCounts.guests}
+          </p>
+          <p style={{ margin: '0.2rem 0', fontSize: 13, color: '#475569' }}>
+            Reservations: {entityCounts.reservations}
+          </p>
+          <p style={{ margin: '0.2rem 0', fontSize: 13, color: '#475569' }}>
+            Messages: {entityCounts.messages}
+          </p>
         </article>
       </section>
 
-      <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+      <section
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '1rem',
+          marginBottom: '1rem',
+        }}
+      >
         <article style={panelStyle}>
           <h2 style={{ marginTop: 0 }}>Property Brain</h2>
           <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.5rem' }}>
@@ -1433,17 +1596,21 @@ export function CommandCenterDashboard() {
                 {propertyBrain.profile.cleanerPreferences.contact ?? ''}
               </p>
               <p style={{ margin: '0.2rem 0', fontSize: 13, color: '#475569' }}>
-                Voice: {propertyBrain.profile.voiceProfile?.tone ?? 'n/a'} / emoji {propertyBrain.profile.voiceProfile?.emojiUse ?? 'n/a'}
+                Voice: {propertyBrain.profile.voiceProfile?.tone ?? 'n/a'} / emoji{' '}
+                {propertyBrain.profile.voiceProfile?.emojiUse ?? 'n/a'}
               </p>
               <p style={{ margin: '0.2rem 0', fontSize: 13, color: '#475569' }}>
-                Amenity index entries: {Object.keys(propertyBrain.profile.amenityImportanceIndex ?? {}).length}
+                Amenity index entries:{' '}
+                {Object.keys(propertyBrain.profile.amenityImportanceIndex ?? {}).length}
               </p>
               <p style={{ margin: '0.2rem 0', fontSize: 13, color: '#475569' }}>
-                Always-manual scenarios: {propertyBrain.profile.escalationMatrix?.alwaysManualScenarios?.length ?? 0}
+                Always-manual scenarios:{' '}
+                {propertyBrain.profile.escalationMatrix?.alwaysManualScenarios?.length ?? 0}
               </p>
               <p style={{ margin: '0.35rem 0 0', fontSize: 13 }}>
                 Completeness: core={String(propertyBrain.completeness.coreRules)} early/late=
-                {String(propertyBrain.completeness.earlyLatePolicy)} arrival={String(propertyBrain.completeness.arrivalGuide)} voice=
+                {String(propertyBrain.completeness.earlyLatePolicy)} arrival=
+                {String(propertyBrain.completeness.arrivalGuide)} voice=
                 {String(propertyBrain.completeness.voiceProfile ?? false)} escalation=
                 {String(propertyBrain.completeness.escalationMatrix ?? false)}
               </p>
@@ -1454,7 +1621,14 @@ export function CommandCenterDashboard() {
         </article>
       </section>
 
-      <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+      <section
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '1rem',
+          marginBottom: '1rem',
+        }}
+      >
         <article style={panelStyle}>
           <h2 style={{ marginTop: 0 }}>Incident Recovery State Machine</h2>
           <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
@@ -1471,7 +1645,12 @@ export function CommandCenterDashboard() {
             {incidents.map((incident) => (
               <div
                 key={incident.id}
-                style={{ border: '1px solid #e2e8f0', borderRadius: 6, padding: '0.6rem', fontSize: 14 }}
+                style={{
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 6,
+                  padding: '0.6rem',
+                  fontSize: 14,
+                }}
               >
                 <div style={{ fontWeight: 600 }}>{incident.summary}</div>
                 <div style={{ color: '#64748b', marginBottom: '0.35rem' }}>{incident.state}</div>
@@ -1488,7 +1667,14 @@ export function CommandCenterDashboard() {
         </article>
       </section>
 
-      <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+      <section
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '1rem',
+          marginBottom: '1rem',
+        }}
+      >
         <article style={panelStyle}>
           <h2 style={{ marginTop: 0 }}>Controlled Rollout</h2>
           {rollout ? (
@@ -1537,7 +1723,9 @@ export function CommandCenterDashboard() {
               Onboard Host
             </button>
           </div>
-          {onboardingMessage && <p style={{ margin: '0.3rem 0', color: '#475569' }}>{onboardingMessage}</p>}
+          {onboardingMessage && (
+            <p style={{ margin: '0.3rem 0', color: '#475569' }}>{onboardingMessage}</p>
+          )}
           <div style={{ fontSize: 13 }}>
             <strong>Onboarded Hosts</strong>
             <ul style={{ margin: '0.3rem 0 0', paddingLeft: '1rem' }}>
@@ -1549,18 +1737,28 @@ export function CommandCenterDashboard() {
         </article>
       </section>
 
-      <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+      <section
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '1rem',
+          marginBottom: '1rem',
+        }}
+      >
         <article style={panelStyle}>
           <h2 style={{ marginTop: 0 }}>Training Signals From Edits</h2>
           <p style={{ margin: '0.2rem 0 0.5rem', color: '#475569', fontSize: 13 }}>
             Capturing host edits for model quality improvement.
           </p>
           <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: 13 }}>
-            {trainingSignals.slice(-5).reverse().map((signal, index) => (
-              <li key={`${signal.draftId}-${signal.capturedAt}-${index}`}>
-                {signal.intent}: {signal.after}
-              </li>
-            ))}
+            {trainingSignals
+              .slice(-5)
+              .reverse()
+              .map((signal, index) => (
+                <li key={`${signal.draftId}-${signal.capturedAt}-${index}`}>
+                  {signal.intent}: {signal.after}
+                </li>
+              ))}
           </ul>
         </article>
 
@@ -1573,7 +1771,9 @@ export function CommandCenterDashboard() {
               <p style={{ margin: '0.2rem 0' }}>
                 Total refunds: ${roiMetrics.totalRefundAmount.toFixed(2)}
               </p>
-              <p style={{ margin: '0.2rem 0' }}>Review average: {roiMetrics.reviewAverage.toFixed(2)}</p>
+              <p style={{ margin: '0.2rem 0' }}>
+                Review average: {roiMetrics.reviewAverage.toFixed(2)}
+              </p>
             </>
           ) : (
             <p>No ROI data yet.</p>
@@ -1605,7 +1805,14 @@ export function CommandCenterDashboard() {
         </article>
       </section>
 
-      <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+      <section
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '1rem',
+          marginBottom: '1rem',
+        }}
+      >
         <article style={panelStyle}>
           <h2 style={{ marginTop: 0 }}>Dedicated Audit Timeline</h2>
           <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.5rem' }}>
@@ -1619,7 +1826,13 @@ export function CommandCenterDashboard() {
               value={auditActionFilter}
               onChange={(event) =>
                 setAuditActionFilter(
-                  event.target.value as 'all' | 'created' | 'edited' | 'approved' | 'sent' | 'rejected'
+                  event.target.value as
+                    | 'all'
+                    | 'created'
+                    | 'edited'
+                    | 'approved'
+                    | 'sent'
+                    | 'rejected',
                 )
               }
             >
@@ -1646,7 +1859,15 @@ export function CommandCenterDashboard() {
               Apply
             </button>
           </div>
-          <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: 13, maxHeight: 180, overflow: 'auto' }}>
+          <ul
+            style={{
+              margin: 0,
+              paddingLeft: '1rem',
+              fontSize: 13,
+              maxHeight: 180,
+              overflow: 'auto',
+            }}
+          >
             {auditTimeline.slice(0, 25).map((entry, index) => (
               <li key={`${entry.draftId}-${entry.timestamp}-${index}`}>
                 {entry.action} by {entry.actorId} on {entry.draftId}
@@ -1666,17 +1887,23 @@ export function CommandCenterDashboard() {
           <Field
             label="Global Trust Score"
             value={riskInputs.globalTrustScore}
-            onChange={(value) => setRiskInputs((current) => ({ ...current, globalTrustScore: value }))}
+            onChange={(value) =>
+              setRiskInputs((current) => ({ ...current, globalTrustScore: value }))
+            }
           />
           <Field
             label="Local Risk Tolerance"
             value={riskInputs.localRiskTolerance}
-            onChange={(value) => setRiskInputs((current) => ({ ...current, localRiskTolerance: value }))}
+            onChange={(value) =>
+              setRiskInputs((current) => ({ ...current, localRiskTolerance: value }))
+            }
           />
           <Field
             label="Local Incident Signals"
             value={riskInputs.localIncidentSignals}
-            onChange={(value) => setRiskInputs((current) => ({ ...current, localIncidentSignals: value }))}
+            onChange={(value) =>
+              setRiskInputs((current) => ({ ...current, localIncidentSignals: value }))
+            }
           />
           <button onClick={() => void evaluateRisk()} style={buttonStyle('#b45309')}>
             Evaluate Risk
@@ -1694,28 +1921,43 @@ export function CommandCenterDashboard() {
         </article>
       </section>
 
-      <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+      <section
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '1rem',
+          marginBottom: '1rem',
+        }}
+      >
         <article style={panelStyle}>
           <h2 style={{ marginTop: 0 }}>Risk/Trust Intelligence</h2>
           <Field
             label="Booking Pattern Signals"
             value={riskIntelligenceInputs.bookingPatternSignals}
-            onChange={(value) => setRiskIntelligenceInputs((current) => ({ ...current, bookingPatternSignals: value }))}
+            onChange={(value) =>
+              setRiskIntelligenceInputs((current) => ({ ...current, bookingPatternSignals: value }))
+            }
           />
           <Field
             label="Profile Quality Signals"
             value={riskIntelligenceInputs.profileQualitySignals}
-            onChange={(value) => setRiskIntelligenceInputs((current) => ({ ...current, profileQualitySignals: value }))}
+            onChange={(value) =>
+              setRiskIntelligenceInputs((current) => ({ ...current, profileQualitySignals: value }))
+            }
           />
           <Field
             label="Language Cues"
             value={riskIntelligenceInputs.languageCues}
-            onChange={(value) => setRiskIntelligenceInputs((current) => ({ ...current, languageCues: value }))}
+            onChange={(value) =>
+              setRiskIntelligenceInputs((current) => ({ ...current, languageCues: value }))
+            }
           />
           <Field
             label="Policy Violation Flags"
             value={riskIntelligenceInputs.policyViolationFlags}
-            onChange={(value) => setRiskIntelligenceInputs((current) => ({ ...current, policyViolationFlags: value }))}
+            onChange={(value) =>
+              setRiskIntelligenceInputs((current) => ({ ...current, policyViolationFlags: value }))
+            }
           />
           <button onClick={() => void evaluateRiskIntelligence()} style={buttonStyle('#1d4ed8')}>
             Evaluate Intelligence
@@ -1725,7 +1967,9 @@ export function CommandCenterDashboard() {
               <p style={{ margin: '0.2rem 0' }}>
                 Risk: {riskIntelligence.riskScore} | Trust: {riskIntelligence.trustScore}
               </p>
-              <p style={{ margin: '0.2rem 0' }}>Recommendation: {riskIntelligence.recommendation}</p>
+              <p style={{ margin: '0.2rem 0' }}>
+                Recommendation: {riskIntelligence.recommendation}
+              </p>
               <ul style={{ margin: '0.3rem 0 0', paddingLeft: '1rem' }}>
                 {riskIntelligence.rationale.map((line, index) => (
                   <li key={`${line}-${index}`}>{line}</li>
@@ -1742,7 +1986,9 @@ export function CommandCenterDashboard() {
           </p>
           {operatingProfile ? (
             <>
-              <p style={{ margin: '0.2rem 0', fontSize: 13 }}>Current: {operatingProfile.economicSensitivity}</p>
+              <p style={{ margin: '0.2rem 0', fontSize: 13 }}>
+                Current: {operatingProfile.economicSensitivity}
+              </p>
               <input
                 type="range"
                 min={0}
@@ -1753,7 +1999,7 @@ export function CommandCenterDashboard() {
                   void fetch('/api/command-center/operating-profile', {
                     method: 'PATCH',
                     headers: { 'content-type': 'application/json' },
-                    body: JSON.stringify({ economicSensitivity: Number(event.target.value) })
+                    body: JSON.stringify({ economicSensitivity: Number(event.target.value) }),
                   }).then((response) => {
                     if (!response.ok) {
                       handleAuthStatus(response.status);
@@ -1771,27 +2017,40 @@ export function CommandCenterDashboard() {
         </article>
       </section>
 
-      <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+      <section
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '1rem',
+          marginBottom: '1rem',
+        }}
+      >
         <article style={panelStyle}>
           <h2 style={{ marginTop: 0 }}>Local-first Strategy</h2>
           <Field
             label="Local Severity"
             value={strategyInputs.localSeverity}
-            onChange={(value) => setStrategyInputs((current) => ({ ...current, localSeverity: value }))}
+            onChange={(value) =>
+              setStrategyInputs((current) => ({ ...current, localSeverity: value }))
+            }
           />
           <Field
             label="Portfolio Confidence"
             value={strategyInputs.portfolioConfidence}
-            onChange={(value) => setStrategyInputs((current) => ({ ...current, portfolioConfidence: value }))}
+            onChange={(value) =>
+              setStrategyInputs((current) => ({ ...current, portfolioConfidence: value }))
+            }
           />
-          <label style={{ display: 'block', fontSize: 13, color: '#475569', marginBottom: '0.5rem' }}>
+          <label
+            style={{ display: 'block', fontSize: 13, color: '#475569', marginBottom: '0.5rem' }}
+          >
             Portfolio Trend
             <select
               value={strategyInputs.portfolioTrend}
               onChange={(event) =>
                 setStrategyInputs((current) => ({
                   ...current,
-                  portfolioTrend: event.target.value as 'low-risk' | 'high-risk'
+                  portfolioTrend: event.target.value as 'low-risk' | 'high-risk',
                 }))
               }
               style={{ marginLeft: '0.5rem' }}
@@ -1809,7 +2068,9 @@ export function CommandCenterDashboard() {
               <p style={{ margin: '0.25rem 0 0', color: '#475569' }}>
                 Primary Driver: {strategyRecommendation.primaryDriver}
               </p>
-              <p style={{ margin: '0.25rem 0 0', color: '#475569' }}>{strategyRecommendation.note}</p>
+              <p style={{ margin: '0.25rem 0 0', color: '#475569' }}>
+                {strategyRecommendation.note}
+              </p>
             </div>
           )}
         </article>
@@ -1826,10 +2087,21 @@ export function CommandCenterDashboard() {
       <h2 style={{ marginBottom: '0.5rem' }}>Approval Queue</h2>
       {loading && <p>Loading...</p>}
       {error && <p style={{ color: '#b91c1c' }}>{error}</p>}
-      {isReadOnly && <p style={{ color: '#92400e' }}>Read-only mode: you can view data but cannot execute restricted actions.</p>}
+      {isReadOnly && (
+        <p style={{ color: '#92400e' }}>
+          Read-only mode: you can view data but cannot execute restricted actions.
+        </p>
+      )}
       {actionError && <p style={{ color: '#b91c1c' }}>{actionError}</p>}
 
-      <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+      <section
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '1rem',
+          marginBottom: '1rem',
+        }}
+      >
         <article style={panelStyle}>
           <h3 style={{ marginTop: 0, marginBottom: '0.5rem' }}>Conversation Context</h3>
           {selectedContext ? (
@@ -1842,7 +2114,7 @@ export function CommandCenterDashboard() {
                     background: '#fee2e2',
                     borderRadius: 6,
                     padding: '0.35rem 0.5rem',
-                    fontSize: 13
+                    fontSize: 13,
                   }}
                 >
                   Low-confidence sources detected. Manual review recommended.
@@ -1860,7 +2132,10 @@ export function CommandCenterDashboard() {
                     <li key={`${source.label}-${index}`}>
                       [{source.type}] {source.label}: {source.snippet}
                       {source.confidence ? (
-                        <span style={sourceConfidenceStyle(source.confidence)}> {source.confidence}</span>
+                        <span style={sourceConfidenceStyle(source.confidence)}>
+                          {' '}
+                          {source.confidence}
+                        </span>
                       ) : null}
                       {source.referenceUrl ? (
                         <a
@@ -1887,12 +2162,23 @@ export function CommandCenterDashboard() {
           {selectedHistory.length === 0 ? (
             <p>No history for selected draft yet.</p>
           ) : (
-            <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: 13, maxHeight: 230, overflow: 'auto' }}>
+            <ul
+              style={{
+                margin: 0,
+                paddingLeft: '1rem',
+                fontSize: 13,
+                maxHeight: 230,
+                overflow: 'auto',
+              }}
+            >
               {selectedHistory.map((entry, index) => (
                 <li key={`${entry.draftId}-${entry.timestamp}-${index}`}>
                   {new Date(entry.timestamp).toLocaleTimeString()} {entry.action} by {entry.actorId}
                   {entry.before || entry.after ? (
-                    <span style={{ color: '#64748b' }}> ({formatAuditPayload(entry.before, entry.after)})</span>
+                    <span style={{ color: '#64748b' }}>
+                      {' '}
+                      ({formatAuditPayload(entry.before, entry.after)})
+                    </span>
                   ) : null}
                 </li>
               ))}
@@ -1916,7 +2202,7 @@ export function CommandCenterDashboard() {
                 setActionError(
                   actionFailure instanceof Error
                     ? `${actionFailure.message} Use "Regenerate AI Draft" or retry after review.`
-                    : 'Action failed. Retry or refresh the queue.'
+                    : 'Action failed. Retry or refresh the queue.',
                 );
               }
             }}
@@ -1932,12 +2218,20 @@ export function CommandCenterDashboard() {
         ) : (
           <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: 13 }}>
             {todayPriorities.map((priority) => (
-              <li key={`${priority.draftId}-${priority.updatedAt}`} style={{ marginBottom: '0.4rem' }}>
-                <strong>{priority.priority.toUpperCase()}</strong> [{priority.risk}/{priority.trust}] {priority.intent} on{' '}
-                {priority.reservationId} ({priority.recommendedAction}) - {priority.reason}{' '}
+              <li
+                key={`${priority.draftId}-${priority.updatedAt}`}
+                style={{ marginBottom: '0.4rem' }}
+              >
+                <strong>{priority.priority.toUpperCase()}</strong> [{priority.risk}/{priority.trust}
+                ] {priority.intent} on {priority.reservationId} ({priority.recommendedAction}) -{' '}
+                {priority.reason}{' '}
                 <button
                   onClick={() => setSelectedDraftId(priority.draftId)}
-                  style={{ ...buttonStyle('#0f172a'), marginLeft: '0.35rem', padding: '0.15rem 0.5rem' }}
+                  style={{
+                    ...buttonStyle('#0f172a'),
+                    marginLeft: '0.35rem',
+                    padding: '0.15rem 0.5rem',
+                  }}
                 >
                   Open
                 </button>
@@ -1954,12 +2248,20 @@ export function CommandCenterDashboard() {
         ) : (
           <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: 13 }}>
             {proactiveSuggestions.map((suggestion) => (
-              <li key={`${suggestion.draftId}-${suggestion.kind}`} style={{ marginBottom: '0.45rem' }}>
-                <strong>{suggestion.kind}</strong> ({suggestion.priority}) for {suggestion.reservationId}: {suggestion.suggestedMessage}
+              <li
+                key={`${suggestion.draftId}-${suggestion.kind}`}
+                style={{ marginBottom: '0.45rem' }}
+              >
+                <strong>{suggestion.kind}</strong> ({suggestion.priority}) for{' '}
+                {suggestion.reservationId}: {suggestion.suggestedMessage}
                 <div style={{ color: '#64748b' }}>{suggestion.reason}</div>
                 <button
                   onClick={() => setSelectedDraftId(suggestion.draftId)}
-                  style={{ ...buttonStyle('#0f172a'), marginTop: '0.2rem', padding: '0.15rem 0.5rem' }}
+                  style={{
+                    ...buttonStyle('#0f172a'),
+                    marginTop: '0.2rem',
+                    padding: '0.15rem 0.5rem',
+                  }}
                 >
                   Open
                 </button>
@@ -1982,7 +2284,11 @@ export function CommandCenterDashboard() {
             onChange={(event) => setCleanerPingCleanerId(event.target.value)}
             placeholder="cleaner id"
           />
-          <input value={cleanerPingReason} onChange={(event) => setCleanerPingReason(event.target.value)} placeholder="reason" />
+          <input
+            value={cleanerPingReason}
+            onChange={(event) => setCleanerPingReason(event.target.value)}
+            placeholder="reason"
+          />
           <button onClick={() => void createCleanerPing()} style={buttonStyle('#475569')}>
             Create JIT Ping
           </button>
@@ -1996,13 +2302,22 @@ export function CommandCenterDashboard() {
                 <strong>{ping.reservationId}</strong> [{ping.status}] cleaner={ping.cleanerId}{' '}
                 {ping.etaMinutes ? `(ETA ${ping.etaMinutes}m)` : ''} - {ping.reason}
                 <div style={{ display: 'flex', gap: '0.35rem', marginTop: '0.2rem' }}>
-                  <button onClick={() => void respondCleanerPing(ping.id, 'READY')} style={buttonStyle('#166534')}>
+                  <button
+                    onClick={() => void respondCleanerPing(ping.id, 'READY')}
+                    style={buttonStyle('#166534')}
+                  >
                     READY
                   </button>
-                  <button onClick={() => void respondCleanerPing(ping.id, 'ETA')} style={buttonStyle('#b45309')}>
+                  <button
+                    onClick={() => void respondCleanerPing(ping.id, 'ETA')}
+                    style={buttonStyle('#b45309')}
+                  >
                     ETA
                   </button>
-                  <button onClick={() => void respondCleanerPing(ping.id, 'NOT_READY')} style={buttonStyle('#b91c1c')}>
+                  <button
+                    onClick={() => void respondCleanerPing(ping.id, 'NOT_READY')}
+                    style={buttonStyle('#b91c1c')}
+                  >
                     NOT READY
                   </button>
                 </div>
@@ -2014,7 +2329,10 @@ export function CommandCenterDashboard() {
 
       <section style={{ ...panelStyle, marginTop: '1rem' }}>
         <h3 style={{ marginTop: 0, marginBottom: '0.5rem' }}>Monitoring Alerts</h3>
-        <button onClick={() => void runMonitoringAgents()} style={{ ...buttonStyle('#334155'), marginBottom: '0.45rem' }}>
+        <button
+          onClick={() => void runMonitoringAgents()}
+          style={{ ...buttonStyle('#334155'), marginBottom: '0.45rem' }}
+        >
           Run Monitoring Sweep
         </button>
         {monitoringAlerts.length === 0 ? (
@@ -2032,23 +2350,34 @@ export function CommandCenterDashboard() {
           <div style={{ marginTop: '0.6rem', fontSize: 13 }}>
             <strong>Property State: {selectedPropertyState.readiness}</strong>
             <div>
-              Alerts: {selectedPropertyState.signals.openAlerts}, High: {selectedPropertyState.signals.highSeverityAlerts}, Pending
-              cleaner: {selectedPropertyState.signals.pendingCleanerPings}
+              Alerts: {selectedPropertyState.signals.openAlerts}, High:{' '}
+              {selectedPropertyState.signals.highSeverityAlerts}, Pending cleaner:{' '}
+              {selectedPropertyState.signals.pendingCleanerPings}
             </div>
           </div>
         ) : null}
       </section>
 
       <section style={{ ...panelStyle, marginTop: '1rem' }}>
-        <h3 style={{ marginTop: 0, marginBottom: '0.5rem' }}>Incident Host Alerts & Guest Drafts</h3>
+        <h3 style={{ marginTop: 0, marginBottom: '0.5rem' }}>
+          Incident Host Alerts & Guest Drafts
+        </h3>
         {incidentAlerts.length === 0 ? (
           <p style={{ margin: 0, color: '#64748b' }}>No active incident alerts.</p>
         ) : (
           <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: 13 }}>
             {incidentAlerts.map((alert) => (
-              <li key={`${alert.incidentId}-${alert.updatedAt}`} style={{ marginBottom: '0.45rem' }}>
-                <strong>[{alert.urgency}] {alert.incidentId}</strong> {alert.hostAlert}
-                <div style={{ color: '#64748b', marginTop: '0.15rem' }}>Guest Draft: {alert.guestDraft}</div>
+              <li
+                key={`${alert.incidentId}-${alert.updatedAt}`}
+                style={{ marginBottom: '0.45rem' }}
+              >
+                <strong>
+                  [{alert.urgency}] {alert.incidentId}
+                </strong>{' '}
+                {alert.hostAlert}
+                <div style={{ color: '#64748b', marginTop: '0.15rem' }}>
+                  Guest Draft: {alert.guestDraft}
+                </div>
               </li>
             ))}
           </ul>
@@ -2057,21 +2386,29 @@ export function CommandCenterDashboard() {
 
       <section style={{ ...panelStyle, marginTop: '1rem' }}>
         <h3 style={{ marginTop: 0, marginBottom: '0.5rem' }}>Experience Risk Scoring</h3>
-        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+        <div
+          style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', marginBottom: '0.5rem' }}
+        >
           <Field
             label="Fix Impact"
             value={experienceRiskInputs.fixImpact}
-            onChange={(value) => setExperienceRiskInputs((current) => ({ ...current, fixImpact: value }))}
+            onChange={(value) =>
+              setExperienceRiskInputs((current) => ({ ...current, fixImpact: value }))
+            }
           />
           <Field
             label="Guest Sensitivity"
             value={experienceRiskInputs.guestSensitivity}
-            onChange={(value) => setExperienceRiskInputs((current) => ({ ...current, guestSensitivity: value }))}
+            onChange={(value) =>
+              setExperienceRiskInputs((current) => ({ ...current, guestSensitivity: value }))
+            }
           />
           <Field
             label="Nights Remaining"
             value={experienceRiskInputs.nightsRemaining}
-            onChange={(value) => setExperienceRiskInputs((current) => ({ ...current, nightsRemaining: value }))}
+            onChange={(value) =>
+              setExperienceRiskInputs((current) => ({ ...current, nightsRemaining: value }))
+            }
           />
           <button onClick={() => void evaluateExperienceRisk()} style={buttonStyle('#7c2d12')}>
             Score Risk
@@ -2079,7 +2416,8 @@ export function CommandCenterDashboard() {
         </div>
         {experienceRiskAssessment ? (
           <p style={{ margin: 0, fontSize: 13 }}>
-            Score {experienceRiskAssessment.score} | Urgency {experienceRiskAssessment.communicationUrgency} | Compensation{' '}
+            Score {experienceRiskAssessment.score} | Urgency{' '}
+            {experienceRiskAssessment.communicationUrgency} | Compensation{' '}
             {experienceRiskAssessment.compensationGuidance}
           </p>
         ) : null}
@@ -2089,14 +2427,15 @@ export function CommandCenterDashboard() {
         <h3 style={{ marginTop: 0, marginBottom: '0.5rem' }}>Portfolio & Autopilot Controls</h3>
         {portfolioTrends ? (
           <p style={{ margin: '0 0 0.45rem', fontSize: 13 }}>
-            Incidents: {portfolioTrends.incidentTrend} | Refunds: {portfolioTrends.refundTrend} | Amenity reliability:{' '}
-            {portfolioTrends.amenityReliability} | Reviews: {portfolioTrends.reviewQualityTrend}
+            Incidents: {portfolioTrends.incidentTrend} | Refunds: {portfolioTrends.refundTrend} |
+            Amenity reliability: {portfolioTrends.amenityReliability} | Reviews:{' '}
+            {portfolioTrends.reviewQualityTrend}
           </p>
         ) : null}
         {operatingProfile ? (
           <p style={{ margin: '0 0 0.45rem', fontSize: 13 }}>
-            Strictness {operatingProfile.strictness} | Generosity {operatingProfile.generosity} | Cap $
-            {operatingProfile.compensationCapUsd}
+            Strictness {operatingProfile.strictness} | Generosity {operatingProfile.generosity} |
+            Cap ${operatingProfile.compensationCapUsd}
           </p>
         ) : null}
         <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.4rem' }}>
@@ -2105,7 +2444,10 @@ export function CommandCenterDashboard() {
               <button onClick={() => void evaluateAutopilot()} style={buttonStyle('#14532d')}>
                 Evaluate Autopilot
               </button>
-              <button onClick={() => void updateProfileStrictness(75)} style={buttonStyle('#1e3a8a')}>
+              <button
+                onClick={() => void updateProfileStrictness(75)}
+                style={buttonStyle('#1e3a8a')}
+              >
                 Set Strictness 75
               </button>
             </>
@@ -2119,7 +2461,11 @@ export function CommandCenterDashboard() {
                 <button
                   disabled={isReadOnly}
                   onClick={() => void rollbackAutopilot(action.id)}
-                  style={{ ...buttonStyle('#991b1b'), marginLeft: '0.35rem', padding: '0.1rem 0.45rem' }}
+                  style={{
+                    ...buttonStyle('#991b1b'),
+                    marginLeft: '0.35rem',
+                    padding: '0.1rem 0.45rem',
+                  }}
                 >
                   Rollback
                 </button>
@@ -2147,13 +2493,17 @@ function QueueCard({
   canExecute,
   onSelect,
   onUpdate,
-  onRegenerateInbound
+  onRegenerateInbound,
 }: {
   item: QueueItem;
   isSelected: boolean;
   canExecute: boolean;
   onSelect: (id: string) => void;
-  onUpdate: (id: string, action: 'edit' | 'approve' | 'send' | 'reject', body?: string) => Promise<void>;
+  onUpdate: (
+    id: string,
+    action: 'edit' | 'approve' | 'send' | 'reject',
+    body?: string,
+  ) => Promise<void>;
   onRegenerateInbound: (id: string) => Promise<void>;
 }) {
   const [body, setBody] = useState(item.body);
@@ -2165,7 +2515,7 @@ function QueueCard({
         border: `1px solid ${isSelected ? '#2563eb' : '#e2e8f0'}`,
         borderRadius: 8,
         padding: '1rem',
-        boxShadow: isSelected ? '0 0 0 1px rgba(37, 99, 235, 0.25)' : 'none'
+        boxShadow: isSelected ? '0 0 0 1px rgba(37, 99, 235, 0.25)' : 'none',
       }}
     >
       <header style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
@@ -2183,7 +2533,7 @@ function QueueCard({
             fontSize: 12,
             borderRadius: 999,
             padding: '0.15rem 0.6rem',
-            alignSelf: 'center'
+            alignSelf: 'center',
           }}
         >
           {item.status}
@@ -2203,9 +2553,16 @@ function QueueCard({
           {item.sources.map((source, idx) => (
             <li key={`${item.id}-${idx}`}>
               {source.label}: {source.snippet}
-              {source.confidence ? <span style={sourceConfidenceStyle(source.confidence)}> {source.confidence}</span> : null}
+              {source.confidence ? (
+                <span style={sourceConfidenceStyle(source.confidence)}> {source.confidence}</span>
+              ) : null}
               {source.referenceUrl ? (
-                <a href={source.referenceUrl} target="_blank" rel="noreferrer" style={{ marginLeft: '0.35rem', color: '#1d4ed8' }}>
+                <a
+                  href={source.referenceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ marginLeft: '0.35rem', color: '#1d4ed8' }}
+                >
                   source link
                 </a>
               ) : null}
@@ -2221,7 +2578,10 @@ function QueueCard({
             <li key={`${item.id}-audit-${idx}`}>
               {entry.action} by {entry.actorId} at {new Date(entry.timestamp).toLocaleTimeString()}
               {entry.before || entry.after ? (
-                <span style={{ color: '#64748b' }}> ({formatAuditPayload(entry.before, entry.after)})</span>
+                <span style={{ color: '#64748b' }}>
+                  {' '}
+                  ({formatAuditPayload(entry.before, entry.after)})
+                </span>
               ) : null}
             </li>
           ))}
@@ -2234,13 +2594,22 @@ function QueueCard({
         </button>
         {canExecute ? (
           <>
-            <button onClick={() => void onRegenerateInbound(item.id)} style={buttonStyle('#7c3aed')}>
+            <button
+              onClick={() => void onRegenerateInbound(item.id)}
+              style={buttonStyle('#7c3aed')}
+            >
               Regenerate AI Draft
             </button>
-            <button onClick={() => void onUpdate(item.id, 'edit', body)} style={buttonStyle('#334155')}>
+            <button
+              onClick={() => void onUpdate(item.id, 'edit', body)}
+              style={buttonStyle('#334155')}
+            >
               Save Edit
             </button>
-            <button onClick={() => void onUpdate(item.id, 'approve')} style={buttonStyle('#166534')}>
+            <button
+              onClick={() => void onUpdate(item.id, 'approve')}
+              style={buttonStyle('#166534')}
+            >
               Approve
             </button>
             <button onClick={() => void onUpdate(item.id, 'send')} style={buttonStyle('#0369a1')}>
@@ -2259,7 +2628,7 @@ function QueueCard({
 function Field({
   label,
   value,
-  onChange
+  onChange,
 }: {
   label: string;
   value: number;
@@ -2281,7 +2650,7 @@ function Field({
 const panelStyle: CSSProperties = {
   border: '1px solid #e2e8f0',
   borderRadius: 8,
-  padding: '0.85rem'
+  padding: '0.85rem',
 };
 
 function toIsoDateTime(localDateTime: string): string | null {
@@ -2295,7 +2664,7 @@ function toIsoDateTime(localDateTime: string): string | null {
 function buildQueueFilterQuery(
   intent: string,
   risk: 'all' | 'low' | 'medium' | 'high',
-  trust: 'all' | 'low' | 'medium' | 'high'
+  trust: 'all' | 'low' | 'medium' | 'high',
 ): string {
   const params = new URLSearchParams();
   if (intent !== 'all') {
@@ -2317,7 +2686,7 @@ function buttonStyle(color: string): CSSProperties {
     border: 0,
     borderRadius: 6,
     padding: '0.45rem 0.75rem',
-    cursor: 'pointer'
+    cursor: 'pointer',
   };
 }
 
@@ -2332,11 +2701,14 @@ function sourceConfidenceStyle(level: 'low' | 'medium' | 'high'): CSSProperties 
     background: bg,
     borderRadius: 999,
     padding: '0.05rem 0.45rem',
-    marginLeft: '0.35rem'
+    marginLeft: '0.35rem',
   };
 }
 
-function formatAuditPayload(before?: Record<string, unknown>, after?: Record<string, unknown>): string {
+function formatAuditPayload(
+  before?: Record<string, unknown>,
+  after?: Record<string, unknown>,
+): string {
   const beforeSummary = before ? `before=${JSON.stringify(before)}` : '';
   const afterSummary = after ? `after=${JSON.stringify(after)}` : '';
   return [beforeSummary, afterSummary].filter((part) => part.length > 0).join(' ');

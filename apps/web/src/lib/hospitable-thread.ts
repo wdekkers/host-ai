@@ -13,7 +13,7 @@ export function buildHospitableMessagesPath(input: {
 }): string {
   const params = new URLSearchParams({
     reservationId: input.reservationId,
-    limit: String(input.limit ?? 5)
+    limit: String(input.limit ?? 5),
   });
   if (input.beforeCursor) {
     params.set('beforeCursor', input.beforeCursor);
@@ -23,7 +23,7 @@ export function buildHospitableMessagesPath(input: {
 
 export function mergeOlderMessages(
   current: HospitableThreadMessage[],
-  older: HospitableThreadMessage[]
+  older: HospitableThreadMessage[],
 ): HospitableThreadMessage[] {
   const ids = new Set<string>();
   const merged: HospitableThreadMessage[] = [];
