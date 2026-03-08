@@ -4,7 +4,7 @@ export const draftStatusSchema = z.enum(['pending', 'edited', 'approved', 'sent'
 export type DraftStatus = z.infer<typeof draftStatusSchema>;
 
 export const draftSourceSchema = z.object({
-  type: z.enum(['policy', 'reservation', 'property-note']),
+  type: z.enum(['policy', 'reservation', 'property-note', 'property-qa']),
   label: z.string().min(1),
   snippet: z.string().min(1),
   confidence: z.enum(['low', 'medium', 'high']).optional(),
@@ -109,3 +109,60 @@ export const roiUpdateInputSchema = z.discriminatedUnion('action', [
   })
 ]);
 export type RoiUpdateInput = z.infer<typeof roiUpdateInputSchema>;
+
+export const propertyQaEntryStatusSchema = z.enum(['active', 'archived']);
+export type PropertyQaEntryStatus = z.infer<typeof propertyQaEntryStatusSchema>;
+
+export const propertyQaEntrySourceSchema = z.enum(['manual', 'suggestion']);
+export type PropertyQaEntrySource = z.infer<typeof propertyQaEntrySourceSchema>;
+
+export const propertyQaEntrySchema = z.object({
+  id: z.string().min(1),
+  propertyId: z.string().min(1),
+  question: z.string().min(1),
+  answer: z.string().min(1),
+  status: propertyQaEntryStatusSchema,
+  source: propertyQaEntrySourceSchema,
+  createdBy: z.string().min(1),
+  updatedBy: z.string().min(1),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime()
+});
+export type PropertyQaEntry = z.infer<typeof propertyQaEntrySchema>;
+
+export const propertyQaSuggestionStatusSchema = z.enum(['pending', 'approved', 'rejected', 'invalid_output']);
+export type PropertyQaSuggestionStatus = z.infer<typeof propertyQaSuggestionStatusSchema>;
+
+export const propertyQaClassifierLabelSchema = z.enum(['likely-reusable', 'one-off', 'unclear']);
+export type PropertyQaClassifierLabel = z.infer<typeof propertyQaClassifierLabelSchema>;
+
+export const propertyQaSuggestionSchema = z.object({
+  id: z.string().min(1),
+  propertyId: z.string().min(1),
+  sourceMessageId: z.string().min(1),
+  proposedQuestion: z.string().min(1),
+  proposedAnswer: z.string().min(1),
+  classifierLabel: propertyQaClassifierLabelSchema,
+  confidence: z.number().min(0).max(1),
+  status: propertyQaSuggestionStatusSchema,
+  reviewedBy: z.string().min(1).nullable(),
+  reviewedAt: z.string().datetime().nullable(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime()
+});
+export type PropertyQaSuggestion = z.infer<typeof propertyQaSuggestionSchema>;
+
+export const createPropertyQaEntryInputSchema = z.object({
+  question: z.string().min(1),
+  answer: z.string().min(1),
+  createdBy: z.string().min(1).optional()
+});
+export type CreatePropertyQaEntryInput = z.infer<typeof createPropertyQaEntryInputSchema>;
+
+export const updatePropertyQaEntryInputSchema = z.object({
+  question: z.string().min(1).optional(),
+  answer: z.string().min(1).optional(),
+  status: propertyQaEntryStatusSchema.optional(),
+  updatedBy: z.string().min(1).optional()
+});
+export type UpdatePropertyQaEntryInput = z.infer<typeof updatePropertyQaEntryInputSchema>;
