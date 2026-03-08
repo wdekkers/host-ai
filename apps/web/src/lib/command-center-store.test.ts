@@ -96,7 +96,7 @@ import {
   POST as postPropertyQaEntry,
 } from '@/app/api/command-center/qa/[propertyId]/route';
 import { PATCH as patchPropertyQaEntry } from '@/app/api/command-center/qa/entry/[id]/route';
-import { GET as getQaSuggestionsByProperty } from '@/app/api/command-center/qa-suggestions/[propertyId]/route';
+import { GET as getQaSuggestionsByProperty } from '@/app/api/command-center/qa-suggestions/route';
 import { POST as postApproveQaSuggestion } from '@/app/api/command-center/qa-suggestions/[id]/approve/route';
 import { POST as postRejectQaSuggestion } from '@/app/api/command-center/qa-suggestions/[id]/reject/route';
 import { GET as getQaSuggestionNotifications } from '@/app/api/command-center/qa-suggestions/notifications/route';
@@ -3274,7 +3274,7 @@ void test('creates pending qa suggestion from inbound message and exposes notifi
 
   const suggestions = await getQaSuggestionsByProperty(
     new Request(
-      'http://localhost/api/command-center/qa-suggestions/property:res-qa-001?status=pending',
+      'http://localhost/api/command-center/qa-suggestions?propertyId=property:res-qa-001&status=pending',
     ),
     { params: Promise.resolve({ propertyId: 'property:res-qa-001' }) },
   );
@@ -3306,7 +3306,7 @@ void test('approves qa suggestion and includes approved qa source in regenerated
 
   const suggestions = await getQaSuggestionsByProperty(
     new Request(
-      'http://localhost/api/command-center/qa-suggestions/property:res-qa-approve-001?status=pending',
+      'http://localhost/api/command-center/qa-suggestions?propertyId=property:res-qa-approve-001&status=pending',
     ),
     { params: Promise.resolve({ propertyId: 'property:res-qa-approve-001' }) },
   );
@@ -3383,7 +3383,7 @@ void test('deduplicates near-identical qa suggestions by normalized question has
 
   const suggestions = await getQaSuggestionsByProperty(
     new Request(
-      'http://localhost/api/command-center/qa-suggestions/property:res-qa-dedupe-001?status=pending',
+      'http://localhost/api/command-center/qa-suggestions?propertyId=property:res-qa-dedupe-001&status=pending',
     ),
     { params: Promise.resolve({ propertyId: 'property:res-qa-dedupe-001' }) },
   );
@@ -3451,7 +3451,7 @@ void test('rejects qa suggestion and updates status', async () => {
 
   const pending = await getQaSuggestionsByProperty(
     new Request(
-      'http://localhost/api/command-center/qa-suggestions/property:res-qa-reject-001?status=pending',
+      'http://localhost/api/command-center/qa-suggestions?propertyId=property:res-qa-reject-001&status=pending',
     ),
     { params: Promise.resolve({ propertyId: 'property:res-qa-reject-001' }) },
   );
@@ -3470,7 +3470,7 @@ void test('rejects qa suggestion and updates status', async () => {
 
   const rejectedList = await getQaSuggestionsByProperty(
     new Request(
-      'http://localhost/api/command-center/qa-suggestions/property:res-qa-reject-001?status=rejected',
+      'http://localhost/api/command-center/qa-suggestions?propertyId=property:res-qa-reject-001&status=rejected',
     ),
     { params: Promise.resolve({ propertyId: 'property:res-qa-reject-001' }) },
   );
