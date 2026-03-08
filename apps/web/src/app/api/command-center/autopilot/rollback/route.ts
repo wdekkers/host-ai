@@ -7,7 +7,7 @@ import { rollbackAutopilotActionInSingleton } from '@/lib/command-center-store';
 
 const rollbackSchema = z.object({
   actionId: z.string().min(1),
-  reason: z.string().min(1)
+  reason: z.string().min(1),
 });
 
 export async function POST(request: Request) {

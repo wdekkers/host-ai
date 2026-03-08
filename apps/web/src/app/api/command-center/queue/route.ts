@@ -12,8 +12,14 @@ export async function GET(request: Request) {
 
   const filtered = listQueue()
     .filter((item) => !intent || item.intent === intent)
-    .filter((item) => !risk || getRiskTrustIndicator({ intent: item.intent, body: item.body }).risk === risk)
-    .filter((item) => !trust || getRiskTrustIndicator({ intent: item.intent, body: item.body }).trust === trust);
+    .filter(
+      (item) =>
+        !risk || getRiskTrustIndicator({ intent: item.intent, body: item.body }).risk === risk,
+    )
+    .filter(
+      (item) =>
+        !trust || getRiskTrustIndicator({ intent: item.intent, body: item.body }).trust === trust,
+    );
 
   const sorted = [...filtered];
   if (sort === 'sla') {
@@ -38,7 +44,7 @@ export async function GET(request: Request) {
           risk: riskTrust.risk,
           trust: riskTrust.trust,
           slaBucket,
-          quickActions: ['preview', 'edit', 'send']
+          quickActions: ['preview', 'edit', 'send'],
         };
       })
     : sorted;

@@ -100,7 +100,10 @@ export default async function InboxPage({
     <div className="p-4 sm:p-8">
       <div className="mb-6">
         {propertyId && (
-          <Link href="/inbox" className="text-xs text-gray-500 hover:text-gray-700 mb-1 inline-flex items-center gap-1">
+          <Link
+            href="/inbox"
+            className="text-xs text-gray-500 hover:text-gray-700 mb-1 inline-flex items-center gap-1"
+          >
             ← All conversations
           </Link>
         )}
@@ -114,7 +117,9 @@ export default async function InboxPage({
 
       {threads.length === 0 ? (
         <div className="rounded-lg border border-gray-200 bg-white p-12 text-center text-gray-500">
-          {propertyId ? 'No conversations for this property.' : 'No messages yet. Sync reservations first.'}
+          {propertyId
+            ? 'No conversations for this property.'
+            : 'No messages yet. Sync reservations first.'}
         </div>
       ) : (
         <div className="rounded-lg border border-gray-200 bg-white divide-y divide-gray-200">
@@ -133,7 +138,9 @@ export default async function InboxPage({
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2 mb-0.5">
-                  <span className={`text-sm ${thread.hasUnrepliedGuest ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
+                  <span
+                    className={`text-sm ${thread.hasUnrepliedGuest ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}
+                  >
                     {thread.guestName}
                   </span>
                   <span className="flex-shrink-0 text-xs text-gray-400">
@@ -145,16 +152,19 @@ export default async function InboxPage({
                     {thread.propertyName ?? '—'}
                     {thread.checkIn && (
                       <span className="ml-2">
-                        · {thread.checkIn.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        {thread.checkOut && ` – ${thread.checkOut.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                        ·{' '}
+                        {thread.checkIn.toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                        {thread.checkOut &&
+                          ` – ${thread.checkOut.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
                       </span>
                     )}
                   </p>
                 )}
                 <p className="text-sm text-gray-500 truncate">
-                  {thread.lastSenderType === 'host' && (
-                    <span className="text-gray-400">You: </span>
-                  )}
+                  {thread.lastSenderType === 'host' && <span className="text-gray-400">You: </span>}
                   {truncate(thread.lastBody)}
                 </p>
               </div>

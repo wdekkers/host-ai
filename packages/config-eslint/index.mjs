@@ -12,31 +12,31 @@ export default [
     files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
     languageOptions: {
       globals: {
-        ...globals.node
-      }
-    }
+        ...globals.node,
+      },
+    },
   },
   {
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
       parserOptions: {
-        projectService: true
-      }
+        projectService: true,
+      },
     },
     rules: {
       '@typescript-eslint/consistent-type-imports': 'error',
-      '@typescript-eslint/no-floating-promises': 'error'
-    }
+      '@typescript-eslint/no-floating-promises': 'error',
+    },
   },
   {
     files: ['apps/web/**/*.{js,jsx,ts,tsx}'],
     plugins: {
-      '@next/next': nextPlugin
+      '@next/next': nextPlugin,
     },
     rules: {
       ...nextPlugin.configs.recommended.rules,
-      ...nextPlugin.configs['core-web-vitals'].rules
-    }
+      ...nextPlugin.configs['core-web-vitals'].rules,
+    },
   },
   {
     ignores: [
@@ -46,7 +46,7 @@ export default [
       '**/node_modules/**',
       '**/*.config.js',
       '**/*.config.cjs',
-      '**/*.config.mjs'
-    ]
-  }
+      '**/*.config.mjs',
+    ],
+  },
 ];

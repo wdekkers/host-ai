@@ -11,10 +11,16 @@ const rolePermissionMap: Record<Role, ReadonlySet<Permission>> = {
     'incidents.write',
     'ops.write',
     'automation.execute',
-    'integration.read.provider'
+    'integration.read.provider',
   ]),
-  agent: new Set(['dashboard.read', 'drafts.write', 'decision.compute', 'incidents.write', 'ops.write']),
-  viewer: new Set(['dashboard.read'])
+  agent: new Set([
+    'dashboard.read',
+    'drafts.write',
+    'decision.compute',
+    'incidents.write',
+    'ops.write',
+  ]),
+  viewer: new Set(['dashboard.read']),
 };
 
 export function hasPermission(role: Role, permission: Permission): boolean {
@@ -50,7 +56,10 @@ export function getPermissionForApiRoute(pathname: string, method: string): Perm
     return 'decision.compute';
   }
 
-  if (pathname.includes('/command-center/experience-risk') || pathname.includes('/command-center/risk-intelligence')) {
+  if (
+    pathname.includes('/command-center/experience-risk') ||
+    pathname.includes('/command-center/risk-intelligence')
+  ) {
     return 'decision.compute';
   }
 
@@ -86,7 +95,10 @@ export function getPermissionForApiRoute(pathname: string, method: string): Perm
     return 'drafts.write';
   }
 
-  if (pathname.includes('/command-center/qa') || pathname.includes('/command-center/qa-suggestions')) {
+  if (
+    pathname.includes('/command-center/qa') ||
+    pathname.includes('/command-center/qa-suggestions')
+  ) {
     return 'drafts.write';
   }
 

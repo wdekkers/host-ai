@@ -45,7 +45,10 @@ export default async function ThreadPage({
   return (
     <div className="p-4 sm:p-8 max-w-3xl">
       {/* Back link */}
-      <Link href="/inbox" className="text-sm text-gray-500 hover:text-gray-700 mb-6 inline-flex items-center gap-1">
+      <Link
+        href="/inbox"
+        className="text-sm text-gray-500 hover:text-gray-700 mb-6 inline-flex items-center gap-1"
+      >
         ← Inbox
       </Link>
 
@@ -56,33 +59,43 @@ export default async function ThreadPage({
             <h1 className="text-lg font-semibold text-gray-900">{guestName}</h1>
             <p className="text-sm text-gray-500 mt-0.5">{reservation.propertyName ?? '—'}</p>
           </div>
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
-            reservation.status === 'accepted' || reservation.status === 'confirmed'
-              ? 'bg-green-100 text-green-800'
-              : reservation.status === 'cancelled' || reservation.status === 'canceled'
-              ? 'bg-red-100 text-red-800'
-              : 'bg-gray-100 text-gray-600'
-          }`}>
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
+              reservation.status === 'accepted' || reservation.status === 'confirmed'
+                ? 'bg-green-100 text-green-800'
+                : reservation.status === 'cancelled' || reservation.status === 'canceled'
+                  ? 'bg-red-100 text-red-800'
+                  : 'bg-gray-100 text-gray-600'
+            }`}
+          >
             {reservation.status ?? 'unknown'}
           </span>
         </div>
         <div className="mt-3 flex flex-wrap gap-4 text-sm text-gray-500">
           <div>
-            <span className="text-xs font-medium text-gray-400 uppercase tracking-wide block">Check-in</span>
+            <span className="text-xs font-medium text-gray-400 uppercase tracking-wide block">
+              Check-in
+            </span>
             {formatDate(reservation.checkIn)}
           </div>
           <div>
-            <span className="text-xs font-medium text-gray-400 uppercase tracking-wide block">Check-out</span>
+            <span className="text-xs font-medium text-gray-400 uppercase tracking-wide block">
+              Check-out
+            </span>
             {formatDate(reservation.checkOut)}
           </div>
           {reservation.platform && (
             <div>
-              <span className="text-xs font-medium text-gray-400 uppercase tracking-wide block">Platform</span>
+              <span className="text-xs font-medium text-gray-400 uppercase tracking-wide block">
+                Platform
+              </span>
               <span className="capitalize">{reservation.platform}</span>
             </div>
           )}
           <div>
-            <span className="text-xs font-medium text-gray-400 uppercase tracking-wide block">Messages</span>
+            <span className="text-xs font-medium text-gray-400 uppercase tracking-wide block">
+              Messages
+            </span>
             {msgs.length}
           </div>
         </div>
@@ -99,15 +112,21 @@ export default async function ThreadPage({
             const isHost = msg.senderType === 'host';
             return (
               <div key={msg.id} className={`flex ${isHost ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[75%] ${isHost ? 'items-end' : 'items-start'} flex flex-col`}>
-                  <div className={`rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap ${
-                    isHost
-                      ? 'bg-gray-900 text-white rounded-br-sm'
-                      : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm'
-                  }`}>
+                <div
+                  className={`max-w-[75%] ${isHost ? 'items-end' : 'items-start'} flex flex-col`}
+                >
+                  <div
+                    className={`rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap ${
+                      isHost
+                        ? 'bg-gray-900 text-white rounded-br-sm'
+                        : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm'
+                    }`}
+                  >
                     {msg.body}
                   </div>
-                  <div className={`flex items-center gap-2 mt-1 px-1 ${isHost ? 'flex-row-reverse' : ''}`}>
+                  <div
+                    className={`flex items-center gap-2 mt-1 px-1 ${isHost ? 'flex-row-reverse' : ''}`}
+                  >
                     <span className="text-xs text-gray-400">{formatTime(msg.createdAt)}</span>
                     {msg.senderFullName && (
                       <span className="text-xs text-gray-400">{msg.senderFullName}</span>

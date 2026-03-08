@@ -3,7 +3,10 @@ import { NextResponse } from 'next/server';
 
 import { handleApiError } from '@/lib/secure-logger';
 
-import { completeInternalValidationInSingleton, getRolloutStateInSingleton } from '@/lib/command-center-store';
+import {
+  completeInternalValidationInSingleton,
+  getRolloutStateInSingleton,
+} from '@/lib/command-center-store';
 
 export async function GET() {
   return NextResponse.json({ rollout: getRolloutStateInSingleton() });

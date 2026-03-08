@@ -5,12 +5,15 @@
 **Parent Initiative:** AI STR OS Command Center
 
 ## Epic Summary
+
 This epic packages a strategic capability area into implementable scope for product, engineering, and operations. It coordinates workflow behavior, data requirements, and control mechanisms so host teams can act quickly without sacrificing trust, safety, or policy compliance.
 
 ## Problem Statement
+
 Hospitality operations break down when communication decisions, readiness context, and policy enforcement are fragmented. The result is slower guest response, inconsistent handling, and increased incident/refund exposure. This epic defines a coherent slice of the system that closes those gaps with measurable outcomes.
 
 ## Objectives
+
 - Story 3.1: to ingest guest messages from Hospitable webhooks
 - Story 3.2: intent detection for key hospitality intents
 - Story 3.3: per-property context assembly from policies, docs (RAG), and reservation context
@@ -20,26 +23,31 @@ Hospitality operations break down when communication decisions, readiness contex
 - Story 3.7: visible risk/trust indicators on booking requests and inquiries
 
 ## Scope
+
 - Deliver all stories listed under this epic with production-ready acceptance criteria.
 - Ensure each story has auditability, dependency awareness, and operational fallback handling.
 - Preserve approval-first trust controls where risk and policy require human review.
 
 ## Non-Goals
+
 - Cross-epic expansions that are not required for this epic’s outcome.
 - Optional enhancements that do not materially improve response quality or risk posture.
 - Automation that bypasses manual-only or high-stakes safety guardrails.
 
 ## Stakeholders
+
 - Hosts and operations leads using the command center daily.
 - Product and engineering teams delivering workflow, state, and reliability.
 - Quality/compliance stakeholders requiring traceable decisions.
 
 ## Dependencies
+
 - Reliable event ingestion and projection freshness.
 - Structured property policy data and retrieval paths.
 - Messaging, ops, and notification service contracts.
 
 ## Risks and Mitigations
+
 1. **Insufficient context quality** can produce weak recommendations.  
    **Mitigation:** require context completeness checks and clarifying prompts.
 2. **Trust erosion from over-automation** can reduce adoption.  
@@ -48,12 +56,14 @@ Hospitality operations break down when communication decisions, readiness contex
    **Mitigation:** retries, outbox patterns, and explicit fallback UX.
 
 ## Success Metrics
+
 - Reduced median response time and SLA breaches.
 - Improved policy adherence with fewer manual corrections.
 - Lower incident escalation and compensation leakage.
 - Improved user confidence and command-center-first adoption.
 
 ## Stories
+
 - Story 3.1: [Ingest guest messages from Hospitable webhooks](../stories/E03/S01-ingest-guest-messages-from-hospitable-webhooks.md)
 - Story 3.2: [Intent detection for key hospitality intents](../stories/E03/S02-intent-detection-for-key-hospitality-intents.md)
 - Story 3.3: [Per-property context assembly from policies, docs (RAG), and reservation context](../stories/E03/S03-per-property-context-assembly-from-policies-docs-rag-and-reserva.md)
@@ -63,6 +73,7 @@ Hospitality operations break down when communication decisions, readiness contex
 - Story 3.7: [Visible risk/trust indicators on booking requests and inquiries](../stories/E03/S07-visible-risk-trust-indicators-on-booking-requests-and-inquiries.md)
 
 ## Release Readiness Checklist
+
 1. All story acceptance criteria validated.
 2. Audit records verified for mutating actions.
 3. KPI instrumentation confirmed in dashboards.

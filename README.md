@@ -58,6 +58,7 @@ pnpm dev
 ## Integration Setup (Hospitable)
 
 For the `apps/web` integration routes, configure env vars in either:
+
 - repo root `.env` (shared), or
 - `apps/web/.env.local` (app-local, based on `apps/web/.env.example`)
 

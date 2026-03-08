@@ -2,7 +2,14 @@ import { NextResponse } from 'next/server';
 
 const MAX_DEPTH = 6;
 const MAX_STRING_LENGTH = 500;
-const SENSITIVE_KEY_PATTERNS = ['token', 'secret', 'password', 'authorization', 'api_key', 'apikey'];
+const SENSITIVE_KEY_PATTERNS = [
+  'token',
+  'secret',
+  'password',
+  'authorization',
+  'api_key',
+  'apikey',
+];
 const EMAIL_KEY_PATTERNS = ['email'];
 const PHONE_KEY_PATTERNS = ['phone', 'mobile', 'whatsapp', 'contact'];
 
@@ -14,10 +21,13 @@ function truncateString(value: string) {
 }
 
 function maskEmail(value: string) {
-  return value.replace(/([A-Z0-9._%+-]{1,64})@([A-Z0-9.-]+\.[A-Z]{2,})/gi, (_match, localPart: string, domain: string) => {
-    const head = localPart.slice(0, 1);
-    return `${head}***@${domain.toLowerCase()}`;
-  });
+  return value.replace(
+    /([A-Z0-9._%+-]{1,64})@([A-Z0-9.-]+\.[A-Z]{2,})/gi,
+    (_match, localPart: string, domain: string) => {
+      const head = localPart.slice(0, 1);
+      return `${head}***@${domain.toLowerCase()}`;
+    },
+  );
 }
 
 function maskPhone(value: string) {
@@ -60,7 +70,12 @@ export function redactForLogs(value: unknown, depth = 0): unknown {
     return maskText(value);
   }
 
-  if (typeof value === 'number' || typeof value === 'boolean' || value === null || value === undefined) {
+  if (
+    typeof value === 'number' ||
+    typeof value === 'boolean' ||
+    value === null ||
+    value === undefined
+  ) {
     return value;
   }
 
@@ -107,7 +122,7 @@ export function handleApiError(input: ApiErrorInput) {
     status,
     message: safeMessage,
     context: redactForLogs(input.context ?? {}),
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
   console.error(JSON.stringify(payload));
 

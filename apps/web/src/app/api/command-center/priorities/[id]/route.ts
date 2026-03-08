@@ -23,7 +23,7 @@ export async function GET(_request: Request, { params }: Params) {
       propertyId,
       intent: item.intent,
       status: item.status,
-      propertyState
-    }
+      propertyState,
+    },
   });
 }

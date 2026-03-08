@@ -7,7 +7,7 @@ import { runJitChecksInSingleton } from '@/lib/command-center-store';
 
 const inputSchema = z.object({
   reservationId: z.string().min(1),
-  requestType: z.enum(['early-check-in', 'late-checkout'])
+  requestType: z.enum(['early-check-in', 'late-checkout']),
 });
 
 export async function POST(request: Request) {

@@ -8,7 +8,7 @@ import { updateCleanerJitPingInSingleton } from '@/lib/command-center-store';
 const updateCleanerPingSchema = z.object({
   status: z.enum(['READY', 'ETA', 'NOT_READY']),
   note: z.string().optional(),
-  etaMinutes: z.number().int().positive().optional()
+  etaMinutes: z.number().int().positive().optional(),
 });
 
 type Params = { params: Promise<{ id: string }> };
