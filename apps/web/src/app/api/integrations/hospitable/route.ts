@@ -2,14 +2,14 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import OpenAI from 'openai';
-import { reservations, messages, propertyFaqs } from '@walt/db';
+import { reservations, messages } from '@walt/db';
 import { eq } from 'drizzle-orm';
 
 import { handleApiError } from '@/lib/secure-logger';
 import { getHospitableApiConfig } from '@/lib/integrations-env';
 import { db } from '@/lib/db';
 import { normalizeReservation, normalizeMessage } from '@/lib/hospitable-normalize';
+import { generateReplySuggestion } from '@/lib/generate-reply-suggestion';
 
 const webhookSchema = z.object({
   reservationId: z.string().min(1),
@@ -50,64 +50,6 @@ async function fetchReservation(
   if (!res.ok) return null;
   const body = (await res.json()) as { data?: Record<string, unknown> };
   return body.data ?? null;
-}
-
-async function generateSuggestion(
-  reservation: Record<string, unknown>,
-  messageBody: string,
-  propertyId: string | null,
-): Promise<string | null> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return null;
-
-  const client = new OpenAI({ apiKey });
-  const guest = reservation.guest as Record<string, unknown> | undefined;
-  const props = reservation.properties as Record<string, unknown>[] | undefined;
-  const guestName = String(guest?.first_name ?? 'the guest');
-  const propertyName = String(props?.[0]?.name ?? 'the property');
-  const checkIn = reservation.check_in
-    ? new Date(reservation.check_in as string).toLocaleDateString()
-    : 'unknown';
-  const checkOut = reservation.check_out
-    ? new Date(reservation.check_out as string).toLocaleDateString()
-    : 'unknown';
-
-  // Load property FAQs for context
-  let faqContext = '';
-  if (propertyId) {
-    const faqs = await db
-      .select({ category: propertyFaqs.category, answer: propertyFaqs.answer })
-      .from(propertyFaqs)
-      .where(eq(propertyFaqs.propertyId, propertyId));
-    if (faqs.length > 0) {
-      const faqLines = faqs
-        .filter((f) => f.answer)
-        .map((f) => `Q: ${f.category}\nA: ${f.answer}`)
-        .join('\n\n');
-      if (faqLines) {
-        faqContext = `\n\nKnowledge base for this property:\n${faqLines}`;
-      }
-    }
-  }
-
-  const response = await client.chat.completions.create({
-    model: 'gpt-4o-mini',
-    max_tokens: 500,
-    messages: [
-      {
-        role: 'system',
-        content: `You are a helpful short-term rental host assistant. Draft a warm, concise reply to a guest message.
-Property: ${propertyName}
-Guest: ${guestName}
-Check-in: ${checkIn}
-Check-out: ${checkOut}
-Reply in the same language as the guest message. Keep it under 3 sentences unless the question requires more detail.${faqContext}`,
-      },
-      { role: 'user', content: messageBody },
-    ],
-  });
-
-  return response.choices[0]?.message?.content ?? null;
 }
 
 export async function POST(request: Request) {
@@ -151,11 +93,17 @@ export async function POST(request: Request) {
         .onConflictDoNothing();
 
       if (parsed.senderType === 'guest' && reservationRaw) {
-        const propId =
-          ((reservationRaw.properties as Record<string, unknown>[] | undefined)?.[0]?.id as
-            | string
-            | null) ?? null;
-        const suggestion = await generateSuggestion(reservationRaw, parsed.message, propId);
+        const guest = reservationRaw.guest as Record<string, unknown> | undefined;
+        const props = reservationRaw.properties as Record<string, unknown>[] | undefined;
+        const propId = (props?.[0]?.id as string | null) ?? null;
+        const suggestion = await generateReplySuggestion({
+          guestName: String(guest?.first_name ?? 'the guest'),
+          propertyName: String(props?.[0]?.name ?? 'the property'),
+          propertyId: propId,
+          checkIn: reservationRaw.check_in as string | null,
+          checkOut: reservationRaw.check_out as string | null,
+          messageBody: parsed.message,
+        });
         if (suggestion) {
           await db
             .update(messages)

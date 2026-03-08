@@ -9,7 +9,6 @@ export type SerializedMessage = {
   senderType: string;
   senderFullName: string | null;
   createdAt: string; // ISO string
-  suggestion: string | null;
 };
 
 function formatTime(isoDate: string) {
@@ -153,13 +152,6 @@ export function MessageThread({
                   <span className="text-xs text-gray-400">{msg.senderFullName}</span>
                 )}
               </div>
-
-              {!isHost && msg.suggestion && (
-                <div className="mt-2 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 max-w-full">
-                  <p className="text-xs font-medium text-blue-600 mb-1">Suggested reply</p>
-                  <p className="text-sm text-blue-900 whitespace-pre-wrap">{msg.suggestion}</p>
-                </div>
-              )}
             </div>
           </div>
         );
