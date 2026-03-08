@@ -1,6 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
+
 This repository is a `pnpm` + `Turborepo` monorepo.
 
 - `apps/web`: Next.js frontend (App Router)
@@ -14,6 +15,7 @@ This repository is a `pnpm` + `Turborepo` monorepo.
 - `docs`: planning and product documentation
 
 ## Build, Test, and Development Commands
+
 Run from repo root:
 
 - `pnpm install`: install workspace dependencies
@@ -26,6 +28,7 @@ Run from repo root:
 - `docker compose -f infra/docker-compose.yml up -d`: start local Postgres
 
 ## Coding Style & Naming Conventions
+
 - Language: TypeScript (strict)
 - Formatting: Prettier (`pnpm format:write`)
 - Linting: ESLint flat config via `@walt/config-eslint`
@@ -37,6 +40,7 @@ Run from repo root:
   - packages: `@walt/*`
 
 ## Testing Guidelines
+
 Current scaffold includes placeholder test scripts; add tests with new features.
 
 - Recommended: Vitest for unit/integration and Playwright for e2e (when introduced)
@@ -45,10 +49,13 @@ Current scaffold includes placeholder test scripts; add tests with new features.
 - Minimum gate before PR: `pnpm lint && pnpm typecheck && pnpm build`
 
 ## Commit & Pull Request Guidelines
+
 Git history is not available in this workspace snapshot; use Conventional Commits:
+
 - `feat: ...`, `fix: ...`, `chore: ...`, `refactor: ...`, `docs: ...`
 
 PRs should include:
+
 - clear summary and scope
 - linked issue/ticket (if applicable)
 - verification steps and command output summary
@@ -56,6 +63,7 @@ PRs should include:
 - notes for schema, config, or migration changes
 
 ## Security & Configuration Tips
+
 - Do not commit secrets; use `.env` files (see `.env.example`)
 - Treat OpenAPI specs as source artifacts; regenerate clients after spec updates
 - Prefer shared contracts in `packages/contracts` over duplicating request/response schemas

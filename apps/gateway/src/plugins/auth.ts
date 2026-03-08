@@ -59,7 +59,10 @@ const loadJwks = (() => {
       return cached.keys;
     }
 
-    const response = await fetch(jwksUrl, { method: 'GET', headers: { accept: 'application/json' } });
+    const response = await fetch(jwksUrl, {
+      method: 'GET',
+      headers: { accept: 'application/json' },
+    });
     if (!response.ok) {
       throw new Error(`Failed to load JWKS: ${response.status}`);
     }
@@ -159,7 +162,7 @@ export const authPlugin: FastifyPluginAsync = async (app) => {
       userId: payload.sub,
       orgId: payload.org_id ?? null,
       role: payload.org_role ?? 'viewer',
-      permissions: Array.isArray(payload.permissions) ? payload.permissions : []
+      permissions: Array.isArray(payload.permissions) ? payload.permissions : [],
     };
   });
 };

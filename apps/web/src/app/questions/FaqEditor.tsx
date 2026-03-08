@@ -34,14 +34,18 @@ export function RunAnalysisButton() {
       >
         {loading ? 'Analysing…' : 'Run Analysis'}
       </button>
-      {error && (
-        <p className="text-sm text-red-600 mt-2">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
     </div>
   );
 }
 
-export function AnswerEditor({ faqId, initialAnswer }: { faqId: string; initialAnswer: string | null }) {
+export function AnswerEditor({
+  faqId,
+  initialAnswer,
+}: {
+  faqId: string;
+  initialAnswer: string | null;
+}) {
   const [editing, setEditing] = useState(false);
   const [answer, setAnswer] = useState(initialAnswer ?? '');
   const [saving, setSaving] = useState(false);
@@ -54,7 +58,7 @@ export function AnswerEditor({ faqId, initialAnswer }: { faqId: string; initialA
       await fetch('/api/admin/property-faqs', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: faqId, answer })
+        body: JSON.stringify({ id: faqId, answer }),
       });
       setEditing(false);
       startTransition(() => router.refresh());
@@ -75,7 +79,9 @@ export function AnswerEditor({ faqId, initialAnswer }: { faqId: string; initialA
             Edit
           </button>
         </div>
-        <p className="text-sm text-blue-900">{answer || <span className="italic text-blue-400">No answer yet</span>}</p>
+        <p className="text-sm text-blue-900">
+          {answer || <span className="italic text-blue-400">No answer yet</span>}
+        </p>
       </div>
     );
   }
@@ -98,7 +104,10 @@ export function AnswerEditor({ faqId, initialAnswer }: { faqId: string; initialA
           {saving ? 'Saving…' : 'Save'}
         </button>
         <button
-          onClick={() => { setAnswer(initialAnswer ?? ''); setEditing(false); }}
+          onClick={() => {
+            setAnswer(initialAnswer ?? '');
+            setEditing(false);
+          }}
           className="px-3 py-1 text-xs text-gray-600 hover:text-gray-900"
         >
           Cancel

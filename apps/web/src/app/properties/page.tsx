@@ -6,14 +6,16 @@ import { db } from '@/lib/db';
 const statusStyles: Record<string, string> = {
   active: 'bg-green-100 text-green-800',
   inactive: 'bg-gray-100 text-gray-800',
-  suspended: 'bg-red-100 text-red-800'
+  suspended: 'bg-red-100 text-red-800',
 };
 
 function StatusBadge({ status }: { status: string | null }) {
   const lower = (status ?? '').toLowerCase();
   const classes = statusStyles[lower] ?? 'bg-gray-100 text-gray-800';
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${classes}`}>
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${classes}`}
+    >
       {status ?? 'unknown'}
     </span>
   );
@@ -48,7 +50,10 @@ export default async function PropertiesPage() {
           {props.map((p) => {
             const reservationCount = countMap.get(p.id) ?? 0;
             return (
-              <div key={p.id} className="rounded-lg border border-gray-200 bg-white p-5 hover:shadow-sm transition-shadow flex flex-col">
+              <div
+                key={p.id}
+                className="rounded-lg border border-gray-200 bg-white p-5 hover:shadow-sm transition-shadow flex flex-col"
+              >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <h3 className="font-medium text-gray-900 text-sm leading-snug">{p.name}</h3>
                   <StatusBadge status={p.status} />

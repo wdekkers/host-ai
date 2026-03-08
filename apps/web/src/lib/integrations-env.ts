@@ -2,13 +2,13 @@ import { z } from 'zod';
 
 const envSchema = z.object({
   HOSPITABLE_API_KEY: z.string().trim().min(1).optional(),
-  HOSPITABLE_BASE_URL: z.string().trim().url().optional()
+  HOSPITABLE_BASE_URL: z.string().trim().url().optional(),
 });
 
 function readEnv() {
   return envSchema.parse({
     HOSPITABLE_API_KEY: process.env.HOSPITABLE_API_KEY,
-    HOSPITABLE_BASE_URL: process.env.HOSPITABLE_BASE_URL
+    HOSPITABLE_BASE_URL: process.env.HOSPITABLE_BASE_URL,
   });
 }
 
@@ -20,6 +20,6 @@ export function getHospitableApiConfig() {
 
   return {
     apiKey: env.HOSPITABLE_API_KEY,
-    baseUrl: env.HOSPITABLE_BASE_URL
+    baseUrl: env.HOSPITABLE_BASE_URL,
   };
 }

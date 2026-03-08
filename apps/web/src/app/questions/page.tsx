@@ -5,8 +5,11 @@ import { RunAnalysisButton, AnswerEditor } from './FaqEditor';
 
 export default async function QuestionsPage() {
   const [allProperties, allFaqs] = await Promise.all([
-    db.select({ id: properties.id, name: properties.name }).from(properties).orderBy(asc(properties.name)),
-    db.select().from(propertyFaqs).orderBy(asc(propertyFaqs.category))
+    db
+      .select({ id: properties.id, name: properties.name })
+      .from(properties)
+      .orderBy(asc(properties.name)),
+    db.select().from(propertyFaqs).orderBy(asc(propertyFaqs.category)),
   ]);
 
   // Group FAQs by propertyId
@@ -30,13 +33,23 @@ export default async function QuestionsPage() {
           <h1 className="text-2xl font-semibold">Common Questions</h1>
           {totalFaqs > 0 ? (
             <p className="text-sm text-gray-500 mt-1">
-              {totalFaqs} categor{totalFaqs !== 1 ? 'ies' : 'y'} across {allProperties.length} propert{allProperties.length !== 1 ? 'ies' : 'y'}
+              {totalFaqs} categor{totalFaqs !== 1 ? 'ies' : 'y'} across {allProperties.length}{' '}
+              propert{allProperties.length !== 1 ? 'ies' : 'y'}
               {lastAnalysed && (
-                <span className="ml-2">· Last analysed {lastAnalysed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                <span className="ml-2">
+                  · Last analysed{' '}
+                  {lastAnalysed.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </span>
               )}
             </p>
           ) : (
-            <p className="text-sm text-gray-500 mt-1">Run analysis to build your Q&amp;A knowledge base</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Run analysis to build your Q&amp;A knowledge base
+            </p>
           )}
         </div>
         <RunAnalysisButton />
@@ -64,10 +77,14 @@ export default async function QuestionsPage() {
                       </div>
                       {faq.examples && faq.examples.length > 0 && (
                         <div className="mb-3">
-                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Example messages</p>
+                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                            Example messages
+                          </p>
                           <ul className="text-sm text-gray-600 space-y-1">
                             {(faq.examples as string[]).map((ex, i) => (
-                              <li key={i} className="truncate">"{ex}"</li>
+                              <li key={i} className="truncate">
+                                "{ex}"
+                              </li>
                             ))}
                           </ul>
                         </div>

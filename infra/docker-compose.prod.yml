@@ -17,9 +17,9 @@ services:
     image: ghcr.io/wdekkers/walt-caddy:${IMAGE_TAG:-latest}
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
     volumes:
       - caddy_data:/data
       - caddy_config:/config
@@ -36,7 +36,7 @@ services:
   migrate:
     image: ghcr.io/wdekkers/walt-migrate:${IMAGE_TAG:-latest}
     <<: *common
-    restart: "no"
+    restart: 'no'
     deploy:
       resources:
         limits:
@@ -69,7 +69,7 @@ services:
         condition: service_completed_successfully
     environment:
       - PORT=4000
-    command: ["apps/gateway/dist/index.js"]
+    command: ['apps/gateway/dist/index.js']
     deploy:
       resources:
         limits:
@@ -85,7 +85,7 @@ services:
         condition: service_completed_successfully
     environment:
       - PORT=4101
-    command: ["services/identity/dist/index.js"]
+    command: ['services/identity/dist/index.js']
     deploy:
       resources:
         limits:
@@ -98,7 +98,7 @@ services:
         condition: service_completed_successfully
     environment:
       - PORT=4102
-    command: ["services/messaging/dist/index.js"]
+    command: ['services/messaging/dist/index.js']
     deploy:
       resources:
         limits:
@@ -111,7 +111,7 @@ services:
         condition: service_completed_successfully
     environment:
       - PORT=4103
-    command: ["services/ops/dist/index.js"]
+    command: ['services/ops/dist/index.js']
     deploy:
       resources:
         limits:
@@ -124,7 +124,7 @@ services:
         condition: service_completed_successfully
     environment:
       - PORT=4104
-    command: ["services/notifications/dist/index.js"]
+    command: ['services/notifications/dist/index.js']
     deploy:
       resources:
         limits:

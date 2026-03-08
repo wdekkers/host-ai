@@ -25,45 +25,45 @@ Two new tables added to `packages/db/src/schema.ts` inside the existing `waltSch
 
 ### `walt.reservations`
 
-| Column | Type | Notes |
-|---|---|---|
-| `id` | text PK | Hospitable UUID — `data[].id` |
-| `conversation_id` | text | `data[].conversation_id` |
-| `platform` | text | `airbnb`, `vrbo`, etc. |
-| `platform_id` | text | Platform-specific booking ref |
-| `status` | text | `data[].status` |
-| `arrival_date` | timestamptz | `data[].arrival_date` |
-| `departure_date` | timestamptz | `data[].departure_date` |
-| `check_in` | timestamptz | `data[].check_in` |
-| `check_out` | timestamptz | `data[].check_out` |
-| `booking_date` | timestamptz | `data[].booking_date` |
-| `last_message_at` | timestamptz | `data[].last_message_at` |
-| `nights` | integer | `data[].nights` |
-| `guest_id` | text | `data[].guest.id` |
-| `guest_first_name` | text | `data[].guest.first_name` |
-| `guest_last_name` | text | `data[].guest.last_name` |
-| `guest_email` | text | `data[].guest.email` |
-| `property_id` | text | `data[].properties[0].id` |
-| `property_name` | text | `data[].properties[0].name` |
-| `raw` | jsonb | Full Hospitable payload for agent context |
-| `synced_at` | timestamptz | Set on every upsert |
+| Column             | Type        | Notes                                     |
+| ------------------ | ----------- | ----------------------------------------- |
+| `id`               | text PK     | Hospitable UUID — `data[].id`             |
+| `conversation_id`  | text        | `data[].conversation_id`                  |
+| `platform`         | text        | `airbnb`, `vrbo`, etc.                    |
+| `platform_id`      | text        | Platform-specific booking ref             |
+| `status`           | text        | `data[].status`                           |
+| `arrival_date`     | timestamptz | `data[].arrival_date`                     |
+| `departure_date`   | timestamptz | `data[].departure_date`                   |
+| `check_in`         | timestamptz | `data[].check_in`                         |
+| `check_out`        | timestamptz | `data[].check_out`                        |
+| `booking_date`     | timestamptz | `data[].booking_date`                     |
+| `last_message_at`  | timestamptz | `data[].last_message_at`                  |
+| `nights`           | integer     | `data[].nights`                           |
+| `guest_id`         | text        | `data[].guest.id`                         |
+| `guest_first_name` | text        | `data[].guest.first_name`                 |
+| `guest_last_name`  | text        | `data[].guest.last_name`                  |
+| `guest_email`      | text        | `data[].guest.email`                      |
+| `property_id`      | text        | `data[].properties[0].id`                 |
+| `property_name`    | text        | `data[].properties[0].name`               |
+| `raw`              | jsonb       | Full Hospitable payload for agent context |
+| `synced_at`        | timestamptz | Set on every upsert                       |
 
 ### `walt.messages`
 
 No `id` in Hospitable's message response — we generate a UUID. Unique constraint on `(reservation_id, created_at)` prevents duplicates on re-sync.
 
-| Column | Type | Notes |
-|---|---|---|
-| `id` | uuid PK | Generated |
-| `reservation_id` | text FK → reservations | `data[].reservation_id` |
-| `platform` | text | `data[].platform` |
-| `body` | text | `data[].body` |
-| `sender_type` | text | `host` \| `guest` |
-| `sender_full_name` | text | `data[].sender.full_name` |
-| `created_at` | timestamptz | `data[].created_at` |
-| `suggestion` | text | Nullable — Claude reply draft |
-| `suggestion_generated_at` | timestamptz | Nullable |
-| `raw` | jsonb | Full Hospitable payload |
+| Column                    | Type                   | Notes                         |
+| ------------------------- | ---------------------- | ----------------------------- |
+| `id`                      | uuid PK                | Generated                     |
+| `reservation_id`          | text FK → reservations | `data[].reservation_id`       |
+| `platform`                | text                   | `data[].platform`             |
+| `body`                    | text                   | `data[].body`                 |
+| `sender_type`             | text                   | `host` \| `guest`             |
+| `sender_full_name`        | text                   | `data[].sender.full_name`     |
+| `created_at`              | timestamptz            | `data[].created_at`           |
+| `suggestion`              | text                   | Nullable — Claude reply draft |
+| `suggestion_generated_at` | timestamptz            | Nullable                      |
+| `raw`                     | jsonb                  | Full Hospitable payload       |
 
 ---
 
@@ -93,6 +93,7 @@ No `id` in Hospitable's message response — we generate a UUID. Unique constrai
 ### 3. Reply agent context
 
 When generating a suggestion, the system prompt includes:
+
 - Guest name, check-in/check-out dates, nights
 - Property name and address (from `raw`)
 - Platform (Airbnb, Vrbo…)
@@ -113,10 +114,10 @@ Suggestions are stored on the message row — **never auto-sent**.
 
 ## API Routes
 
-| Method | Path | Purpose |
-|---|---|---|
-| POST | `/api/admin/sync-hospitable` | Bulk import all reservations + messages |
-| POST | `/api/admin/analyze-questions` | Run question analysis over stored messages |
+| Method | Path                           | Purpose                                    |
+| ------ | ------------------------------ | ------------------------------------------ |
+| POST   | `/api/admin/sync-hospitable`   | Bulk import all reservations + messages    |
+| POST   | `/api/admin/analyze-questions` | Run question analysis over stored messages |
 
 Both admin routes require `admin` role (existing permission system).
 

@@ -16,7 +16,7 @@ function getTestAuthContextFromHeaders(request?: Request): AuthContext {
     userId,
     orgId,
     role,
-    propertyIds: propertyIds.length > 0 ? propertyIds : undefined
+    propertyIds: propertyIds.length > 0 ? propertyIds : undefined,
   });
 }
 
@@ -48,6 +48,6 @@ export async function getAuthContext(request?: Request): Promise<AuthContext | n
     userId: session.userId,
     orgId: session.orgId,
     role,
-    propertyIds: undefined
+    propertyIds: undefined,
   });
 }

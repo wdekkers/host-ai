@@ -11,10 +11,17 @@
 ---
 
 ### Task 1: Add failing tests for E08 behavior
+
 ### Task 2: Implement append-only events + outbox model in store
+
 ### Task 3: Implement destination-based outbox retry logic
+
 ### Task 4: Implement projections and normalized entities in store
+
 ### Task 5: Add new API routes for events/outbox/projections/entities
+
 ### Task 6: Extend audit route with export modes and payload inclusion
+
 ### Task 7: Add minimal dashboard visibility for new capabilities
+
 ### Task 8: Run tests, lint, and typecheck

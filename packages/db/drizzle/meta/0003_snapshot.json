@@ -153,12 +153,8 @@
           "tableFrom": "messages",
           "tableTo": "reservations",
           "schemaTo": "walt",
-          "columnsFrom": [
-            "reservation_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["reservation_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -205,12 +201,8 @@
           "tableFrom": "organization_memberships",
           "tableTo": "organizations",
           "schemaTo": "walt",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -218,10 +210,7 @@
       "compositePrimaryKeys": {
         "organization_memberships_organization_id_user_id_pk": {
           "name": "organization_memberships_organization_id_user_id_pk",
-          "columns": [
-            "organization_id",
-            "user_id"
-          ]
+          "columns": ["organization_id", "user_id"]
         }
       },
       "uniqueConstraints": {},
@@ -351,12 +340,8 @@
           "tableFrom": "property_access",
           "tableTo": "organizations",
           "schemaTo": "walt",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -364,11 +349,7 @@
       "compositePrimaryKeys": {
         "property_access_organization_id_user_id_property_id_pk": {
           "name": "property_access_organization_id_user_id_property_id_pk",
-          "columns": [
-            "organization_id",
-            "user_id",
-            "property_id"
-          ]
+          "columns": ["organization_id", "user_id", "property_id"]
         }
       },
       "uniqueConstraints": {},

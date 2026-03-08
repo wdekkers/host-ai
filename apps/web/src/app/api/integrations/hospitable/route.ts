@@ -16,7 +16,7 @@ const webhookSchema = z.object({
   message: z.string().min(1),
   senderType: z.string().default('guest'),
   senderName: z.string().optional(),
-  sentAt: z.string().optional()
+  sentAt: z.string().optional(),
 });
 
 function verifySignature(request: Request, rawBody: string) {
@@ -28,15 +28,24 @@ function verifySignature(request: Request, rawBody: string) {
   const expected = createHmac('sha256', secret).update(`${timestamp}.${rawBody}`).digest('hex');
   const providedBuffer = Buffer.from(signature, 'hex');
   const expectedBuffer = Buffer.from(expected, 'hex');
-  if (providedBuffer.length !== expectedBuffer.length || !timingSafeEqual(providedBuffer, expectedBuffer)) {
+  if (
+    providedBuffer.length !== expectedBuffer.length ||
+    !timingSafeEqual(providedBuffer, expectedBuffer)
+  ) {
     throw new Error('Invalid webhook signature');
   }
 }
 
-async function fetchReservation(config: { apiKey: string; baseUrl: string }, reservationId: string) {
-  const url = new URL(`/v2/reservations/${reservationId}?includes[]=guest&includes[]=properties`, config.baseUrl);
+async function fetchReservation(
+  config: { apiKey: string; baseUrl: string },
+  reservationId: string,
+) {
+  const url = new URL(
+    `/v2/reservations/${reservationId}?includes[]=guest&includes[]=properties`,
+    config.baseUrl,
+  );
   const res = await fetch(url, {
-    headers: { accept: 'application/json', authorization: `Bearer ${config.apiKey}` }
+    headers: { accept: 'application/json', authorization: `Bearer ${config.apiKey}` },
   });
   if (!res.ok) return null;
   const body = (await res.json()) as { data?: Record<string, unknown> };
@@ -46,7 +55,7 @@ async function fetchReservation(config: { apiKey: string; baseUrl: string }, res
 async function generateSuggestion(
   reservation: Record<string, unknown>,
   messageBody: string,
-  propertyId: string | null
+  propertyId: string | null,
 ): Promise<string | null> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
@@ -56,8 +65,12 @@ async function generateSuggestion(
   const props = reservation.properties as Record<string, unknown>[] | undefined;
   const guestName = String(guest?.first_name ?? 'the guest');
   const propertyName = String(props?.[0]?.name ?? 'the property');
-  const checkIn = reservation.check_in ? new Date(reservation.check_in as string).toLocaleDateString() : 'unknown';
-  const checkOut = reservation.check_out ? new Date(reservation.check_out as string).toLocaleDateString() : 'unknown';
+  const checkIn = reservation.check_in
+    ? new Date(reservation.check_in as string).toLocaleDateString()
+    : 'unknown';
+  const checkOut = reservation.check_out
+    ? new Date(reservation.check_out as string).toLocaleDateString()
+    : 'unknown';
 
   // Load property FAQs for context
   let faqContext = '';
@@ -88,10 +101,10 @@ Property: ${propertyName}
 Guest: ${guestName}
 Check-in: ${checkIn}
 Check-out: ${checkOut}
-Reply in the same language as the guest message. Keep it under 3 sentences unless the question requires more detail.${faqContext}`
+Reply in the same language as the guest message. Keep it under 3 sentences unless the question requires more detail.${faqContext}`,
       },
-      { role: 'user', content: messageBody }
-    ]
+      { role: 'user', content: messageBody },
+    ],
   });
 
   return response.choices[0]?.message?.content ?? null;
@@ -116,7 +129,7 @@ export async function POST(request: Request) {
           .values({ ...normalized, syncedAt: new Date() })
           .onConflictDoUpdate({
             target: reservations.id,
-            set: { ...normalized, syncedAt: new Date() }
+            set: { ...normalized, syncedAt: new Date() },
           });
       }
     }
@@ -126,7 +139,7 @@ export async function POST(request: Request) {
       body: parsed.message,
       sender_type: parsed.senderType,
       sender: { full_name: parsed.senderName ?? '' },
-      created_at: parsed.sentAt ?? new Date().toISOString()
+      created_at: parsed.sentAt ?? new Date().toISOString(),
     };
     const normalizedMsg = normalizeMessage(msgRaw, parsed.reservationId);
 
@@ -138,7 +151,10 @@ export async function POST(request: Request) {
         .onConflictDoNothing();
 
       if (parsed.senderType === 'guest' && reservationRaw) {
-        const propId = (reservationRaw.properties as Record<string, unknown>[] | undefined)?.[0]?.id as string | null ?? null;
+        const propId =
+          ((reservationRaw.properties as Record<string, unknown>[] | undefined)?.[0]?.id as
+            | string
+            | null) ?? null;
         const suggestion = await generateSuggestion(reservationRaw, parsed.message, propId);
         if (suggestion) {
           await db
@@ -153,7 +169,8 @@ export async function POST(request: Request) {
   } catch (error) {
     const status =
       error instanceof Error &&
-      (error.message === 'Missing webhook signature headers' || error.message === 'Invalid webhook signature')
+      (error.message === 'Missing webhook signature headers' ||
+        error.message === 'Invalid webhook signature')
         ? 401
         : 400;
     return handleApiError({ error, route: '/api/integrations/hospitable', status });

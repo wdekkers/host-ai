@@ -6,7 +6,7 @@ import { handleApiError } from '@/lib/secure-logger';
 import { regenerateDraftFromInboundInSingleton } from '@/lib/command-center-store';
 
 const regenerateDraftInputSchema = z.object({
-  draftId: z.string().min(1)
+  draftId: z.string().min(1),
 });
 
 export async function POST(request: Request) {

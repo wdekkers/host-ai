@@ -13,7 +13,7 @@ const inputSchema = z.object({
   policyViolationFlags: z.number().min(0).max(100),
   positiveReviewHistory: z.number().min(0).max(100),
   responseQuality: z.number().min(0).max(100),
-  explicitRuleAcceptance: z.number().min(0).max(100)
+  explicitRuleAcceptance: z.number().min(0).max(100),
 });
 
 export async function POST(request: Request) {

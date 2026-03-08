@@ -15,21 +15,23 @@ const state: {
   threads: CleanerThread[];
 } = {
   opsNumber: '+15550000000',
-  threads: []
+  threads: [],
 };
 
 const inputSchema = z.object({
   opsNumber: z.string().min(5),
   cleanerId: z.string().min(1),
   cleanerPhone: z.string().min(5),
-  readinessSignal: z.string().min(1)
+  readinessSignal: z.string().min(1),
 });
 
 export async function GET(_request: Request) {
   void _request;
   return NextResponse.json({
     opsNumber: state.opsNumber,
-    threads: [...state.threads].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+    threads: [...state.threads].sort((left, right) =>
+      right.updatedAt.localeCompare(left.updatedAt),
+    ),
   });
 }
 
@@ -48,13 +50,15 @@ export async function POST(request: Request) {
         cleanerId: parsed.cleanerId,
         cleanerPhone: parsed.cleanerPhone,
         readinessSignal: parsed.readinessSignal,
-        updatedAt
+        updatedAt,
       });
     }
 
     return NextResponse.json({
       opsNumber: state.opsNumber,
-      threads: [...state.threads].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+      threads: [...state.threads].sort((left, right) =>
+        right.updatedAt.localeCompare(left.updatedAt),
+      ),
     });
   } catch (error) {
     return handleApiError({ error, route: '/api/integrations/twilio/threads' });

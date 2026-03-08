@@ -15,7 +15,7 @@ type QuestionCategory = {
 async function analyzePropertyMessages(
   client: OpenAI,
   propertyName: string,
-  guestMessages: string[]
+  guestMessages: string[],
 ): Promise<QuestionCategory[]> {
   if (guestMessages.length === 0) return [];
 
@@ -31,13 +31,13 @@ async function analyzePropertyMessages(
         content: `You are analyzing guest messages for the short-term rental property "${propertyName}".
 Identify the most common question categories, count how many messages fall into each,
 provide 2-3 example messages per category, and draft a concise suggested host answer for each category.
-Return valid JSON only: { "categories": [{ "name": string, "count": number, "examples": string[], "suggestedAnswer": string }] }`
+Return valid JSON only: { "categories": [{ "name": string, "count": number, "examples": string[], "suggestedAnswer": string }] }`,
       },
       {
         role: 'user',
-        content: `Here are ${guestMessages.length} guest messages for property "${propertyName}":\n\n${messageList}\n\nReturn JSON only.`
-      }
-    ]
+        content: `Here are ${guestMessages.length} guest messages for property "${propertyName}":\n\n${messageList}\n\nReturn JSON only.`,
+      },
+    ],
   });
 
   const text = response.choices[0]?.message?.content;
@@ -61,7 +61,9 @@ export async function POST() {
   const now = new Date();
 
   // Load all properties
-  const allProperties = await db.select({ id: properties.id, name: properties.name }).from(properties);
+  const allProperties = await db
+    .select({ id: properties.id, name: properties.name })
+    .from(properties);
   if (allProperties.length === 0) {
     return NextResponse.json({ error: 'No properties found. Run sync first.' }, { status: 400 });
   }
@@ -88,7 +90,12 @@ export async function POST() {
     messagesByProperty.set(propId, list);
   }
 
-  const results: { propertyId: string; propertyName: string; categories: number; messages: number }[] = [];
+  const results: {
+    propertyId: string;
+    propertyName: string;
+    categories: number;
+    messages: number;
+  }[] = [];
 
   for (const prop of allProperties) {
     const msgs = messagesByProperty.get(prop.id) ?? [];
@@ -107,7 +114,7 @@ export async function POST() {
           answer: cat.suggestedAnswer,
           examples: cat.examples,
           analysedAt: now,
-          updatedAt: now
+          updatedAt: now,
         })
         .onConflictDoUpdate({
           target: [propertyFaqs.propertyId, propertyFaqs.category],
@@ -116,12 +123,17 @@ export async function POST() {
             answer: cat.suggestedAnswer,
             examples: cat.examples,
             analysedAt: now,
-            updatedAt: now
-          }
+            updatedAt: now,
+          },
         });
     }
 
-    results.push({ propertyId: prop.id, propertyName: prop.name, categories: categories.length, messages: msgs.length });
+    results.push({
+      propertyId: prop.id,
+      propertyName: prop.name,
+      categories: categories.length,
+      messages: msgs.length,
+    });
   }
 
   return NextResponse.json({ ok: true, properties: results, totalMessages: guestMessages.length });
