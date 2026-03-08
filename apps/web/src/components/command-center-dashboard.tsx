@@ -2,8 +2,9 @@
 
 import type { QueueItem } from '@walt/contracts';
 import type { CSSProperties } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getRiskTrustIndicator } from '@/lib/command-center-store';
+import { buildHospitableMessagesPath, mergeOlderMessages } from '@/lib/hospitable-thread';
 
 type QueueResponse = { items: QueueItem[] };
 type LandingResponse = {
@@ -206,6 +207,13 @@ type HospitableMessagesResponse = {
     message: string;
     sentAt: string;
   }>;
+  page?: {
+    limit: number;
+    hasMoreOlder: boolean;
+    nextBeforeCursor: string | null;
+    newestMessageId: string | null;
+    oldestMessageId: string | null;
+  };
 };
 
 type PropertyBrainProfileResponse = {
@@ -355,6 +363,10 @@ export function CommandCenterDashboard() {
   const [twilioCleanerPhone, setTwilioCleanerPhone] = useState('+15550001234');
   const [twilioReadinessSignal, setTwilioReadinessSignal] = useState('READY');
   const [hospitableMessages, setHospitableMessages] = useState<HospitableMessagesResponse['items']>([]);
+  const [hospitableHasMoreOlder, setHospitableHasMoreOlder] = useState(false);
+  const [hospitableBeforeCursor, setHospitableBeforeCursor] = useState<string | null>(null);
+  const [isLoadingHospitableMessages, setIsLoadingHospitableMessages] = useState(false);
+  const [isLoadingOlderHospitableMessages, setIsLoadingOlderHospitableMessages] = useState(false);
   const [propertyBrainPropertyId, setPropertyBrainPropertyId] = useState('property:res-demo-001');
   const [propertyBrain, setPropertyBrain] = useState<PropertyBrainProfileResponse | null>(null);
   const [riskIntelligence, setRiskIntelligence] = useState<RiskIntelligenceResponse['assessment'] | null>(null);
@@ -404,6 +416,7 @@ export function CommandCenterDashboard() {
   const [twilioError, setTwilioError] = useState<string | null>(null);
   const [hospitableMessagesError, setHospitableMessagesError] = useState<string | null>(null);
   const [isReadOnly, setIsReadOnly] = useState(false);
+  const hospitableMessagesContainerRef = useRef<HTMLDivElement | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -823,14 +836,75 @@ export function CommandCenterDashboard() {
   };
 
   const loadHospitableMessages = async () => {
-    const response = await fetch(`/api/integrations/hospitable/messages?reservationId=${encodeURIComponent(webhookReservationId)}&limit=10`);
-    const body = (await response.json()) as { error?: string } & Partial<HospitableMessagesResponse>;
-    if (!response.ok) {
-      setHospitableMessagesError(body.error ?? 'Failed to load Hospitable messages.');
+    setIsLoadingHospitableMessages(true);
+    try {
+      const response = await fetch(buildHospitableMessagesPath({ reservationId: webhookReservationId }));
+      const body = (await response.json()) as { error?: string } & Partial<HospitableMessagesResponse>;
+      if (!response.ok) {
+        setHospitableMessagesError(body.error ?? 'Failed to load Hospitable messages.');
+        return;
+      }
+      setHospitableMessages(body.items ?? []);
+      setHospitableHasMoreOlder(Boolean(body.page?.hasMoreOlder));
+      setHospitableBeforeCursor(body.page?.nextBeforeCursor ?? null);
+      setHospitableMessagesError(null);
+      requestAnimationFrame(() => {
+        if (!hospitableMessagesContainerRef.current) {
+          return;
+        }
+        hospitableMessagesContainerRef.current.scrollTop = hospitableMessagesContainerRef.current.scrollHeight;
+      });
+    } finally {
+      setIsLoadingHospitableMessages(false);
+    }
+  };
+
+  const loadOlderHospitableMessages = async () => {
+    if (!hospitableHasMoreOlder || !hospitableBeforeCursor || isLoadingOlderHospitableMessages) {
       return;
     }
-    setHospitableMessages(body.items ?? []);
-    setHospitableMessagesError(null);
+
+    setIsLoadingOlderHospitableMessages(true);
+    const container = hospitableMessagesContainerRef.current;
+    const previousHeight = container?.scrollHeight ?? 0;
+    const previousTop = container?.scrollTop ?? 0;
+
+    try {
+      const response = await fetch(
+        buildHospitableMessagesPath({
+          reservationId: webhookReservationId,
+          beforeCursor: hospitableBeforeCursor
+        })
+      );
+      const body = (await response.json()) as { error?: string } & Partial<HospitableMessagesResponse>;
+      if (!response.ok) {
+        setHospitableMessagesError(body.error ?? 'Failed to load older Hospitable messages.');
+        return;
+      }
+      const olderItems = body.items ?? [];
+      setHospitableMessages((current) => mergeOlderMessages(current, olderItems));
+      setHospitableHasMoreOlder(Boolean(body.page?.hasMoreOlder));
+      setHospitableBeforeCursor(body.page?.nextBeforeCursor ?? null);
+      setHospitableMessagesError(null);
+
+      requestAnimationFrame(() => {
+        if (!container) {
+          return;
+        }
+        const nextHeight = container.scrollHeight;
+        container.scrollTop = previousTop + (nextHeight - previousHeight);
+      });
+    } finally {
+      setIsLoadingOlderHospitableMessages(false);
+    }
+  };
+
+  const handleHospitableMessagesScroll = () => {
+    const container = hospitableMessagesContainerRef.current;
+    if (!container || container.scrollTop > 32) {
+      return;
+    }
+    void loadOlderHospitableMessages();
   };
 
   const loadConversationDetail = async (draftId: string) => {
@@ -1266,21 +1340,35 @@ export function CommandCenterDashboard() {
           Pulls recent messages from the configured Hospitable API.
         </p>
         <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.5rem' }}>
-          <button onClick={() => void loadHospitableMessages()} style={buttonStyle('#334155')}>
+          <button onClick={() => void loadHospitableMessages()} style={buttonStyle('#334155')} disabled={isLoadingHospitableMessages}>
             Load Messages
           </button>
         </div>
         {hospitableMessagesError ? <p style={{ margin: '0 0 0.5rem', color: '#b91c1c', fontSize: 13 }}>{hospitableMessagesError}</p> : null}
+        {isLoadingHospitableMessages ? <p style={{ margin: '0 0 0.5rem', color: '#64748b', fontSize: 13 }}>Loading latest messages...</p> : null}
         {hospitableMessages.length === 0 ? (
           <p style={{ margin: 0, color: '#64748b' }}>No messages loaded.</p>
         ) : (
-          <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: 13 }}>
-            {hospitableMessages.slice(0, 10).map((message) => (
-              <li key={message.id}>
-                {message.reservationId} - {message.guestName}: {message.message}
-              </li>
-            ))}
-          </ul>
+          <div
+            ref={hospitableMessagesContainerRef}
+            onScroll={handleHospitableMessagesScroll}
+            style={{ maxHeight: 240, overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: 8, padding: '0.5rem' }}
+          >
+            {hospitableHasMoreOlder ? (
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.5rem' }}>
+                <button onClick={() => void loadOlderHospitableMessages()} style={buttonStyle('#475569')} disabled={isLoadingOlderHospitableMessages}>
+                  {isLoadingOlderHospitableMessages ? 'Loading older...' : 'Load older messages'}
+                </button>
+              </div>
+            ) : null}
+            <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: 13 }}>
+              {hospitableMessages.map((message) => (
+                <li key={message.id}>
+                  {message.reservationId} - {message.guestName}: {message.message}
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </section>
 

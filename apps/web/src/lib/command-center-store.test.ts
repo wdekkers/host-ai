@@ -2702,6 +2702,123 @@ void test('fetches and normalizes hospitable outbound messages when api is confi
   }
 });
 
+void test('returns latest reservation messages first with cursor pagination metadata', async () => {
+  const previousApiKey = process.env.HOSPITABLE_API_KEY;
+  const previousBaseUrl = process.env.HOSPITABLE_BASE_URL;
+  const originalFetch = globalThis.fetch;
+  process.env.HOSPITABLE_API_KEY = 'test-api-key';
+  process.env.HOSPITABLE_BASE_URL = 'https://api.hospitable.com';
+
+  globalThis.fetch = (async () => {
+    const messages = Array.from({ length: 8 }, (_, index) => ({
+      id: `msg-00${index + 1}`,
+      reservationId: 'res-demo-001',
+      guestName: 'Casey',
+      message: `Message ${index + 1}`,
+      sentAt: `2026-03-01T10:0${index}:00.000Z`
+    }));
+    return new Response(JSON.stringify({ data: messages }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' }
+    });
+  }) as typeof fetch;
+
+  try {
+    const response = await getHospitableMessages(
+      new Request('http://localhost/api/integrations/hospitable/messages?reservationId=res-demo-001&limit=5')
+    );
+    const body = (await response.json()) as {
+      count: number;
+      items: Array<{ id: string }>;
+      page?: { hasMoreOlder: boolean; nextBeforeCursor: string | null };
+    };
+    assert.equal(response.status, 200);
+    assert.equal(body.count, 5);
+    assert.deepEqual(
+      body.items.map((item) => item.id),
+      ['msg-004', 'msg-005', 'msg-006', 'msg-007', 'msg-008']
+    );
+    assert.equal(body.page?.hasMoreOlder, true);
+    assert.equal(typeof body.page?.nextBeforeCursor, 'string');
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (previousApiKey === undefined) {
+      delete process.env.HOSPITABLE_API_KEY;
+    } else {
+      process.env.HOSPITABLE_API_KEY = previousApiKey;
+    }
+    if (previousBaseUrl === undefined) {
+      delete process.env.HOSPITABLE_BASE_URL;
+    } else {
+      process.env.HOSPITABLE_BASE_URL = previousBaseUrl;
+    }
+  }
+});
+
+void test('returns older reservation messages when beforeCursor is provided', async () => {
+  const previousApiKey = process.env.HOSPITABLE_API_KEY;
+  const previousBaseUrl = process.env.HOSPITABLE_BASE_URL;
+  const originalFetch = globalThis.fetch;
+  process.env.HOSPITABLE_API_KEY = 'test-api-key';
+  process.env.HOSPITABLE_BASE_URL = 'https://api.hospitable.com';
+
+  globalThis.fetch = (async () => {
+    const messages = Array.from({ length: 8 }, (_, index) => ({
+      id: `msg-00${index + 1}`,
+      reservationId: 'res-demo-001',
+      guestName: 'Casey',
+      message: `Message ${index + 1}`,
+      sentAt: `2026-03-01T10:0${index}:00.000Z`
+    }));
+    return new Response(JSON.stringify({ data: messages }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' }
+    });
+  }) as typeof fetch;
+
+  try {
+    const firstResponse = await getHospitableMessages(
+      new Request('http://localhost/api/integrations/hospitable/messages?reservationId=res-demo-001&limit=5')
+    );
+    const firstBody = (await firstResponse.json()) as {
+      page?: { nextBeforeCursor: string | null };
+    };
+    const cursor = firstBody.page?.nextBeforeCursor ?? '';
+    assert.equal(cursor.length > 0, true);
+
+    const secondResponse = await getHospitableMessages(
+      new Request(
+        `http://localhost/api/integrations/hospitable/messages?reservationId=res-demo-001&limit=5&beforeCursor=${encodeURIComponent(cursor)}`
+      )
+    );
+    const secondBody = (await secondResponse.json()) as {
+      count: number;
+      items: Array<{ id: string }>;
+      page?: { hasMoreOlder: boolean; nextBeforeCursor: string | null };
+    };
+    assert.equal(secondResponse.status, 200);
+    assert.equal(secondBody.count, 3);
+    assert.deepEqual(
+      secondBody.items.map((item) => item.id),
+      ['msg-001', 'msg-002', 'msg-003']
+    );
+    assert.equal(secondBody.page?.hasMoreOlder, false);
+    assert.equal(secondBody.page?.nextBeforeCursor ?? null, null);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (previousApiKey === undefined) {
+      delete process.env.HOSPITABLE_API_KEY;
+    } else {
+      process.env.HOSPITABLE_API_KEY = previousApiKey;
+    }
+    if (previousBaseUrl === undefined) {
+      delete process.env.HOSPITABLE_BASE_URL;
+    } else {
+      process.env.HOSPITABLE_BASE_URL = previousBaseUrl;
+    }
+  }
+});
+
 void test('supports single twilio ops number and cleaner 1-1 readiness threads', async () => {
   const upsert = await postTwilioThread(
     new Request('http://localhost/api/integrations/twilio/threads', {
