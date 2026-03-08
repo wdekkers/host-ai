@@ -1,9 +1,11 @@
 import { fileURLToPath } from 'node:url';
 import Fastify from 'fastify';
+import { z } from 'zod';
 
 type Contact = {
   id: string;
   displayName: string;
+  vendorType: 'pool-maintenance' | 'plumber' | 'handyman' | 'cleaner' | 'electrician' | 'other';
   channel: 'sms' | 'airbnb' | 'email';
   handle: string;
   lastMessageAt: string;
@@ -20,16 +22,18 @@ type Message = {
 const contacts: Contact[] = [
   {
     id: 'contact-001',
-    displayName: 'Taylor Reed',
+    displayName: 'Blue Wave Pools',
+    vendorType: 'pool-maintenance',
     channel: 'sms',
     handle: '+1-555-0101',
     lastMessageAt: '2026-03-08T11:00:00.000Z'
   },
   {
     id: 'contact-002',
-    displayName: 'Jordan Lee',
-    channel: 'airbnb',
-    handle: 'airbnb:guest-202',
+    displayName: 'Rapid Rooter',
+    vendorType: 'plumber',
+    channel: 'sms',
+    handle: '+1-555-0132',
     lastMessageAt: '2026-03-08T09:30:00.000Z'
   }
 ];
@@ -39,21 +43,21 @@ const messages: Message[] = [
     id: 'message-001',
     contactId: 'contact-001',
     direction: 'inbound',
-    body: 'Can we check in around 2pm?',
+    body: 'Pool light is flickering. Can we check it today?',
     sentAt: '2026-03-08T10:30:00.000Z'
   },
   {
     id: 'message-002',
     contactId: 'contact-001',
     direction: 'outbound',
-    body: 'Yes, early check-in is available after 2pm.',
+    body: 'Yes, please stop by after 2 PM and send an ETA.',
     sentAt: '2026-03-08T11:00:00.000Z'
   },
   {
     id: 'message-003',
     contactId: 'contact-002',
     direction: 'inbound',
-    body: 'Do you have parking instructions?',
+    body: 'Leak under kitchen sink fixed and tested.',
     sentAt: '2026-03-08T09:30:00.000Z'
   }
 ];
@@ -62,8 +66,21 @@ const defaultPortByService: Record<string, number> = {
   identity: 4101,
   messaging: 4102,
   ops: 4103,
-  notifications: 4104,
+  notifications: 4104
 };
+
+const createContactInputSchema = z.object({
+  displayName: z.string().min(1),
+  vendorType: z.enum(['pool-maintenance', 'plumber', 'handyman', 'cleaner', 'electrician', 'other']),
+  channel: z.enum(['sms', 'airbnb', 'email']),
+  handle: z.string().min(1)
+});
+
+const createMessageInputSchema = z.object({
+  contactId: z.string().min(1),
+  direction: z.enum(['inbound', 'outbound']),
+  body: z.string().min(1)
+});
 
 export function buildMessagingApp() {
   const app = Fastify({ logger: true });
@@ -74,6 +91,47 @@ export function buildMessagingApp() {
     const { contactId } = request.query as { contactId?: string };
     const filtered = contactId ? messages.filter((message) => message.contactId === contactId) : messages;
     return { items: [...filtered].sort((a, b) => b.sentAt.localeCompare(a.sentAt)) };
+  });
+  app.post('/contacts', async (request, reply) => {
+    const parsed = createContactInputSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: parsed.error.message });
+    }
+
+    const now = new Date().toISOString();
+    const item: Contact = {
+      id: `contact-${String(contacts.length + 1).padStart(3, '0')}`,
+      displayName: parsed.data.displayName,
+      vendorType: parsed.data.vendorType,
+      channel: parsed.data.channel,
+      handle: parsed.data.handle,
+      lastMessageAt: now
+    };
+    contacts.unshift(item);
+    return reply.status(201).send({ item });
+  });
+  app.post('/messages', async (request, reply) => {
+    const parsed = createMessageInputSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: parsed.error.message });
+    }
+
+    const target = contacts.find((contact) => contact.id === parsed.data.contactId);
+    if (!target) {
+      return reply.status(404).send({ error: 'Contact not found' });
+    }
+
+    const sentAt = new Date().toISOString();
+    const item: Message = {
+      id: `message-${String(messages.length + 1).padStart(3, '0')}`,
+      contactId: parsed.data.contactId,
+      direction: parsed.data.direction,
+      body: parsed.data.body,
+      sentAt
+    };
+    messages.push(item);
+    target.lastMessageAt = sentAt;
+    return reply.status(201).send({ item });
   });
 
   return app;

@@ -19,3 +19,24 @@ export async function GET() {
     return NextResponse.json({ error: 'Gateway unavailable' }, { status: 502 });
   }
 }
+
+export async function POST(request: Request) {
+  try {
+    const response = await fetch(`${gatewayBaseUrl}/messaging/contacts`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', accept: 'application/json' },
+      cache: 'no-store',
+      body: JSON.stringify(await request.json())
+    });
+
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      return NextResponse.json({ error: payload.error ?? `Gateway returned ${response.status}` }, { status: response.status });
+    }
+
+    const payload = (await response.json()) as { item: unknown };
+    return NextResponse.json({ item: payload.item }, { status: 201 });
+  } catch {
+    return NextResponse.json({ error: 'Gateway unavailable' }, { status: 502 });
+  }
+}
