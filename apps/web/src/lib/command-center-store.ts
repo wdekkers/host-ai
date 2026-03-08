@@ -1,4 +1,12 @@
-import type { CreateDraftInput, QueueItem } from '@walt/contracts';
+import type {
+  CreateDraftInput,
+  CreatePropertyQaEntryInput,
+  PropertyQaEntry,
+  PropertyQaSuggestion,
+  PropertyQaSuggestionStatus,
+  QueueItem,
+  UpdatePropertyQaEntryInput
+} from '@walt/contracts';
 
 type DraftEventType =
   | 'draft.created'
@@ -533,6 +541,15 @@ type IncidentResponsePlan = {
   };
 };
 
+type PropertyQaSuggestionEvent = {
+  id: string;
+  suggestionId: string;
+  eventType: 'created' | 'approved' | 'edited_approved' | 'rejected' | 'archived';
+  actorId: string;
+  payload: Record<string, unknown>;
+  createdAt: string;
+};
+
 type Store = {
   listQueue: () => QueueItem[];
   createDraft: (input: CreateDraftInput) => QueueItem;
@@ -637,6 +654,16 @@ type Store = {
     guestName: string;
     actorId?: string;
   }) => IntentDraftResult;
+  listPropertyQaEntries: (propertyId: string, status?: 'active' | 'archived') => PropertyQaEntry[];
+  createPropertyQaEntry: (propertyId: string, input: CreatePropertyQaEntryInput) => PropertyQaEntry;
+  updatePropertyQaEntry: (id: string, input: UpdatePropertyQaEntryInput) => PropertyQaEntry;
+  listPropertyQaSuggestions: (propertyId: string, status?: PropertyQaSuggestionStatus) => PropertyQaSuggestion[];
+  approvePropertyQaSuggestion: (
+    suggestionId: string,
+    input: { actorId: string; question?: string; answer?: string }
+  ) => { suggestion: PropertyQaSuggestion; entry: PropertyQaEntry };
+  rejectPropertyQaSuggestion: (suggestionId: string, input: { actorId: string; reason?: string }) => PropertyQaSuggestion;
+  getPropertyQaSuggestionNotifications: () => { pendingCount: number; newlyReadyCount: number; generatedAt: string };
 };
 
 type StoreOptions = {
@@ -650,6 +677,9 @@ let cleanerPingCounter = 0;
 let monitoringAlertCounter = 0;
 let autopilotActionCounter = 0;
 let outboxCounter = 0;
+let propertyQaEntryCounter = 0;
+let propertyQaSuggestionCounter = 0;
+let propertyQaSuggestionEventCounter = 0;
 
 const nextId = () => {
   idCounter += 1;
@@ -679,6 +709,21 @@ const nextAutopilotActionId = () => {
 const nextOutboxId = () => {
   outboxCounter += 1;
   return `outbox-${outboxCounter}`;
+};
+
+const nextPropertyQaEntryId = () => {
+  propertyQaEntryCounter += 1;
+  return `property-qa-entry-${propertyQaEntryCounter}`;
+};
+
+const nextPropertyQaSuggestionId = () => {
+  propertyQaSuggestionCounter += 1;
+  return `property-qa-suggestion-${propertyQaSuggestionCounter}`;
+};
+
+const nextPropertyQaSuggestionEventId = () => {
+  propertyQaSuggestionEventCounter += 1;
+  return `property-qa-suggestion-event-${propertyQaSuggestionEventCounter}`;
 };
 
 const nowIso = () => new Date().toISOString();
@@ -823,6 +868,39 @@ const detectIntentFromGuestMessage = (message: string): string => {
   return 'guest-message';
 };
 
+const normalizeQuestionForHash = (question: string) =>
+  question
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const classifyQuestionReusability = (message: string): { label: 'likely-reusable' | 'one-off' | 'unclear'; confidence: number } => {
+  const normalized = message.toLowerCase();
+  const reusableKeywords = [
+    'wifi',
+    'parking',
+    'check in',
+    'check-in',
+    'checkout',
+    'check out',
+    'pool',
+    'hot tub',
+    'sauna',
+    'pet',
+    'quiet hours'
+  ];
+  const oneOffCues = ['my reservation', 'tonight', 'tomorrow', 'this weekend', 'reservation id', 'confirmation code'];
+
+  if (reusableKeywords.some((keyword) => normalized.includes(keyword)) && normalized.includes('?')) {
+    return { label: 'likely-reusable', confidence: 0.86 };
+  }
+  if (oneOffCues.some((cue) => normalized.includes(cue))) {
+    return { label: 'one-off', confidence: 0.74 };
+  }
+  return { label: 'unclear', confidence: 0.52 };
+};
+
 const propertyNotesByIntent: Record<string, string> = {
   'early-check-in-request': 'Check cleaning completion and lock readiness before offering early check-in.',
   'late-checkout-request': 'Verify same-day turnover and cleaner schedule before confirming late checkout.',
@@ -913,6 +991,10 @@ export const createStore = (options: StoreOptions = {}): Store => {
   };
   const propertyBrainProfiles = new Map<string, PropertyBrainProfile>();
   const hospitableByEventId = new Map<string, string>();
+  const propertyQaEntries: PropertyQaEntry[] = [];
+  const propertyQaSuggestions: Array<PropertyQaSuggestion & { normalizedQuestionHash: string }> = [];
+  const propertyQaSuggestionEvents: PropertyQaSuggestionEvent[] = [];
+  const qaRetentionDays = Number(process.env.PROPERTY_QA_RETENTION_DAYS ?? '30');
   let lastMonitoringRunAt = nowIso();
 
   const createEmptyPropertyBrain = (propertyId: string): PropertyBrainProfile => ({
@@ -1066,11 +1148,20 @@ export const createStore = (options: StoreOptions = {}): Store => {
 
   const assembleContext = (draftId: string): AssembledContext => {
     const item = byId(draftId);
+    const propertyId = propertyIdFromReservation(item.reservationId);
     const policy =
       policiesByIntent[item.intent] ??
       defaultPoliciesByIntent['guest-message'] ??
       'Acknowledge guest message and confirm details before final response.';
     const propertyNote = propertyNotesByIntent[item.intent] ?? 'Use property profile and reservation context for response.';
+    const qaSources = activeQaEntriesForProperty(propertyId).slice(0, 5).map((entry) => ({
+      type: 'property-qa' as const,
+      label: `Q&A: ${entry.question}`,
+      snippet: entry.answer,
+      confidence: 'medium' as const,
+      referenceUrl: `https://docs.walt.local/properties/${propertyId}/qa/${entry.id}`,
+      referenceId: `property-qa:${entry.id}`
+    }));
     const knowledgeSources = ([
       {
         type: 'policy',
@@ -1081,6 +1172,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
         referenceId: `policy:${item.intent}`
       },
       ...item.sources,
+      ...qaSources,
       {
         type: 'property-note',
         label: 'Property knowledge',
@@ -1155,6 +1247,94 @@ export const createStore = (options: StoreOptions = {}): Store => {
   };
 
   const autopilotSafeIntents = new Set(['wifi-help', 'parking-help', 'guest-message']);
+
+  const emitPropertyQaSuggestionEvent = (
+    suggestionId: string,
+    eventType: PropertyQaSuggestionEvent['eventType'],
+    actorId: string,
+    payload: Record<string, unknown> = {}
+  ) => {
+    propertyQaSuggestionEvents.unshift({
+      id: nextPropertyQaSuggestionEventId(),
+      suggestionId,
+      eventType,
+      actorId,
+      payload,
+      createdAt: nowIso()
+    });
+  };
+
+  const autoArchiveStaleSuggestions = () => {
+    const thresholdMs = Math.max(1, qaRetentionDays) * 24 * 60 * 60 * 1000;
+    const nowMs = Date.now();
+    for (const suggestion of propertyQaSuggestions) {
+      if (suggestion.status !== 'pending') {
+        continue;
+      }
+      const ageMs = nowMs - new Date(suggestion.createdAt).getTime();
+      if (ageMs <= thresholdMs) {
+        continue;
+      }
+      suggestion.status = 'invalid_output';
+      suggestion.updatedAt = nowIso();
+      emitPropertyQaSuggestionEvent(suggestion.id, 'archived', 'system', { reason: 'stale_pending' });
+    }
+  };
+
+  const activeQaEntriesForProperty = (propertyId: string) =>
+    propertyQaEntries
+      .filter((entry) => entry.propertyId === propertyId && entry.status === 'active')
+      .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+
+  const createQaSuggestionFromInbound = (item: QueueItem) => {
+    const propertyId = propertyIdFromReservation(item.reservationId);
+    const messageText = item.body.replace(/^Guest\s+[^:]+:\s*/i, '').trim();
+    if (messageText.length < 8) {
+      return;
+    }
+    const classifier = classifyQuestionReusability(messageText);
+    if (classifier.label !== 'likely-reusable') {
+      return;
+    }
+    const proposedQuestion = messageText.endsWith('?') ? messageText : `${messageText}?`;
+    const normalizedQuestionHash = normalizeQuestionForHash(proposedQuestion);
+    const duplicate = propertyQaSuggestions.some(
+      (suggestion) =>
+        suggestion.propertyId === propertyId &&
+        suggestion.normalizedQuestionHash === normalizedQuestionHash &&
+        (suggestion.status === 'pending' || suggestion.status === 'approved')
+    );
+    if (duplicate) {
+      return;
+    }
+
+    const proposedAnswer =
+      defaultPoliciesByIntent[item.intent] ??
+      policiesByIntent[item.intent] ??
+      defaultPoliciesByIntent['guest-message'];
+    const ts = nowIso();
+    const suggestion: PropertyQaSuggestion & { normalizedQuestionHash: string } = {
+      id: nextPropertyQaSuggestionId(),
+      propertyId,
+      sourceMessageId: item.id,
+      proposedQuestion,
+      proposedAnswer,
+      classifierLabel: classifier.label,
+      confidence: classifier.confidence,
+      status: proposedAnswer ? 'pending' : 'invalid_output',
+      reviewedBy: null,
+      reviewedAt: null,
+      createdAt: ts,
+      updatedAt: ts,
+      normalizedQuestionHash
+    };
+    propertyQaSuggestions.unshift(suggestion);
+    emitPropertyQaSuggestionEvent(suggestion.id, 'created', 'qa-analyzer', {
+      sourceMessageId: suggestion.sourceMessageId,
+      classifierLabel: suggestion.classifierLabel,
+      confidence: suggestion.confidence
+    });
+  };
 
   return {
     listQueue: () => sortedQueue(),
@@ -1672,6 +1852,7 @@ export const createStore = (options: StoreOptions = {}): Store => {
 
       hospitableByEventId.set(input.eventId, item.id);
       queue.unshift(item);
+      createQaSuggestionFromInbound(item);
       emit('message.ingested', { id: item.id, eventId: input.eventId }, { aggregateType: 'integration', aggregateId: input.eventId, actorId: 'hospitable-webhook' });
       return { item, duplicated: false };
     },
@@ -2600,6 +2781,153 @@ export const createStore = (options: StoreOptions = {}): Store => {
         },
         updatedAt: nowIso()
       };
+    },
+
+    listPropertyQaEntries: (propertyId, status) =>
+      propertyQaEntries
+        .filter((entry) => entry.propertyId === propertyId)
+        .filter((entry) => !status || entry.status === status)
+        .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
+
+    createPropertyQaEntry: (propertyId, input) => {
+      const ts = nowIso();
+      const actorId = input.createdBy ?? 'host-user';
+      const entry: PropertyQaEntry = {
+        id: nextPropertyQaEntryId(),
+        propertyId,
+        question: input.question,
+        answer: input.answer,
+        status: 'active',
+        source: 'manual',
+        createdBy: actorId,
+        updatedBy: actorId,
+        createdAt: ts,
+        updatedAt: ts
+      };
+      propertyQaEntries.unshift(entry);
+      return entry;
+    },
+
+    updatePropertyQaEntry: (id, input) => {
+      const entry = propertyQaEntries.find((candidate) => candidate.id === id);
+      if (!entry) {
+        throw new Error(`Property QA entry not found: ${id}`);
+      }
+      if (input.question !== undefined) {
+        entry.question = input.question;
+      }
+      if (input.answer !== undefined) {
+        entry.answer = input.answer;
+      }
+      if (input.status !== undefined) {
+        entry.status = input.status;
+      }
+      entry.updatedBy = input.updatedBy ?? 'host-user';
+      entry.updatedAt = nowIso();
+      return entry;
+    },
+
+    listPropertyQaSuggestions: (propertyId, status) => {
+      autoArchiveStaleSuggestions();
+      return propertyQaSuggestions
+        .filter((suggestion) => suggestion.propertyId === propertyId)
+        .filter((suggestion) => !status || suggestion.status === status)
+        .map(({ normalizedQuestionHash: _normalizedQuestionHash, ...suggestion }) => suggestion)
+        .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+    },
+
+    approvePropertyQaSuggestion: (suggestionId, input) => {
+      autoArchiveStaleSuggestions();
+      const suggestion = propertyQaSuggestions.find((candidate) => candidate.id === suggestionId);
+      if (!suggestion) {
+        throw new Error(`Property QA suggestion not found: ${suggestionId}`);
+      }
+      if (suggestion.status !== 'pending') {
+        throw new Error('Only pending suggestions can be approved.');
+      }
+
+      const ts = nowIso();
+      const approvedQuestion = input.question ?? suggestion.proposedQuestion;
+      const approvedAnswer = input.answer ?? suggestion.proposedAnswer;
+      const normalizedQuestionHash = normalizeQuestionForHash(approvedQuestion);
+      const existingEntry = propertyQaEntries.find(
+        (entry) =>
+          entry.propertyId === suggestion.propertyId &&
+          normalizeQuestionForHash(entry.question) === normalizedQuestionHash &&
+          entry.status === 'active'
+      );
+
+      let entry: PropertyQaEntry;
+      if (existingEntry) {
+        existingEntry.question = approvedQuestion;
+        existingEntry.answer = approvedAnswer;
+        existingEntry.updatedBy = input.actorId;
+        existingEntry.updatedAt = ts;
+        entry = existingEntry;
+      } else {
+        entry = {
+          id: nextPropertyQaEntryId(),
+          propertyId: suggestion.propertyId,
+          question: approvedQuestion,
+          answer: approvedAnswer,
+          status: 'active',
+          source: 'suggestion',
+          createdBy: input.actorId,
+          updatedBy: input.actorId,
+          createdAt: ts,
+          updatedAt: ts
+        };
+        propertyQaEntries.unshift(entry);
+      }
+
+      suggestion.proposedQuestion = approvedQuestion;
+      suggestion.proposedAnswer = approvedAnswer;
+      suggestion.status = 'approved';
+      suggestion.reviewedBy = input.actorId;
+      suggestion.reviewedAt = ts;
+      suggestion.updatedAt = ts;
+      suggestion.normalizedQuestionHash = normalizedQuestionHash;
+
+      emitPropertyQaSuggestionEvent(
+        suggestion.id,
+        input.question || input.answer ? 'edited_approved' : 'approved',
+        input.actorId,
+        { entryId: entry.id }
+      );
+
+      const { normalizedQuestionHash: _normalizedQuestionHash, ...withoutHash } = suggestion;
+      return { suggestion: withoutHash, entry };
+    },
+
+    rejectPropertyQaSuggestion: (suggestionId, input) => {
+      autoArchiveStaleSuggestions();
+      const suggestion = propertyQaSuggestions.find((candidate) => candidate.id === suggestionId);
+      if (!suggestion) {
+        throw new Error(`Property QA suggestion not found: ${suggestionId}`);
+      }
+      if (suggestion.status !== 'pending') {
+        throw new Error('Only pending suggestions can be rejected.');
+      }
+      suggestion.status = 'rejected';
+      suggestion.reviewedBy = input.actorId;
+      suggestion.reviewedAt = nowIso();
+      suggestion.updatedAt = suggestion.reviewedAt;
+      emitPropertyQaSuggestionEvent(suggestion.id, 'rejected', input.actorId, { reason: input.reason ?? '' });
+      const { normalizedQuestionHash: _normalizedQuestionHash, ...withoutHash } = suggestion;
+      return withoutHash;
+    },
+
+    getPropertyQaSuggestionNotifications: () => {
+      autoArchiveStaleSuggestions();
+      const nowMs = Date.now();
+      const oneDayMs = 24 * 60 * 60 * 1000;
+      const pending = propertyQaSuggestions.filter((suggestion) => suggestion.status === 'pending');
+      const newlyReady = pending.filter((suggestion) => nowMs - new Date(suggestion.createdAt).getTime() <= oneDayMs);
+      return {
+        pendingCount: pending.length,
+        newlyReadyCount: newlyReady.length,
+        generatedAt: nowIso()
+      };
     }
   };
 };
@@ -2739,6 +3067,25 @@ export const createIntentDraft = (
     actorId?: string;
   }
 ) => store.createIntentDraft(input);
+export const listPropertyQaEntries = (store: Store, propertyId: string, status?: 'active' | 'archived') =>
+  store.listPropertyQaEntries(propertyId, status);
+export const createPropertyQaEntry = (store: Store, propertyId: string, input: CreatePropertyQaEntryInput) =>
+  store.createPropertyQaEntry(propertyId, input);
+export const updatePropertyQaEntry = (store: Store, id: string, input: UpdatePropertyQaEntryInput) =>
+  store.updatePropertyQaEntry(id, input);
+export const listPropertyQaSuggestions = (store: Store, propertyId: string, status?: PropertyQaSuggestionStatus) =>
+  store.listPropertyQaSuggestions(propertyId, status);
+export const approvePropertyQaSuggestion = (
+  store: Store,
+  suggestionId: string,
+  input: { actorId: string; question?: string; answer?: string }
+) => store.approvePropertyQaSuggestion(suggestionId, input);
+export const rejectPropertyQaSuggestion = (
+  store: Store,
+  suggestionId: string,
+  input: { actorId: string; reason?: string }
+) => store.rejectPropertyQaSuggestion(suggestionId, input);
+export const getPropertyQaSuggestionNotifications = (store: Store) => store.getPropertyQaSuggestionNotifications();
 
 export const getRiskRecommendation = (input: RiskRecommendationInput): RiskRecommendation => {
   const baseRisk = 100 - input.globalTrustScore;
@@ -2922,3 +3269,18 @@ export const createIntentDraftInSingleton = (input: {
   guestName: string;
   actorId?: string;
 }) => singletonStore.createIntentDraft(input);
+export const listPropertyQaEntriesInSingleton = (propertyId: string, status?: 'active' | 'archived') =>
+  singletonStore.listPropertyQaEntries(propertyId, status);
+export const createPropertyQaEntryInSingleton = (propertyId: string, input: CreatePropertyQaEntryInput) =>
+  singletonStore.createPropertyQaEntry(propertyId, input);
+export const updatePropertyQaEntryInSingleton = (id: string, input: UpdatePropertyQaEntryInput) =>
+  singletonStore.updatePropertyQaEntry(id, input);
+export const listPropertyQaSuggestionsInSingleton = (propertyId: string, status?: PropertyQaSuggestionStatus) =>
+  singletonStore.listPropertyQaSuggestions(propertyId, status);
+export const approvePropertyQaSuggestionInSingleton = (
+  suggestionId: string,
+  input: { actorId: string; question?: string; answer?: string }
+) => singletonStore.approvePropertyQaSuggestion(suggestionId, input);
+export const rejectPropertyQaSuggestionInSingleton = (suggestionId: string, input: { actorId: string; reason?: string }) =>
+  singletonStore.rejectPropertyQaSuggestion(suggestionId, input);
+export const getPropertyQaSuggestionNotificationsInSingleton = () => singletonStore.getPropertyQaSuggestionNotifications();

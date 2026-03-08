@@ -86,6 +86,11 @@ export function getPermissionForApiRoute(pathname: string, method: string): Perm
     return 'drafts.write';
   }
 
+<<<<<<< HEAD
+  if (pathname.includes('/command-center/qa') || pathname.includes('/command-center/qa-suggestions')) {
+    return 'drafts.write';
+  }
+
   if (pathname.startsWith('/api/admin/')) {
     return 'platform.configure';
   }
