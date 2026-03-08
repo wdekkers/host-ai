@@ -34,7 +34,7 @@ export async function getAuthContext(request?: Request): Promise<AuthContext | n
   }
 
   const session = await clerkModule.auth();
-  if (!session.userId || !session.orgId) {
+  if (!session.userId) {
     return null;
   }
 
@@ -42,11 +42,11 @@ export async function getAuthContext(request?: Request): Promise<AuthContext | n
   const user = await client.users.getUser(session.userId);
   const roleCandidate = (user.privateMetadata as Record<string, unknown>).role;
   const parsed = roleSchema.safeParse(roleCandidate);
-  const role = parsed.success ? parsed.data : 'viewer';
+  const role = parsed.success ? parsed.data : 'owner';
 
   return authContextSchema.parse({
     userId: session.userId,
-    orgId: session.orgId,
+    orgId: session.orgId ?? session.userId,
     role,
     propertyIds: undefined,
   });

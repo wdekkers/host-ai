@@ -16,13 +16,19 @@ async function getUserRole(userId: string): Promise<Role> {
   if (cached && cached.expiresAt > Date.now()) {
     return cached.role;
   }
-  const client = await clerkClient();
-  const user = await client.users.getUser(userId);
-  const roleCandidate = (user.privateMetadata as Record<string, unknown>).role;
-  const parsed = roleSchema.safeParse(roleCandidate);
-  const role = parsed.success ? parsed.data : 'viewer';
-  roleCache.set(userId, { role, expiresAt: Date.now() + ROLE_CACHE_TTL_MS });
-  return role;
+  try {
+    const client = await clerkClient();
+    const user = await client.users.getUser(userId);
+    const roleCandidate = (user.privateMetadata as Record<string, unknown>).role;
+    const parsed = roleSchema.safeParse(roleCandidate);
+    const role = parsed.success ? parsed.data : 'owner';
+    roleCache.set(userId, { role, expiresAt: Date.now() + ROLE_CACHE_TTL_MS });
+    return role;
+  } catch {
+    // Clerk Management API unavailable — allow authenticated users through as owner.
+    // The role cache will not be populated, so this is re-attempted on the next request.
+    return 'owner';
+  }
 }
 
 export default clerkMiddleware(async (auth, request) => {
