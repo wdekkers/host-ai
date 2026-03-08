@@ -1,5 +1,5 @@
-import { ContactCenter } from '@/components/contact-center';
+import { redirect } from 'next/navigation';
 
 export default function ContactCenterPage() {
-  return <ContactCenter />;
+  redirect('/contacts');
 }

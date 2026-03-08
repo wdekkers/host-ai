@@ -83,6 +83,27 @@ app.post('/messaging/contacts', async (request, reply) => {
   }
 });
 
+app.patch('/messaging/contacts/:id', async (request, reply) => {
+  try {
+    const { id } = request.params as { id: string };
+    const response = await fetch(`${messagingServiceBaseUrl}/contacts/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify(request.body ?? {})
+    });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      return reply.status(response.status).send({ error: payload.error ?? `Messaging service returned ${response.status}` });
+    }
+
+    const payload = (await response.json()) as { item: unknown };
+    return { item: payload.item };
+  } catch (error) {
+    app.log.error({ error }, 'Failed to update contact in messaging service');
+    return reply.status(502).send({ error: 'Messaging service unavailable' });
+  }
+});
+
 app.get('/messaging/messages', async (request, reply) => {
   try {
     const { contactId } = request.query as { contactId?: string };

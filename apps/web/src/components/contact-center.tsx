@@ -2,14 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-type PropertyItem = { id: string; name: string };
-
 type Contact = {
   id: string;
   displayName: string;
-  vendorType: 'pool-maintenance' | 'plumber' | 'handyman' | 'cleaner' | 'electrician' | 'other';
+  contactType: string;
   channel: 'sms' | 'airbnb' | 'email';
   handle: string;
+  preferred: boolean;
 };
 
 type Message = {
@@ -19,26 +18,18 @@ type Message = {
   sentAt: string;
 };
 
-const vendorTypeOptions: Contact['vendorType'][] = [
-  'pool-maintenance',
-  'plumber',
-  'handyman',
-  'cleaner',
-  'electrician',
-  'other'
-];
+const contactTypeSuggestions = ['pool-maintenance', 'plumber', 'handyman', 'cleaner', 'electrician'];
 
 export function ContactCenter() {
-  const [properties, setProperties] = useState<PropertyItem[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContactId, setSelectedContactId] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const [vendorName, setVendorName] = useState('');
-  const [vendorType, setVendorType] = useState<Contact['vendorType']>('pool-maintenance');
-  const [vendorChannel, setVendorChannel] = useState<Contact['channel']>('sms');
-  const [vendorHandle, setVendorHandle] = useState('');
+  const [contactName, setContactName] = useState('');
+  const [contactType, setContactType] = useState('');
+  const [contactChannel, setContactChannel] = useState<Contact['channel']>('sms');
+  const [contactHandle, setContactHandle] = useState('');
 
   const [composerBody, setComposerBody] = useState('');
   const [composerDirection, setComposerDirection] = useState<'inbound' | 'outbound'>('outbound');
@@ -48,24 +39,25 @@ export function ContactCenter() {
     [contacts, selectedContactId]
   );
 
-  const loadProperties = async () => {
-    const res = await fetch('/api/properties');
-    if (!res.ok) return;
-    const data = (await res.json()) as { items: PropertyItem[] };
-    setProperties(data.items ?? []);
-  };
+  const resolvedTypeSuggestions = useMemo(() => {
+    const dynamic = contacts.map((contact) => contact.contactType.trim()).filter((value) => value.length > 0);
+    return Array.from(new Set([...contactTypeSuggestions, ...dynamic])).sort((a, b) => a.localeCompare(b));
+  }, [contacts]);
 
   const loadContacts = async () => {
     const res = await fetch('/api/messaging/contacts');
     if (!res.ok) {
-      setError('Unable to load vendor contacts.');
+      setError('Unable to load contacts.');
       return;
     }
     const data = (await res.json()) as { items: Contact[] };
     const sorted = data.items ?? [];
     setContacts(sorted);
-    if ((sorted.length ?? 0) > 0 && !sorted.some((c) => c.id === selectedContactId)) {
-      setSelectedContactId(sorted[0]!.id);
+
+    const preferred = sorted.find((contact) => contact.preferred);
+    const nextId = preferred?.id ?? sorted[0]?.id ?? '';
+    if (nextId && !sorted.some((c) => c.id === selectedContactId)) {
+      setSelectedContactId(nextId);
     }
     setError(null);
   };
@@ -82,9 +74,9 @@ export function ContactCenter() {
     setError(null);
   };
 
-  const addVendor = async () => {
-    if (!vendorName.trim() || !vendorHandle.trim()) {
-      setError('Vendor name and contact are required.');
+  const addContact = async () => {
+    if (!contactName.trim() || !contactHandle.trim() || !contactType.trim()) {
+      setError('Contact name, type, and contact details are required.');
       return;
     }
 
@@ -92,29 +84,46 @@ export function ContactCenter() {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        displayName: vendorName.trim(),
-        vendorType,
-        channel: vendorChannel,
-        handle: vendorHandle.trim()
+        displayName: contactName.trim(),
+        contactType: contactType.trim(),
+        channel: contactChannel,
+        handle: contactHandle.trim()
       })
     });
 
     if (!res.ok) {
-      setError('Unable to add vendor.');
+      setError('Unable to add contact.');
       return;
     }
 
     const payload = (await res.json()) as { item: Contact };
-    setVendorName('');
-    setVendorHandle('');
+    setContactName('');
+    setContactHandle('');
     await loadContacts();
     setSelectedContactId(payload.item.id);
     setError(null);
   };
 
+  const setPreferredContact = async (id: string) => {
+    const res = await fetch(`/api/messaging/contacts/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ preferred: true })
+    });
+
+    if (!res.ok) {
+      setError('Unable to update preferred contact.');
+      return;
+    }
+
+    await loadContacts();
+    setSelectedContactId(id);
+    setError(null);
+  };
+
   const sendMessage = async () => {
     if (!selectedContactId || !composerBody.trim()) {
-      setError('Select a vendor and enter a message.');
+      setError('Select a contact and enter a message.');
       return;
     }
 
@@ -139,7 +148,7 @@ export function ContactCenter() {
   };
 
   useEffect(() => {
-    void Promise.all([loadProperties(), loadContacts()]);
+    void loadContacts();
   }, []);
 
   useEffect(() => {
@@ -149,73 +158,86 @@ export function ContactCenter() {
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Contact Center</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Manage vendors and run conversations directly in the portal.
-        </p>
+        <h1 className="text-2xl font-semibold">Contacts</h1>
+        <p className="text-sm text-gray-500 mt-1">Manage contacts and run conversations directly in the portal.</p>
       </div>
 
       <section className="rounded-lg border bg-white p-4 space-y-3">
-        <h2 className="font-medium">Add Vendor</h2>
-        <p className="text-xs text-gray-500">
-          Properties in database: {properties.length}
-        </p>
+        <h2 className="font-medium">Add Contact</h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-2">
           <input
             className="border rounded px-2 py-1"
-            value={vendorName}
-            onChange={(event) => setVendorName(event.target.value)}
-            placeholder="Vendor name"
+            value={contactName}
+            onChange={(event) => setContactName(event.target.value)}
+            placeholder="Contact name"
           />
-          <select className="border rounded px-2 py-1" value={vendorType} onChange={(event) => setVendorType(event.target.value as Contact['vendorType'])}>
-            {vendorTypeOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-          <select className="border rounded px-2 py-1" value={vendorChannel} onChange={(event) => setVendorChannel(event.target.value as Contact['channel'])}>
+          <div>
+            <input
+              list="contact-type-options"
+              className="border rounded px-2 py-1 w-full"
+              value={contactType}
+              onChange={(event) => setContactType(event.target.value)}
+              placeholder="Contact type"
+            />
+            <datalist id="contact-type-options">
+              {resolvedTypeSuggestions.map((option) => (
+                <option key={option} value={option} />
+              ))}
+            </datalist>
+          </div>
+          <select className="border rounded px-2 py-1" value={contactChannel} onChange={(event) => setContactChannel(event.target.value as Contact['channel'])}>
             <option value="sms">sms</option>
             <option value="email">email</option>
             <option value="airbnb">airbnb</option>
           </select>
           <input
             className="border rounded px-2 py-1"
-            value={vendorHandle}
-            onChange={(event) => setVendorHandle(event.target.value)}
+            value={contactHandle}
+            onChange={(event) => setContactHandle(event.target.value)}
             placeholder="Phone or email"
           />
-          <button className="border rounded px-3 py-1" onClick={() => void addVendor()}>
-            Add Vendor
+          <button className="border rounded px-3 py-1" onClick={() => void addContact()}>
+            Add Contact
           </button>
         </div>
       </section>
 
       <section className="rounded-lg border bg-white p-4 space-y-3">
-        <h2 className="font-medium">Vendor Conversations</h2>
-        <div className="flex gap-2 items-center flex-wrap">
-          <select
-            className="border rounded px-2 py-1 min-w-72"
-            value={selectedContactId}
-            onChange={(event) => setSelectedContactId(event.target.value)}
-          >
+        <h2 className="font-medium">Contacts</h2>
+        {contacts.length === 0 ? (
+          <p className="text-sm text-gray-500">No contacts yet.</p>
+        ) : (
+          <ul className="space-y-2 text-sm">
             {contacts.map((contact) => (
-              <option key={contact.id} value={contact.id}>
-                {contact.displayName} ({contact.vendorType}) - {contact.handle}
-              </option>
+              <li key={contact.id} className="rounded border p-2 flex items-center justify-between gap-3">
+                <div>
+                  <button className="font-medium text-left" onClick={() => setSelectedContactId(contact.id)}>
+                    {contact.displayName}
+                  </button>{' '}
+                  ({contact.contactType}) - {contact.handle}
+                </div>
+                <label className="flex items-center gap-1 text-xs text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={contact.preferred}
+                    onChange={() => void setPreferredContact(contact.id)}
+                  />
+                  preferred
+                </label>
+              </li>
             ))}
-          </select>
-          <button className="border rounded px-3 py-1" onClick={() => void loadMessages(selectedContactId)}>
-            Refresh Conversation
-          </button>
-        </div>
+          </ul>
+        )}
+      </section>
 
+      <section className="rounded-lg border bg-white p-4 space-y-3">
+        <h2 className="font-medium">Conversation</h2>
         {selectedContact ? (
           <p className="text-sm text-gray-600">
-            Active vendor: <strong>{selectedContact.displayName}</strong> ({selectedContact.vendorType}) via {selectedContact.channel}
+            Active contact: <strong>{selectedContact.displayName}</strong> ({selectedContact.contactType}) via {selectedContact.channel}
           </p>
         ) : (
-          <p className="text-sm text-gray-500">No vendor selected yet.</p>
+          <p className="text-sm text-gray-500">No contact selected yet.</p>
         )}
 
         <div className="grid gap-2">
@@ -237,7 +259,7 @@ export function ContactCenter() {
             value={composerBody}
             onChange={(event) => setComposerBody(event.target.value)}
             rows={2}
-            placeholder="Type message to vendor"
+            placeholder="Type message"
           />
         </div>
 

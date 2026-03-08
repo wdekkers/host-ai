@@ -9,11 +9,12 @@ void test('GET /contacts returns a contact list', async () => {
 
   assert.equal(response.statusCode, 200);
   const payload = response.json() as {
-    items: Array<{ id: string; displayName: string; channel: string; handle: string; lastMessageAt: string }>;
+    items: Array<{ id: string; displayName: string; contactType: string; preferred: boolean }>;
   };
 
   assert.ok(payload.items.length > 0);
   assert.equal(payload.items[0]?.id, 'contact-001');
+  assert.equal(payload.items[0]?.preferred, true);
   await app.close();
 });
 
@@ -31,14 +32,14 @@ void test('GET /messages filters by contactId', async () => {
   await app.close();
 });
 
-void test('POST /contacts creates a vendor contact', async () => {
+void test('POST /contacts creates a contact with free-text contactType', async () => {
   const app = buildMessagingApp();
   const createResponse = await app.inject({
     method: 'POST',
     url: '/contacts',
     payload: {
       displayName: 'Apex Pool Co',
-      vendorType: 'pool-maintenance',
+      contactType: 'pool-specialist-night-shift',
       channel: 'sms',
       handle: '+1-555-0202'
     }
@@ -46,14 +47,31 @@ void test('POST /contacts creates a vendor contact', async () => {
 
   assert.equal(createResponse.statusCode, 201);
   const created = createResponse.json() as {
-    item: { id: string; displayName: string; vendorType: string; channel: string; handle: string };
+    item: { id: string; displayName: string; contactType: string; channel: string; handle: string };
   };
   assert.equal(created.item.displayName, 'Apex Pool Co');
-  assert.equal(created.item.vendorType, 'pool-maintenance');
+  assert.equal(created.item.contactType, 'pool-specialist-night-shift');
 
   const listResponse = await app.inject({ method: 'GET', url: '/contacts' });
   const listPayload = listResponse.json() as { items: Array<{ id: string }> };
   assert.ok(listPayload.items.some((item) => item.id === created.item.id));
+  await app.close();
+});
+
+void test('PATCH /contacts/:id marks preferred contact', async () => {
+  const app = buildMessagingApp();
+  const patchResponse = await app.inject({
+    method: 'PATCH',
+    url: '/contacts/contact-002',
+    payload: { preferred: true }
+  });
+
+  assert.equal(patchResponse.statusCode, 200);
+
+  const listResponse = await app.inject({ method: 'GET', url: '/contacts' });
+  const payload = listResponse.json() as { items: Array<{ id: string; preferred: boolean }> };
+  assert.equal(payload.items.find((item) => item.id === 'contact-002')?.preferred, true);
+  assert.equal(payload.items.find((item) => item.id === 'contact-001')?.preferred, false);
   await app.close();
 });
 
