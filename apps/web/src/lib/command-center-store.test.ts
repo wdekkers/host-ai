@@ -905,6 +905,148 @@ void test('deduplicates Hospitable webhook event id to prevent duplicate queue i
   );
 });
 
+void test('logs webhook_raw_body and webhook_ingested events on successful ingestion', async () => {
+  const captured: string[] = [];
+  const originalLog = console.log;
+  console.log = (...args: unknown[]) => {
+    captured.push(args.map((arg) => String(arg)).join(' '));
+  };
+
+  try {
+    await postHospitableWebhook(
+      new Request('http://localhost/api/integrations/hospitable', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          eventId: 'evt-logging-ingested',
+          reservationId: 'res-logging-ingested',
+          guestName: 'Alex',
+          message: 'What time is checkout?',
+          sentAt: '2026-03-01T10:00:00.000Z',
+        }),
+      }),
+    );
+
+    const events = captured
+      .map((line) => {
+        try {
+          return JSON.parse(line) as Record<string, unknown>;
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean) as Array<Record<string, unknown>>;
+
+    const rawBodyEvent = events.find((e) => e.event === 'webhook_raw_body');
+    assert.equal(rawBodyEvent !== undefined, true);
+    assert.equal(typeof rawBodyEvent?.correlationId, 'string');
+
+    const receivedEvent = events.find((e) => e.event === 'webhook_received');
+    assert.equal(receivedEvent !== undefined, true);
+    assert.equal(receivedEvent?.reservationId, 'res-logging-ingested');
+    assert.equal(receivedEvent?.eventId, 'evt-logging-ingested');
+
+    const ingestedEvent = events.find((e) => e.event === 'webhook_ingested');
+    assert.equal(ingestedEvent !== undefined, true);
+    assert.equal(typeof ingestedEvent?.queueItemId, 'string');
+    assert.equal(typeof ingestedEvent?.intent, 'string');
+    assert.equal(ingestedEvent?.correlationId, receivedEvent?.correlationId);
+  } finally {
+    console.log = originalLog;
+  }
+});
+
+void test('logs webhook_duplicate event when same eventId is received twice', async () => {
+  const captured: string[] = [];
+  const originalLog = console.log;
+  console.log = (...args: unknown[]) => {
+    captured.push(args.map((arg) => String(arg)).join(' '));
+  };
+
+  const payload = JSON.stringify({
+    eventId: 'evt-logging-dedupe',
+    reservationId: 'res-logging-dedupe',
+    guestName: 'Morgan',
+    message: 'Is there parking nearby?',
+    sentAt: '2026-03-01T11:00:00.000Z',
+  });
+
+  try {
+    await postHospitableWebhook(
+      new Request('http://localhost/api/integrations/hospitable', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: payload,
+      }),
+    );
+
+    captured.length = 0; // reset — only capture the duplicate call's logs
+
+    await postHospitableWebhook(
+      new Request('http://localhost/api/integrations/hospitable', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: payload,
+      }),
+    );
+
+    const events = captured
+      .map((line) => {
+        try {
+          return JSON.parse(line) as Record<string, unknown>;
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean) as Array<Record<string, unknown>>;
+
+    const duplicateEvent = events.find((e) => e.event === 'webhook_duplicate');
+    assert.equal(duplicateEvent !== undefined, true);
+    assert.equal(duplicateEvent?.eventId, 'evt-logging-dedupe');
+    assert.equal(duplicateEvent?.reservationId, 'res-logging-dedupe');
+    assert.equal(typeof duplicateEvent?.queueItemId, 'string');
+  } finally {
+    console.log = originalLog;
+  }
+});
+
+void test('logs api_error with correlationId when webhook body is malformed', async () => {
+  const captured: string[] = [];
+  const originalError = console.error;
+  console.error = (...args: unknown[]) => {
+    captured.push(args.map((arg) => String(arg)).join(' '));
+  };
+
+  try {
+    const response = await postHospitableWebhook(
+      new Request('http://localhost/api/integrations/hospitable', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ unexpected: 'payload' }),
+      }),
+    );
+
+    assert.equal(response.status, 400);
+
+    const errorEvents = captured
+      .map((line) => {
+        try {
+          return JSON.parse(line) as Record<string, unknown>;
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean) as Array<Record<string, unknown>>;
+
+    const errorEvent = errorEvents.find((e) => e.event === 'api_error');
+    assert.equal(errorEvent !== undefined, true);
+    assert.equal(typeof (errorEvent?.context as Record<string, unknown>)?.correlationId, 'string');
+    assert.equal(errorEvent?.route, '/api/integrations/hospitable');
+  } finally {
+    console.error = originalError;
+  }
+});
+
 void test('detects booking inquiry intent from Hospitable message content', async () => {
   const response = await postHospitableWebhook(
     new Request('http://localhost/api/integrations/hospitable', {
@@ -2996,8 +3138,8 @@ void test('fetches and normalizes hospitable outbound messages when api is confi
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const target =
       typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-    assert.equal(target.includes('/v1/reservations/res-demo-001/messages'), true);
-    assert.equal(target.includes('limit=2'), true);
+    assert.equal(target.includes('/v2/reservations/res-demo-001/messages'), true);
+    assert.equal(target.includes('limit=100'), true); // route clamps to max(requested, 100)
     assert.equal(
       String((init?.headers as Record<string, string>).authorization).startsWith('Bearer'),
       true,
