@@ -1,4 +1,4 @@
-import { asc, eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { messages, reservations } from '@walt/db';
@@ -37,7 +37,8 @@ export default async function ThreadPage({
     .select()
     .from(messages)
     .where(eq(messages.reservationId, reservationId))
-    .orderBy(asc(messages.createdAt));
+    .orderBy(desc(messages.createdAt))
+    .limit(5);
 
   const guestName =
     [reservation.guestFirstName, reservation.guestLastName].filter(Boolean).join(' ') || 'Guest';
@@ -96,7 +97,7 @@ export default async function ThreadPage({
             <span className="text-xs font-medium text-gray-400 uppercase tracking-wide block">
               Messages
             </span>
-            {msgs.length}
+            {msgs.length} (latest)
           </div>
         </div>
       </div>
