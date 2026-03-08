@@ -63,6 +63,26 @@ app.get('/messaging/contacts', async (_request, reply) => {
   }
 });
 
+app.post('/messaging/contacts', async (request, reply) => {
+  try {
+    const response = await fetch(`${messagingServiceBaseUrl}/contacts`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify(request.body ?? {})
+    });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      return reply.status(response.status).send({ error: payload.error ?? `Messaging service returned ${response.status}` });
+    }
+
+    const payload = (await response.json()) as { item: unknown };
+    return reply.status(201).send({ item: payload.item });
+  } catch (error) {
+    app.log.error({ error }, 'Failed to create contact in messaging service');
+    return reply.status(502).send({ error: 'Messaging service unavailable' });
+  }
+});
+
 app.get('/messaging/messages', async (request, reply) => {
   try {
     const { contactId } = request.query as { contactId?: string };
@@ -76,6 +96,26 @@ app.get('/messaging/messages', async (request, reply) => {
     return { items: payload.items ?? [] };
   } catch (error) {
     app.log.error({ error }, 'Failed to load messages from messaging service');
+    return reply.status(502).send({ error: 'Messaging service unavailable' });
+  }
+});
+
+app.post('/messaging/messages', async (request, reply) => {
+  try {
+    const response = await fetch(`${messagingServiceBaseUrl}/messages`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', accept: 'application/json' },
+      body: JSON.stringify(request.body ?? {})
+    });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      return reply.status(response.status).send({ error: payload.error ?? `Messaging service returned ${response.status}` });
+    }
+
+    const payload = (await response.json()) as { item: unknown };
+    return reply.status(201).send({ item: payload.item });
+  } catch (error) {
+    app.log.error({ error }, 'Failed to create message in messaging service');
     return reply.status(502).send({ error: 'Messaging service unavailable' });
   }
 });
