@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { listQueue } from '@/lib/command-center-store';
+import { getPropertyQaSuggestionNotificationsInSingleton, listQueue } from '@/lib/command-center-store';
 
 export async function GET() {
   const items = listQueue();
@@ -10,6 +10,7 @@ export async function GET() {
       total: items.length,
       pending: items.filter((item) => item.status === 'pending' || item.status === 'edited').length,
       approved: items.filter((item) => item.status === 'approved').length
-    }
+    },
+    qaSuggestions: getPropertyQaSuggestionNotificationsInSingleton()
   });
 }
