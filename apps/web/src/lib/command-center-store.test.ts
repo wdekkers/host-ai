@@ -91,6 +91,12 @@ import { GET as getContextByDraftId } from '@/app/api/command-center/context/[id
 import { POST as postDraftFromInbound } from '@/app/api/command-center/drafts/from-inbound/route';
 import { GET as getRoiDashboard } from '@/app/api/command-center/metrics/roi/route';
 import { GET as getAdoptionMetrics } from '@/app/api/command-center/metrics/adoption/route';
+import { GET as getPropertyQaEntries, POST as postPropertyQaEntry } from '@/app/api/command-center/qa/[propertyId]/route';
+import { PATCH as patchPropertyQaEntry } from '@/app/api/command-center/qa/entry/[id]/route';
+import { GET as getQaSuggestionsByProperty } from '@/app/api/command-center/qa-suggestions/[propertyId]/route';
+import { POST as postApproveQaSuggestion } from '@/app/api/command-center/qa-suggestions/[id]/approve/route';
+import { POST as postRejectQaSuggestion } from '@/app/api/command-center/qa-suggestions/[id]/reject/route';
+import { GET as getQaSuggestionNotifications } from '@/app/api/command-center/qa-suggestions/notifications/route';
 
 void test('shows a control-tower queue with actionable items', () => {
   const store = createStore();
@@ -3237,4 +3243,219 @@ void test('returns adoption metrics for command-center-first behavior and reduce
     true,
   );
   assert.equal(body.adoption.period.length > 0, true);
+});
+
+void test('creates pending qa suggestion from inbound message and exposes notification count', async () => {
+  const eventId = `event-qa-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const ingress = await postHospitableWebhook(
+    new Request('http://localhost/api/integrations/hospitable', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        eventId,
+        reservationId: 'res-qa-001',
+        guestName: 'Alex',
+        message: 'What is the wifi password?'
+      })
+    })
+  );
+  assert.equal(ingress.status, 202);
+
+  const notifications = await getQaSuggestionNotifications();
+  const notificationsBody = (await notifications.json()) as { pendingCount: number };
+  assert.equal(notifications.status, 200);
+  assert.equal(notificationsBody.pendingCount > 0, true);
+
+  const suggestions = await getQaSuggestionsByProperty(
+    new Request('http://localhost/api/command-center/qa-suggestions/property:res-qa-001?status=pending'),
+    { params: Promise.resolve({ propertyId: 'property:res-qa-001' }) }
+  );
+  const suggestionsBody = (await suggestions.json()) as {
+    items: Array<{ id: string; status: string; classifierLabel: string; sourceMessageId: string }>;
+  };
+  assert.equal(suggestions.status, 200);
+  assert.equal(suggestionsBody.items.length > 0, true);
+  assert.equal(suggestionsBody.items[0]?.status, 'pending');
+  assert.equal(suggestionsBody.items[0]?.classifierLabel, 'likely-reusable');
+});
+
+void test('approves qa suggestion and includes approved qa source in regenerated context', async () => {
+  const eventId = `event-qa-approve-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const ingress = await postHospitableWebhook(
+    new Request('http://localhost/api/integrations/hospitable', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        eventId,
+        reservationId: 'res-qa-approve-001',
+        guestName: 'Avery',
+        message: 'Do you have parking available?'
+      })
+    })
+  );
+  const ingressBody = (await ingress.json()) as { item: { id: string } };
+  assert.equal(ingress.status, 202);
+
+  const suggestions = await getQaSuggestionsByProperty(
+    new Request('http://localhost/api/command-center/qa-suggestions/property:res-qa-approve-001?status=pending'),
+    { params: Promise.resolve({ propertyId: 'property:res-qa-approve-001' }) }
+  );
+  const suggestionsBody = (await suggestions.json()) as { items: Array<{ id: string }> };
+  const suggestionId = suggestionsBody.items[0]?.id;
+  assert.equal(typeof suggestionId, 'string');
+
+  const approved = await postApproveQaSuggestion(
+    new Request(`http://localhost/api/command-center/qa-suggestions/${suggestionId}/approve`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ actorId: 'qa-reviewer-1' })
+    }),
+    { params: Promise.resolve({ id: String(suggestionId) }) }
+  );
+  assert.equal(approved.status, 200);
+
+  const regenerated = await postDraftFromInbound(
+    new Request('http://localhost/api/command-center/drafts/from-inbound', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ draftId: ingressBody.item.id })
+    })
+  );
+  assert.equal(regenerated.status, 200);
+
+  const context = await getContextByDraftId(
+    new Request(`http://localhost/api/command-center/context/${ingressBody.item.id}`),
+    { params: Promise.resolve({ id: ingressBody.item.id }) }
+  );
+  const contextBody = (await context.json()) as {
+    context: { knowledgeSources: Array<{ type: string; referenceId?: string }> };
+  };
+  assert.equal(context.status, 200);
+  assert.equal(
+    contextBody.context.knowledgeSources.some((source) => source.type === 'policy'),
+    true
+  );
+  assert.equal(
+    contextBody.context.knowledgeSources.some((source) => source.type === 'property-qa'),
+    true
+  );
+});
+
+void test('deduplicates near-identical qa suggestions by normalized question hash', async () => {
+  const eventA = `event-qa-dedupe-a-${Date.now()}`;
+  const eventB = `event-qa-dedupe-b-${Date.now()}`;
+
+  await postHospitableWebhook(
+    new Request('http://localhost/api/integrations/hospitable', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        eventId: eventA,
+        reservationId: 'res-qa-dedupe-001',
+        guestName: 'Sam',
+        message: 'What is the wifi password?'
+      })
+    })
+  );
+
+  await postHospitableWebhook(
+    new Request('http://localhost/api/integrations/hospitable', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        eventId: eventB,
+        reservationId: 'res-qa-dedupe-001',
+        guestName: 'Sam',
+        message: 'What is the WI-FI password'
+      })
+    })
+  );
+
+  const suggestions = await getQaSuggestionsByProperty(
+    new Request('http://localhost/api/command-center/qa-suggestions/property:res-qa-dedupe-001?status=pending'),
+    { params: Promise.resolve({ propertyId: 'property:res-qa-dedupe-001' }) }
+  );
+  const body = (await suggestions.json()) as { items: Array<{ id: string }> };
+  assert.equal(suggestions.status, 200);
+  assert.equal(body.items.length, 1);
+});
+
+void test('supports manual property qa add and archive flow', async () => {
+  const created = await postPropertyQaEntry(
+    new Request('http://localhost/api/command-center/qa/property:manual-001', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        question: 'Is the hot tub open all year?',
+        answer: 'Yes, but quiet hours start at 10 PM.',
+        createdBy: 'host-manual-1'
+      })
+    }),
+    { params: Promise.resolve({ propertyId: 'property:manual-001' }) }
+  );
+  const createdBody = (await created.json()) as { item: { id: string; status: string } };
+  assert.equal(created.status, 200);
+  assert.equal(createdBody.item.status, 'active');
+
+  const archived = await patchPropertyQaEntry(
+    new Request(`http://localhost/api/command-center/qa/entry/${createdBody.item.id}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        status: 'archived',
+        updatedBy: 'host-manual-1'
+      })
+    }),
+    { params: Promise.resolve({ id: createdBody.item.id }) }
+  );
+  assert.equal(archived.status, 200);
+
+  const entries = await getPropertyQaEntries(
+    new Request('http://localhost/api/command-center/qa/property:manual-001'),
+    { params: Promise.resolve({ propertyId: 'property:manual-001' }) }
+  );
+  const entriesBody = (await entries.json()) as { items: Array<{ id: string; status: string }> };
+  assert.equal(entries.status, 200);
+  assert.equal(entriesBody.items.some((item) => item.id === createdBody.item.id && item.status === 'archived'), true);
+});
+
+void test('rejects qa suggestion and updates status', async () => {
+  const eventId = `event-qa-reject-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  await postHospitableWebhook(
+    new Request('http://localhost/api/integrations/hospitable', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        eventId,
+        reservationId: 'res-qa-reject-001',
+        guestName: 'Riley',
+        message: 'Can I check in at 7am?'
+      })
+    })
+  );
+
+  const pending = await getQaSuggestionsByProperty(
+    new Request('http://localhost/api/command-center/qa-suggestions/property:res-qa-reject-001?status=pending'),
+    { params: Promise.resolve({ propertyId: 'property:res-qa-reject-001' }) }
+  );
+  const pendingBody = (await pending.json()) as { items: Array<{ id: string }> };
+  const suggestionId = String(pendingBody.items[0]?.id);
+
+  const rejected = await postRejectQaSuggestion(
+    new Request(`http://localhost/api/command-center/qa-suggestions/${suggestionId}/reject`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ actorId: 'qa-reviewer-2', reason: 'one-off question' })
+    }),
+    { params: Promise.resolve({ id: suggestionId }) }
+  );
+  assert.equal(rejected.status, 200);
+
+  const rejectedList = await getQaSuggestionsByProperty(
+    new Request('http://localhost/api/command-center/qa-suggestions/property:res-qa-reject-001?status=rejected'),
+    { params: Promise.resolve({ propertyId: 'property:res-qa-reject-001' }) }
+  );
+  const rejectedBody = (await rejectedList.json()) as { items: Array<{ id: string; status: string }> };
+  assert.equal(rejectedList.status, 200);
+  assert.equal(rejectedBody.items.some((item) => item.id === suggestionId && item.status === 'rejected'), true);
 });
