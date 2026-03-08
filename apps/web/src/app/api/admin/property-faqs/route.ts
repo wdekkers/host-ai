@@ -6,7 +6,7 @@ import { db } from '@/lib/db';
 
 const patchSchema = z.object({
   id: z.string().uuid(),
-  answer: z.string().min(1)
+  answer: z.string().min(1),
 });
 
 export async function PATCH(request: Request) {

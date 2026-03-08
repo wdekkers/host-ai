@@ -10,7 +10,7 @@ const validTypes = new Set([
   'draft.rejected',
   'message.ingested',
   'incident.created',
-  'incident.transitioned'
+  'incident.transitioned',
 ]);
 
 export async function GET(request: Request) {
@@ -45,7 +45,7 @@ export async function GET(request: Request) {
         | 'incident.transitioned'
         | undefined,
       actorId,
-      limit
-    })
+      limit,
+    }),
   });
 }

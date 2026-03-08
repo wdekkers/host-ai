@@ -3,12 +3,15 @@ import { NextResponse } from 'next/server';
 
 import { handleApiError } from '@/lib/secure-logger';
 
-import { evaluateAutopilotActionInSingleton, listAutopilotActionsInSingleton } from '@/lib/command-center-store';
+import {
+  evaluateAutopilotActionInSingleton,
+  listAutopilotActionsInSingleton,
+} from '@/lib/command-center-store';
 
 const evaluateAutopilotSchema = z.object({
   reservationId: z.string().min(1),
   intent: z.string().min(1),
-  body: z.string().min(1)
+  body: z.string().min(1),
 });
 
 export async function GET(_request: Request) {
@@ -24,7 +27,7 @@ export async function POST(request: Request) {
       actionId: action.id,
       decision: action.decision,
       reason: action.reason,
-      status: action.status
+      status: action.status,
     });
   } catch (error) {
     return handleApiError({ error, route: '/api/command-center/autopilot' });

@@ -17,7 +17,7 @@ void test('normalizeReservation extracts core fields from Hospitable v2 payload'
     last_message_at: '2025-05-15T00:00:00Z',
     nights: 4,
     guest: { id: 'g1', first_name: 'Jane', last_name: 'Doe', email: 'jane@example.com' },
-    properties: [{ id: 'prop-1', name: 'Beach House' }]
+    properties: [{ id: 'prop-1', name: 'Beach House' }],
   };
 
   const result = normalizeReservation(raw);
@@ -45,7 +45,7 @@ void test('normalizeMessage extracts core fields from Hospitable v2 message payl
     body: 'What time is check-in?',
     sender_type: 'guest',
     sender: { full_name: 'Jane Doe' },
-    created_at: '2025-05-10T10:00:00Z'
+    created_at: '2025-05-10T10:00:00Z',
   };
 
   const result = normalizeMessage(raw, 'res-1');
@@ -57,7 +57,12 @@ void test('normalizeMessage extracts core fields from Hospitable v2 message payl
 });
 
 void test('normalizeMessage returns null when body is empty', () => {
-  const raw = { reservation_id: 'res-1', body: '', sender_type: 'guest', created_at: '2025-05-10T10:00:00Z' };
+  const raw = {
+    reservation_id: 'res-1',
+    body: '',
+    sender_type: 'guest',
+    created_at: '2025-05-10T10:00:00Z',
+  };
   const result = normalizeMessage(raw, 'res-1');
   assert.equal(result, null);
 });

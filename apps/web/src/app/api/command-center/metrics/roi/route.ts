@@ -5,7 +5,7 @@ import {
   getRoiMetricsInSingleton,
   listCleanerJitPingsInSingleton,
   listIncidentsInSingleton,
-  listQueue
+  listQueue,
 } from '@/lib/command-center-store';
 
 export async function GET() {
@@ -18,31 +18,38 @@ export async function GET() {
   const responseTimeMinutes =
     sentItems.length > 0
       ? Math.round(
-          sentItems.reduce((total, item) => total + (new Date(item.updatedAt).getTime() - new Date(item.createdAt).getTime()), 0) /
+          sentItems.reduce(
+            (total, item) =>
+              total + (new Date(item.updatedAt).getTime() - new Date(item.createdAt).getTime()),
+            0,
+          ) /
             sentItems.length /
-            60_000
+            60_000,
         )
       : 0;
 
   const throughputPerDay = sentItems.length;
-  const incidentRate = queue.length > 0 ? Number(((incidents.length / queue.length) * 100).toFixed(2)) : 0;
+  const incidentRate =
+    queue.length > 0 ? Number(((incidents.length / queue.length) * 100).toFixed(2)) : 0;
 
   const normalizedIncidents = incidents.filter((incident) => {
     const timeline = getIncidentTimelineInSingleton(incident.id);
     return timeline.some((entry) => entry.state === 'normalized');
   }).length;
-  const recoveryRate = incidents.length > 0 ? Number(((normalizedIncidents / incidents.length) * 100).toFixed(2)) : 0;
+  const recoveryRate =
+    incidents.length > 0 ? Number(((normalizedIncidents / incidents.length) * 100).toFixed(2)) : 0;
 
   const cleanerResponded = cleanerPings.filter((ping) => ping.status !== 'requested');
   const cleanerResponseLatencyMinutes =
     cleanerResponded.length > 0
       ? Math.round(
           cleanerResponded.reduce(
-            (total, ping) => total + (new Date(ping.updatedAt).getTime() - new Date(ping.createdAt).getTime()),
-            0
+            (total, ping) =>
+              total + (new Date(ping.updatedAt).getTime() - new Date(ping.createdAt).getTime()),
+            0,
           ) /
             cleanerResponded.length /
-            60_000
+            60_000,
         )
       : 0;
 
@@ -54,7 +61,7 @@ export async function GET() {
       recoveryRate,
       refundsAndCompensationUsd: roi.totalRefundAmount,
       reviewOutcomeAverage: Number(roi.reviewAverage.toFixed(2)),
-      cleanerResponseLatencyMinutes
-    }
+      cleanerResponseLatencyMinutes,
+    },
   });
 }

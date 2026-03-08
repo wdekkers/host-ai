@@ -11,9 +11,15 @@ export default function SyncButton() {
     setSummary(null);
     try {
       const res = await fetch('/api/admin/sync-hospitable', { method: 'POST' });
-      const json = (await res.json()) as { reservations?: number; messages?: number; error?: string };
+      const json = (await res.json()) as {
+        reservations?: number;
+        messages?: number;
+        error?: string;
+      };
       if (!res.ok) throw new Error(json.error ?? 'Sync failed');
-      setSummary(`Synced ${json.reservations ?? 0} reservations and ${json.messages ?? 0} messages.`);
+      setSummary(
+        `Synced ${json.reservations ?? 0} reservations and ${json.messages ?? 0} messages.`,
+      );
       setState('done');
       // Reload to show fresh data
       setTimeout(() => window.location.reload(), 1500);

@@ -14,7 +14,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     entities: getNormalizedEntitiesInSingleton(
-      kind as 'all' | 'properties' | 'guests' | 'reservations' | 'messages'
-    )
+      kind as 'all' | 'properties' | 'guests' | 'reservations' | 'messages',
+    ),
   });
 }

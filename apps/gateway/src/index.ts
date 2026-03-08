@@ -13,9 +13,9 @@ await app.register(swagger, {
   openapi: {
     info: {
       title: 'Walt Gateway API',
-      version: '0.1.0'
-    }
-  }
+      version: '0.1.0',
+    },
+  },
 });
 
 await app.register(swaggerUi, { routePrefix: '/docs' });
@@ -28,23 +28,23 @@ app.get(
     schema: {
       tags: ['system'],
       response: {
-        200: zodToJsonSchema(serviceHealthResponseSchema, 'ServiceHealthResponse')
-      }
-    }
+        200: zodToJsonSchema(serviceHealthResponseSchema, 'ServiceHealthResponse'),
+      },
+    },
   },
-  async () => ({ status: 'ok', service: 'gateway' })
+  async () => ({ status: 'ok', service: 'gateway' }),
 );
 
 app.get(
   '/me',
   {
-    preHandler: app.requirePermission('dashboard.read')
+    preHandler: app.requirePermission('dashboard.read'),
   },
   async (request) => ({
     userId: request.auth?.userId,
     orgId: request.auth?.orgId,
-    role: request.auth?.role
-  })
+    role: request.auth?.role,
+  }),
 );
 
 const port = Number(process.env.PORT ?? 4000);

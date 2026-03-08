@@ -11,7 +11,7 @@ export const permissionValues = [
   'ops.write',
   'platform.configure',
   'automation.execute',
-  'integration.read.provider'
+  'integration.read.provider',
 ] as const;
 
 export const permissionSchema = z.enum(permissionValues);
@@ -21,6 +21,6 @@ export const authContextSchema = z.object({
   userId: z.string().min(1),
   orgId: z.string().min(1),
   role: roleSchema,
-  propertyIds: z.array(z.string().min(1)).optional()
+  propertyIds: z.array(z.string().min(1)).optional(),
 });
 export type AuthContext = z.infer<typeof authContextSchema>;
