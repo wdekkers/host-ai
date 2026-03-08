@@ -9,7 +9,7 @@
     "start": "node dist/index.js",
     "lint": "eslint src --max-warnings=0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "echo 'No tests yet for @walt/service-messaging'"
+    "test": "node --import tsx/esm --test 'src/**/*.test.ts'"
   },
   "dependencies": {
     "@walt/contracts": "workspace:*",

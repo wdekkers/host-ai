@@ -1,6 +1,13 @@
 import { fileURLToPath } from 'node:url';
+
 import Fastify from 'fastify';
 import { z } from 'zod';
+
+import { getDb } from './db.js';
+import { registerConsentRoutes } from './routes/consent.js';
+import { registerSmsRoutes } from './routes/sms.js';
+import { registerVendorRoutes } from './routes/vendors.js';
+import { registerWebhookRoutes } from './routes/webhooks.js';
 
 type Contact = {
   id: string;
@@ -20,6 +27,8 @@ type Message = {
   sentAt: string;
 };
 
+// In-memory mock contacts/messages for existing inbox UI compatibility.
+// These will be replaced when the vendor contact model is fully wired to the inbox.
 const contacts: Contact[] = [
   {
     id: 'contact-001',
@@ -28,7 +37,7 @@ const contacts: Contact[] = [
     channel: 'sms',
     handle: '+1-555-0101',
     preferred: true,
-    lastMessageAt: '2026-03-08T11:00:00.000Z'
+    lastMessageAt: '2026-03-08T11:00:00.000Z',
   },
   {
     id: 'contact-002',
@@ -37,8 +46,8 @@ const contacts: Contact[] = [
     channel: 'sms',
     handle: '+1-555-0132',
     preferred: false,
-    lastMessageAt: '2026-03-08T09:30:00.000Z'
-  }
+    lastMessageAt: '2026-03-08T09:30:00.000Z',
+  },
 ];
 
 const messages: Message[] = [
@@ -47,29 +56,29 @@ const messages: Message[] = [
     contactId: 'contact-001',
     direction: 'inbound',
     body: 'Pool light is flickering. Can we check it today?',
-    sentAt: '2026-03-08T10:30:00.000Z'
+    sentAt: '2026-03-08T10:30:00.000Z',
   },
   {
     id: 'message-002',
     contactId: 'contact-001',
     direction: 'outbound',
     body: 'Yes, please stop by after 2 PM and send an ETA.',
-    sentAt: '2026-03-08T11:00:00.000Z'
+    sentAt: '2026-03-08T11:00:00.000Z',
   },
   {
     id: 'message-003',
     contactId: 'contact-002',
     direction: 'inbound',
     body: 'Leak under kitchen sink fixed and tested.',
-    sentAt: '2026-03-08T09:30:00.000Z'
-  }
+    sentAt: '2026-03-08T09:30:00.000Z',
+  },
 ];
 
 const defaultPortByService: Record<string, number> = {
   identity: 4101,
   messaging: 4102,
   ops: 4103,
-  notifications: 4104
+  notifications: 4104,
 };
 
 const createContactInputSchema = z.object({
@@ -77,30 +86,46 @@ const createContactInputSchema = z.object({
   contactType: z.string().min(1),
   channel: z.enum(['sms', 'airbnb', 'email']),
   handle: z.string().min(1),
-  preferred: z.boolean().optional()
+  preferred: z.boolean().optional(),
 });
 
 const updateContactInputSchema = z.object({
-  preferred: z.boolean()
+  preferred: z.boolean(),
 });
 
 const createMessageInputSchema = z.object({
   contactId: z.string().min(1),
   direction: z.enum(['inbound', 'outbound']),
-  body: z.string().min(1)
+  body: z.string().min(1),
 });
 
 const sortContacts = (items: Contact[]) =>
-  [...items].sort((left, right) => Number(right.preferred) - Number(left.preferred) || right.lastMessageAt.localeCompare(left.lastMessageAt));
+  [...items].sort(
+    (left, right) =>
+      Number(right.preferred) - Number(left.preferred) ||
+      right.lastMessageAt.localeCompare(left.lastMessageAt),
+  );
 
-export function buildMessagingApp() {
+export type MessagingAppDeps = {
+  db?: ReturnType<typeof getDb>;
+  /** Skip Twilio SDK calls (use in tests to avoid real SMS sends). */
+  skipTwilio?: boolean;
+  /** Skip Twilio signature validation (use in tests). */
+  skipSignatureValidation?: boolean;
+};
+
+export function buildMessagingApp(deps: MessagingAppDeps = {}) {
   const app = Fastify({ logger: true });
 
   app.get('/health', async () => ({ status: 'ok', service: 'messaging' }));
+
+  // Existing mock routes for inbox UI
   app.get('/contacts', async () => ({ items: sortContacts(contacts) }));
   app.get('/messages', async (request) => {
     const { contactId } = request.query as { contactId?: string };
-    const filtered = contactId ? messages.filter((message) => message.contactId === contactId) : messages;
+    const filtered = contactId
+      ? messages.filter((message) => message.contactId === contactId)
+      : messages;
     return { items: [...filtered].sort((a, b) => b.sentAt.localeCompare(a.sentAt)) };
   });
 
@@ -124,7 +149,7 @@ export function buildMessagingApp() {
       channel: parsed.data.channel,
       handle: parsed.data.handle,
       preferred: Boolean(parsed.data.preferred),
-      lastMessageAt: now
+      lastMessageAt: now,
     };
     contacts.unshift(item);
     return reply.status(201).send({ item });
@@ -170,12 +195,21 @@ export function buildMessagingApp() {
       contactId: parsed.data.contactId,
       direction: parsed.data.direction,
       body: parsed.data.body,
-      sentAt
+      sentAt,
     };
     messages.push(item);
     target.lastMessageAt = sentAt;
     return reply.status(201).send({ item });
   });
+
+  // Vendor consent system routes — only registered when a DB is available
+  const db = deps.db ?? (process.env.DATABASE_URL ? getDb() : undefined);
+  if (db) {
+    registerConsentRoutes(app, db, deps.skipTwilio ?? false);
+    registerVendorRoutes(app, db);
+    registerWebhookRoutes(app, db, deps.skipSignatureValidation ?? false);
+    registerSmsRoutes(app, db, deps.skipTwilio ?? false);
+  }
 
   return app;
 }

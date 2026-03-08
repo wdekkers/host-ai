@@ -3,8 +3,11 @@ import test from 'node:test';
 
 import { buildMessagingApp } from './index.js';
 
+// Minimal stub so buildMessagingApp doesn't require DATABASE_URL in tests
+const stubDb = {} as never;
+
 void test('GET /contacts returns a contact list', async () => {
-  const app = buildMessagingApp();
+  const app = buildMessagingApp({ db: stubDb });
   const response = await app.inject({ method: 'GET', url: '/contacts' });
 
   assert.equal(response.statusCode, 200);
@@ -19,12 +22,18 @@ void test('GET /contacts returns a contact list', async () => {
 });
 
 void test('GET /messages filters by contactId', async () => {
-  const app = buildMessagingApp();
+  const app = buildMessagingApp({ db: stubDb });
   const response = await app.inject({ method: 'GET', url: '/messages?contactId=contact-001' });
 
   assert.equal(response.statusCode, 200);
   const payload = response.json() as {
-    items: Array<{ id: string; contactId: string; direction: 'inbound' | 'outbound'; body: string; sentAt: string }>;
+    items: Array<{
+      id: string;
+      contactId: string;
+      direction: 'inbound' | 'outbound';
+      body: string;
+      sentAt: string;
+    }>;
   };
 
   assert.ok(payload.items.length > 0);
