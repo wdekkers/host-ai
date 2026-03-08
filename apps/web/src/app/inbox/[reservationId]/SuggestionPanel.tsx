@@ -1,5 +1,6 @@
 'use client';
 
+import { useAuth } from '@clerk/nextjs';
 import { useState } from 'react';
 
 export function SuggestionPanel({
@@ -13,6 +14,7 @@ export function SuggestionPanel({
   messageBody: string;
   initialSuggestion: string | null;
 }) {
+  const { getToken } = useAuth();
   const [suggestion, setSuggestion] = useState(initialSuggestion);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -20,9 +22,13 @@ export function SuggestionPanel({
   async function generate() {
     setLoading(true);
     try {
+      const token = await getToken();
       const res = await fetch(`/api/inbox/${reservationId}/suggest`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ messageId }),
       });
       const data = (await res.json()) as { suggestion?: string };

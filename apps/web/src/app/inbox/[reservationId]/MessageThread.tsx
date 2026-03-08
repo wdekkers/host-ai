@@ -1,5 +1,6 @@
 'use client';
 
+import { useAuth } from '@clerk/nextjs';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 export type SerializedMessage = {
@@ -30,6 +31,7 @@ export function MessageThread({
   initialMessages: SerializedMessage[];
   initialHasMore: boolean;
 }) {
+  const { getToken } = useAuth();
   const [msgs, setMsgs] = useState(initialMessages);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [loading, setLoading] = useState(false);
@@ -76,8 +78,10 @@ export function MessageThread({
 
     try {
       const oldest = currentMsgs[0]!;
+      const token = await getToken();
       const res = await fetch(
         `/api/inbox/${reservationId}/messages?before=${encodeURIComponent(oldest.createdAt)}&limit=20`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} },
       );
       if (!res.ok) return;
       const data = (await res.json()) as { messages: SerializedMessage[]; hasMore: boolean };
