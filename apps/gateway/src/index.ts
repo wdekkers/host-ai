@@ -39,7 +39,7 @@ app.get(
 app.get(
   '/me',
   {
-    preHandler: app.requirePermission('dashboard.read'),
+    preHandler: async (request) => app.requirePermission('dashboard.read')(request),
   },
   async (request) => ({
     userId: request.auth?.userId,
@@ -70,11 +70,13 @@ app.post('/messaging/contacts', async (request, reply) => {
     const response = await fetch(`${messagingServiceBaseUrl}/contacts`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', accept: 'application/json' },
-      body: JSON.stringify(request.body ?? {})
+      body: JSON.stringify(request.body ?? {}),
     });
     if (!response.ok) {
       const payload = (await response.json().catch(() => ({}))) as { error?: string };
-      return reply.status(response.status).send({ error: payload.error ?? `Messaging service returned ${response.status}` });
+      return reply
+        .status(response.status)
+        .send({ error: payload.error ?? `Messaging service returned ${response.status}` });
     }
 
     const payload = (await response.json()) as { item: unknown };
@@ -91,11 +93,13 @@ app.patch('/messaging/contacts/:id', async (request, reply) => {
     const response = await fetch(`${messagingServiceBaseUrl}/contacts/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json', accept: 'application/json' },
-      body: JSON.stringify(request.body ?? {})
+      body: JSON.stringify(request.body ?? {}),
     });
     if (!response.ok) {
       const payload = (await response.json().catch(() => ({}))) as { error?: string };
-      return reply.status(response.status).send({ error: payload.error ?? `Messaging service returned ${response.status}` });
+      return reply
+        .status(response.status)
+        .send({ error: payload.error ?? `Messaging service returned ${response.status}` });
     }
 
     const payload = (await response.json()) as { item: unknown };
