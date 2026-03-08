@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { reservations, messages } from '@walt/db';
 import { eq } from 'drizzle-orm';
 
-import { handleApiError } from '@/lib/secure-logger';
+import { handleApiError, log } from '@/lib/secure-logger';
 import { getHospitableApiConfig } from '@/lib/integrations-env';
 import { db } from '@/lib/db';
 import { normalizeReservation, normalizeMessage } from '@/lib/hospitable-normalize';
@@ -53,12 +53,24 @@ async function fetchReservation(
 }
 
 export async function POST(request: Request) {
+  const eventId = uuidv4();
+  const route = '/api/integrations/hospitable';
+
   try {
     const rawBody = await request.text();
     verifySignature(request, rawBody);
 
     const body = JSON.parse(rawBody) as unknown;
     const parsed = webhookSchema.parse(body);
+
+    log('info', 'webhook_received', {
+      eventId,
+      route,
+      reservationId: parsed.reservationId,
+      senderType: parsed.senderType,
+      sentAt: parsed.sentAt ?? null,
+    });
+
     const config = getHospitableApiConfig();
 
     let reservationRaw: Record<string, unknown> | null = null;
@@ -73,7 +85,16 @@ export async function POST(request: Request) {
             target: reservations.id,
             set: { ...normalized, syncedAt: new Date() },
           });
+        log('info', 'reservation_upserted', { eventId, reservationId: parsed.reservationId });
+      } else {
+        log('warn', 'reservation_fetch_failed', { eventId, reservationId: parsed.reservationId });
       }
+    } else {
+      log('warn', 'reservation_fetch_skipped', {
+        eventId,
+        reservationId: parsed.reservationId,
+        reason: 'no_hospitable_config',
+      });
     }
 
     const msgRaw: Record<string, unknown> = {
@@ -85,34 +106,63 @@ export async function POST(request: Request) {
     };
     const normalizedMsg = normalizeMessage(msgRaw, parsed.reservationId);
 
-    if (normalizedMsg) {
-      const msgId = uuidv4();
-      await db
-        .insert(messages)
-        .values({ id: msgId, ...normalizedMsg })
-        .onConflictDoNothing();
-
-      if (parsed.senderType === 'guest' && reservationRaw) {
-        const guest = reservationRaw.guest as Record<string, unknown> | undefined;
-        const props = reservationRaw.properties as Record<string, unknown>[] | undefined;
-        const propId = (props?.[0]?.id as string | null) ?? null;
-        const suggestion = await generateReplySuggestion({
-          guestName: String(guest?.first_name ?? 'the guest'),
-          propertyName: String(props?.[0]?.name ?? 'the property'),
-          propertyId: propId,
-          checkIn: reservationRaw.check_in as string | null,
-          checkOut: reservationRaw.check_out as string | null,
-          messageBody: parsed.message,
-        });
-        if (suggestion) {
-          await db
-            .update(messages)
-            .set({ suggestion, suggestionGeneratedAt: new Date() })
-            .where(eq(messages.id, msgId));
-        }
-      }
+    if (!normalizedMsg) {
+      log('warn', 'message_skip', {
+        eventId,
+        reservationId: parsed.reservationId,
+        reason: 'normalize_returned_null',
+        senderType: parsed.senderType,
+      });
+      return NextResponse.json({ ok: true }, { status: 202 });
     }
 
+    const msgId = uuidv4();
+    await db
+      .insert(messages)
+      .values({ id: msgId, ...normalizedMsg })
+      .onConflictDoNothing();
+
+    log('info', 'message_inserted', {
+      eventId,
+      messageId: msgId,
+      reservationId: parsed.reservationId,
+      senderType: parsed.senderType,
+    });
+
+    if (parsed.senderType === 'guest' && reservationRaw) {
+      const guest = reservationRaw.guest as Record<string, unknown> | undefined;
+      const props = reservationRaw.properties as Record<string, unknown>[] | undefined;
+      const propId = (props?.[0]?.id as string | null) ?? null;
+      const suggestion = await generateReplySuggestion({
+        guestName: String(guest?.first_name ?? 'the guest'),
+        propertyName: String(props?.[0]?.name ?? 'the property'),
+        propertyId: propId,
+        checkIn: reservationRaw.check_in as string | null,
+        checkOut: reservationRaw.check_out as string | null,
+        messageBody: parsed.message,
+      });
+      if (suggestion) {
+        await db
+          .update(messages)
+          .set({ suggestion, suggestionGeneratedAt: new Date() })
+          .where(eq(messages.id, msgId));
+        log('info', 'suggestion_generated', { eventId, messageId: msgId });
+      } else {
+        log('warn', 'suggestion_skip', {
+          eventId,
+          messageId: msgId,
+          reason: 'generate_returned_null',
+        });
+      }
+    } else {
+      log('info', 'suggestion_skip', {
+        eventId,
+        messageId: msgId,
+        reason: parsed.senderType !== 'guest' ? 'sender_not_guest' : 'no_reservation_data',
+      });
+    }
+
+    log('info', 'webhook_processed', { eventId, reservationId: parsed.reservationId });
     return NextResponse.json({ ok: true }, { status: 202 });
   } catch (error) {
     const status =
@@ -121,6 +171,6 @@ export async function POST(request: Request) {
         error.message === 'Invalid webhook signature')
         ? 401
         : 400;
-    return handleApiError({ error, route: '/api/integrations/hospitable', status });
+    return handleApiError({ error, route, status, context: { eventId } });
   }
 }
