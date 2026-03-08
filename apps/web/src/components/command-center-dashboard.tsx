@@ -227,6 +227,23 @@ type MessagingMessagesResponse = {
   }>;
 };
 
+type PropertyChecklistEntry = {
+  id: string;
+  propertyId: string;
+  question: string;
+  answer: string;
+  status: 'active' | 'archived';
+  source: 'manual' | 'suggestion';
+  createdBy: string;
+  updatedBy: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type PropertyChecklistResponse = {
+  items: PropertyChecklistEntry[];
+};
+
 type HospitableMessagesResponse = {
   source: string;
   count: number;
@@ -409,6 +426,11 @@ export function CommandCenterDashboard() {
   const [messagingContacts, setMessagingContacts] = useState<MessagingContactsResponse['items']>([]);
   const [messagingMessages, setMessagingMessages] = useState<MessagingMessagesResponse['items']>([]);
   const [selectedMessagingContactId, setSelectedMessagingContactId] = useState<string>('contact-001');
+  const [checklistPropertyId, setChecklistPropertyId] = useState('property:res-demo-001');
+  const [checklistStatusFilter, setChecklistStatusFilter] = useState<'active' | 'archived'>('active');
+  const [checklistQuestion, setChecklistQuestion] = useState('What is the Wi-Fi network and password?');
+  const [checklistAnswer, setChecklistAnswer] = useState('Network: StayFrisco-Guest, Password: frisco2026!');
+  const [checklistItems, setChecklistItems] = useState<PropertyChecklistEntry[]>([]);
   const [twilioCleanerId, setTwilioCleanerId] = useState('cleaner-001');
   const [twilioCleanerPhone, setTwilioCleanerPhone] = useState('+15550001234');
   const [twilioReadinessSignal, setTwilioReadinessSignal] = useState('READY');
@@ -479,6 +501,7 @@ export function CommandCenterDashboard() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [twilioError, setTwilioError] = useState<string | null>(null);
   const [messagingError, setMessagingError] = useState<string | null>(null);
+  const [checklistError, setChecklistError] = useState<string | null>(null);
   const [hospitableMessagesError, setHospitableMessagesError] = useState<string | null>(null);
   const [isReadOnly, setIsReadOnly] = useState(false);
   const hospitableMessagesContainerRef = useRef<HTMLDivElement | null>(null);
@@ -732,9 +755,31 @@ export function CommandCenterDashboard() {
     }
   };
 
+  const loadPropertyChecklist = async (propertyId = checklistPropertyId, status = checklistStatusFilter) => {
+    try {
+      const response = await fetch(
+        `/api/command-center/qa/${encodeURIComponent(propertyId)}?status=${encodeURIComponent(status)}`,
+      );
+      if (response.status === 401 || response.status === 403) {
+        handleAuthStatus(response.status);
+        return;
+      }
+      if (!response.ok) {
+        setChecklistError('Unable to load property checklist.');
+        return;
+      }
+      const payload = (await response.json()) as PropertyChecklistResponse;
+      setChecklistItems(payload.items ?? []);
+      setChecklistError(null);
+    } catch {
+      setChecklistError('Unable to load property checklist.');
+    }
+  };
+
   useEffect(() => {
     void loadDashboard();
     void loadMessagingData();
+    void loadPropertyChecklist();
   }, []);
 
   useEffect(() => {
@@ -743,6 +788,10 @@ export function CommandCenterDashboard() {
     }
     void loadMessagingData(selectedMessagingContactId);
   }, [selectedMessagingContactId]);
+
+  useEffect(() => {
+    void loadPropertyChecklist(checklistPropertyId, checklistStatusFilter);
+  }, [checklistPropertyId, checklistStatusFilter]);
 
   useEffect(() => {
     if (items.length === 0) {
@@ -782,6 +831,45 @@ export function CommandCenterDashboard() {
       return;
     }
     await loadDashboard();
+  };
+
+  const addChecklistItem = async () => {
+    const response = await fetch(`/api/command-center/qa/${encodeURIComponent(checklistPropertyId)}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        question: checklistQuestion,
+        answer: checklistAnswer,
+      }),
+    });
+    if (response.status === 401 || response.status === 403) {
+      handleAuthStatus(response.status);
+      return;
+    }
+    if (!response.ok) {
+      setChecklistError('Unable to add checklist item.');
+      return;
+    }
+    setChecklistError(null);
+    await loadPropertyChecklist(checklistPropertyId, checklistStatusFilter);
+  };
+
+  const updateChecklistStatus = async (id: string, status: 'active' | 'archived') => {
+    const response = await fetch(`/api/command-center/qa/entry/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    if (response.status === 401 || response.status === 403) {
+      handleAuthStatus(response.status);
+      return;
+    }
+    if (!response.ok) {
+      setChecklistError('Unable to update checklist item.');
+      return;
+    }
+    setChecklistError(null);
+    await loadPropertyChecklist(checklistPropertyId, checklistStatusFilter);
   };
 
   const updateDraft = async (
@@ -1536,6 +1624,64 @@ export function CommandCenterDashboard() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section style={{ ...panelStyle, marginBottom: '1rem' }}>
+        <h3 style={{ marginTop: 0, marginBottom: '0.5rem' }}>Property Checklist</h3>
+        <p style={{ margin: '0.2rem 0 0.5rem', color: '#475569', fontSize: 13 }}>
+          Per-property checklist items (Q/A) used as reusable operational context.
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.1fr auto auto', gap: '0.4rem', marginBottom: '0.5rem' }}>
+          <input
+            value={checklistPropertyId}
+            onChange={(event) => setChecklistPropertyId(event.target.value)}
+            placeholder="property id"
+          />
+          <select
+            value={checklistStatusFilter}
+            onChange={(event) => setChecklistStatusFilter(event.target.value as 'active' | 'archived')}
+          >
+            <option value="active">active</option>
+            <option value="archived">archived</option>
+          </select>
+          <button onClick={() => void loadPropertyChecklist(checklistPropertyId, checklistStatusFilter)} style={buttonStyle('#334155')}>
+            Refresh
+          </button>
+        </div>
+        <div style={{ display: 'grid', gap: '0.4rem', marginBottom: '0.5rem' }}>
+          <input
+            value={checklistQuestion}
+            onChange={(event) => setChecklistQuestion(event.target.value)}
+            placeholder="checklist question"
+          />
+          <textarea
+            value={checklistAnswer}
+            onChange={(event) => setChecklistAnswer(event.target.value)}
+            rows={2}
+            style={{ borderRadius: 6, border: '1px solid #cbd5e1', padding: '0.4rem' }}
+          />
+          <button onClick={() => void addChecklistItem()} style={buttonStyle('#0f766e')}>
+            Add Checklist Item
+          </button>
+        </div>
+        {checklistError ? <p style={{ margin: '0 0 0.5rem', color: '#b91c1c', fontSize: 13 }}>{checklistError}</p> : null}
+        {checklistItems.length === 0 ? (
+          <p style={{ margin: 0, color: '#64748b' }}>No checklist items for this filter.</p>
+        ) : (
+          <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: 13 }}>
+            {checklistItems.slice(0, 10).map((item) => (
+              <li key={item.id}>
+                <strong>Q:</strong> {item.question} | <strong>A:</strong> {item.answer}{' '}
+                <button
+                  onClick={() => void updateChecklistStatus(item.id, item.status === 'active' ? 'archived' : 'active')}
+                  style={{ marginLeft: 6 }}
+                >
+                  {item.status === 'active' ? 'Archive' : 'Reactivate'}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section style={{ ...panelStyle, marginBottom: '1rem' }}>
