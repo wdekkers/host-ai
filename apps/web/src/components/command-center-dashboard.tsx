@@ -207,6 +207,26 @@ type TwilioThreadsResponse = {
   }>;
 };
 
+type MessagingContactsResponse = {
+  items: Array<{
+    id: string;
+    displayName: string;
+    channel: 'sms' | 'airbnb' | 'email';
+    handle: string;
+    lastMessageAt: string;
+  }>;
+};
+
+type MessagingMessagesResponse = {
+  items: Array<{
+    id: string;
+    contactId: string;
+    direction: 'inbound' | 'outbound';
+    body: string;
+    sentAt: string;
+  }>;
+};
+
 type HospitableMessagesResponse = {
   source: string;
   count: number;
@@ -386,6 +406,9 @@ export function CommandCenterDashboard() {
   >(null);
   const [twilioOpsNumber, setTwilioOpsNumber] = useState('+15550000000');
   const [twilioThreads, setTwilioThreads] = useState<TwilioThreadsResponse['threads']>([]);
+  const [messagingContacts, setMessagingContacts] = useState<MessagingContactsResponse['items']>([]);
+  const [messagingMessages, setMessagingMessages] = useState<MessagingMessagesResponse['items']>([]);
+  const [selectedMessagingContactId, setSelectedMessagingContactId] = useState<string>('contact-001');
   const [twilioCleanerId, setTwilioCleanerId] = useState('cleaner-001');
   const [twilioCleanerPhone, setTwilioCleanerPhone] = useState('+15550001234');
   const [twilioReadinessSignal, setTwilioReadinessSignal] = useState('READY');
@@ -455,6 +478,7 @@ export function CommandCenterDashboard() {
   );
   const [actionError, setActionError] = useState<string | null>(null);
   const [twilioError, setTwilioError] = useState<string | null>(null);
+  const [messagingError, setMessagingError] = useState<string | null>(null);
   const [hospitableMessagesError, setHospitableMessagesError] = useState<string | null>(null);
   const [isReadOnly, setIsReadOnly] = useState(false);
   const hospitableMessagesContainerRef = useRef<HTMLDivElement | null>(null);
@@ -682,9 +706,43 @@ export function CommandCenterDashboard() {
     }
   };
 
+  const loadMessagingData = async (contactId = selectedMessagingContactId) => {
+    try {
+      const [contactsRes, messagesRes] = await Promise.all([
+        fetch('/api/messaging/contacts'),
+        fetch(`/api/messaging/messages?contactId=${encodeURIComponent(contactId)}`)
+      ]);
+
+      if (!contactsRes.ok || !messagesRes.ok) {
+        setMessagingError('Unable to load messaging service data.');
+        return;
+      }
+
+      const contactsData = (await contactsRes.json()) as MessagingContactsResponse;
+      const messagesData = (await messagesRes.json()) as MessagingMessagesResponse;
+      setMessagingContacts(contactsData.items ?? []);
+      setMessagingMessages(messagesData.items ?? []);
+      setMessagingError(null);
+
+      if ((contactsData.items?.length ?? 0) > 0 && !contactsData.items.some((item) => item.id === contactId)) {
+        setSelectedMessagingContactId(contactsData.items[0]!.id);
+      }
+    } catch {
+      setMessagingError('Unable to load messaging service data.');
+    }
+  };
+
   useEffect(() => {
     void loadDashboard();
+    void loadMessagingData();
   }, []);
+
+  useEffect(() => {
+    if (!selectedMessagingContactId) {
+      return;
+    }
+    void loadMessagingData(selectedMessagingContactId);
+  }, [selectedMessagingContactId]);
 
   useEffect(() => {
     if (items.length === 0) {
@@ -1451,6 +1509,33 @@ export function CommandCenterDashboard() {
             ))}
           </ul>
         )}
+      </section>
+
+      <section style={{ ...panelStyle, marginBottom: '1rem' }}>
+        <h3 style={{ marginTop: 0, marginBottom: '0.5rem' }}>Contacts and Messaging Service</h3>
+        <p style={{ margin: '0.2rem 0 0.5rem', color: '#475569', fontSize: 13 }}>
+          Data loaded from `service-messaging` through gateway routes.
+        </p>
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', alignItems: 'center' }}>
+          <select value={selectedMessagingContactId} onChange={(event) => setSelectedMessagingContactId(event.target.value)}>
+            {messagingContacts.map((contact) => (
+              <option key={contact.id} value={contact.id}>
+                {contact.displayName} ({contact.channel})
+              </option>
+            ))}
+          </select>
+          <button onClick={() => void loadMessagingData(selectedMessagingContactId)} style={buttonStyle('#334155')}>
+            Refresh
+          </button>
+        </div>
+        {messagingError ? <p style={{ margin: '0 0 0.5rem', color: '#b91c1c', fontSize: 13 }}>{messagingError}</p> : null}
+        <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: 13 }}>
+          {messagingMessages.slice(0, 6).map((message) => (
+            <li key={message.id}>
+              [{message.direction}] {message.body}
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section style={{ ...panelStyle, marginBottom: '1rem' }}>

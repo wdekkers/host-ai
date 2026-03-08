@@ -8,6 +8,7 @@ import { authPlugin } from './plugins/auth.js';
 import { authorizePlugin } from './plugins/authorize.js';
 
 const app = Fastify({ logger: true });
+const messagingServiceBaseUrl = process.env.MESSAGING_SERVICE_URL ?? 'http://127.0.0.1:4102';
 
 await app.register(swagger, {
   openapi: {
@@ -46,6 +47,38 @@ app.get(
     role: request.auth?.role,
   }),
 );
+
+app.get('/messaging/contacts', async (_request, reply) => {
+  try {
+    const response = await fetch(`${messagingServiceBaseUrl}/contacts`);
+    if (!response.ok) {
+      return reply.status(response.status).send({ error: `Messaging service returned ${response.status}` });
+    }
+
+    const payload = (await response.json()) as { items: unknown[] };
+    return { items: payload.items ?? [] };
+  } catch (error) {
+    app.log.error({ error }, 'Failed to load contacts from messaging service');
+    return reply.status(502).send({ error: 'Messaging service unavailable' });
+  }
+});
+
+app.get('/messaging/messages', async (request, reply) => {
+  try {
+    const { contactId } = request.query as { contactId?: string };
+    const query = contactId ? `?contactId=${encodeURIComponent(contactId)}` : '';
+    const response = await fetch(`${messagingServiceBaseUrl}/messages${query}`);
+    if (!response.ok) {
+      return reply.status(response.status).send({ error: `Messaging service returned ${response.status}` });
+    }
+
+    const payload = (await response.json()) as { items: unknown[] };
+    return { items: payload.items ?? [] };
+  } catch (error) {
+    app.log.error({ error }, 'Failed to load messages from messaging service');
+    return reply.status(502).send({ error: 'Messaging service unavailable' });
+  }
+});
 
 const port = Number(process.env.PORT ?? 4000);
 await app.listen({ port, host: '0.0.0.0' });
