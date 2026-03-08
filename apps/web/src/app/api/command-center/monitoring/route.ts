@@ -3,12 +3,17 @@ import { NextResponse } from 'next/server';
 import {
   getMonitoringAgentStatusInSingleton,
   listMonitoringAlertsInSingleton,
-  runMonitoringAgentsInSingleton
+  runMonitoringAgentsInSingleton,
 } from '@/lib/command-center-store';
 
 const validStatus = new Set(['open', 'acknowledged', 'resolved']);
 const validSeverity = new Set(['low', 'medium', 'high']);
-const validCategory = new Set(['upcoming-check-in', 'missing-confirmation', 'vendor-window', 'amenity-issue']);
+const validCategory = new Set([
+  'upcoming-check-in',
+  'missing-confirmation',
+  'vendor-window',
+  'amenity-issue',
+]);
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -44,13 +49,18 @@ export async function GET(request: Request) {
     reservationId,
     status: status as 'open' | 'acknowledged' | 'resolved' | undefined,
     severity: severity as 'low' | 'medium' | 'high' | undefined,
-    category: category as 'upcoming-check-in' | 'missing-confirmation' | 'vendor-window' | 'amenity-issue' | undefined,
-    limit
+    category: category as
+      | 'upcoming-check-in'
+      | 'missing-confirmation'
+      | 'vendor-window'
+      | 'amenity-issue'
+      | undefined,
+    limit,
   });
   if (includeAgentStatus) {
     return NextResponse.json({
       items,
-      agentStatus: getMonitoringAgentStatusInSingleton()
+      agentStatus: getMonitoringAgentStatusInSingleton(),
     });
   }
   return NextResponse.json({ items });
@@ -58,6 +68,6 @@ export async function GET(request: Request) {
 
 export async function POST() {
   return NextResponse.json({
-    items: runMonitoringAgentsInSingleton()
+    items: runMonitoringAgentsInSingleton(),
   });
 }

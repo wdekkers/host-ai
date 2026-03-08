@@ -30,8 +30,13 @@ declare module '@clerk/nextjs/server' {
 
   export function auth(): Promise<SessionAuth>;
   export function clerkClient(): Promise<ClerkClient>;
-  export function createRouteMatcher(patterns: string[]): (request: { nextUrl: { pathname: string } }) => boolean;
+  export function createRouteMatcher(
+    patterns: string[],
+  ): (request: { nextUrl: { pathname: string } }) => boolean;
   export function clerkMiddleware(
-    handler: (auth: MiddlewareAuth, request: { method: string; url: string; nextUrl: { pathname: string } }) => Promise<Response | void>
+    handler: (
+      auth: MiddlewareAuth,
+      request: { method: string; url: string; nextUrl: { pathname: string } },
+    ) => Promise<Response | void>,
   ): (request: Request) => Promise<Response | void>;
 }

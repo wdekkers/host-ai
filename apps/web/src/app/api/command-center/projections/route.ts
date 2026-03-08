@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 
-import { getApprovalQueueProjectionInSingleton, getPropertyStateProjectionInSingleton } from '@/lib/command-center-store';
+import {
+  getApprovalQueueProjectionInSingleton,
+  getPropertyStateProjectionInSingleton,
+} from '@/lib/command-center-store';
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -8,7 +11,10 @@ export async function GET(request: Request) {
   const rawLimit = url.searchParams.get('limit');
 
   if (kind !== 'approval-queue' && kind !== 'property-state') {
-    return NextResponse.json({ error: "kind must be 'approval-queue' or 'property-state'." }, { status: 400 });
+    return NextResponse.json(
+      { error: "kind must be 'approval-queue' or 'property-state'." },
+      { status: 400 },
+    );
   }
 
   let limit: number | undefined;

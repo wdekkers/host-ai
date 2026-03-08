@@ -10,8 +10,8 @@ void test('redacts sensitive fields and pii for logs', () => {
     token: 'secret-token-value',
     nested: {
       authorization: 'Bearer top-secret',
-      note: 'Reach me at support@example.com or +1 212 555 9988'
-    }
+      note: 'Reach me at support@example.com or +1 212 555 9988',
+    },
   };
 
   const redacted = redactForLogs(payload) as Record<string, unknown>;
@@ -38,8 +38,8 @@ void test('api error handler logs masked context and returns safe response', asy
       context: {
         email: 'jane.doe@example.com',
         phone: '+1 (415) 555-1212',
-        authorization: 'Bearer token'
-      }
+        authorization: 'Bearer token',
+      },
     });
     const body = (await response.json()) as { error: string };
     assert.equal(response.status, 400);

@@ -13,6 +13,7 @@
 ### Task 1: Contract and Route Skeletons
 
 **Files:**
+
 - Modify: `packages/contracts/src/command-center.ts`
 - Modify: `apps/web/src/lib/auth/permissions.ts`
 - Test: `apps/web/src/lib/auth/permissions.test.ts`
@@ -24,6 +25,7 @@
 - Create: `apps/web/src/app/api/command-center/qa-suggestions/notifications/route.ts`
 
 **Steps:**
+
 1. Add Q&A entry/suggestion Zod schemas and input schemas to contracts.
 2. Add permission mapping/tests for `/api/command-center/qa` and `/api/command-center/qa-suggestions` write actions.
 3. Add route handlers with Zod validation and error handling wired to store functions.
@@ -32,10 +34,12 @@
 ### Task 2: Store Domain for Q&A Entries, Suggestions, and Review Events
 
 **Files:**
+
 - Modify: `apps/web/src/lib/command-center-store.ts`
 - Test: `apps/web/src/lib/command-center-store.test.ts`
 
 **Steps:**
+
 1. Add store types and state for `propertyQaEntries`, `propertyQaSuggestions`, and `propertyQaSuggestionEvents`.
 2. Add store methods for list/create/update entries; list suggestions; approve/reject suggestions; notification summary.
 3. Implement normalized-question deduplication and stale pending auto-archive (30-day default).
@@ -45,11 +49,13 @@
 ### Task 3: Inbound Analyzer + Context Integration
 
 **Files:**
+
 - Modify: `apps/web/src/lib/command-center-store.ts`
 - Test: `apps/web/src/lib/command-center-store.test.ts`
 - Modify: `apps/web/src/app/api/command-center/landing/route.ts`
 
 **Steps:**
+
 1. Trigger suggestion analysis in inbound message ingestion path.
 2. Add deterministic analyzer heuristic with statuses (`pending`, `invalid_output`) and confidence/label fields.
 3. Integrate approved property Q&A entries into assembled draft context as secondary knowledge, with policy precedence retained.
@@ -59,9 +65,11 @@
 ### Task 4: Verification
 
 **Files:**
+
 - Modify: `apps/web/src/lib/command-center-store.test.ts`
 
 **Steps:**
+
 1. Run focused tests for Q&A behaviors.
 2. Run full web test suite.
 3. Run workspace typecheck/build if needed to validate no regressions.

@@ -13,6 +13,7 @@
 ### Task 1: Add `@walt/db` and `@anthropic-ai/sdk` to `apps/web`
 
 **Files:**
+
 - Modify: `apps/web/package.json`
 
 **Step 1: Add dependencies**
@@ -26,6 +27,7 @@ cd apps/web && pnpm add @walt/db @anthropic-ai/sdk
 ```bash
 pnpm typecheck
 ```
+
 Expected: `Tasks: 10 successful, 10 total`
 
 **Step 3: Commit**
@@ -40,6 +42,7 @@ git commit -m "feat: add @walt/db and @anthropic-ai/sdk to apps/web"
 ### Task 2: Add `reservations` and `messages` tables to DB schema
 
 **Files:**
+
 - Modify: `packages/db/src/schema.ts`
 
 **Step 1: Add the two tables**
@@ -67,7 +70,7 @@ export const reservations = waltSchema.table('reservations', {
   propertyId: text('property_id'),
   propertyName: text('property_name'),
   raw: jsonb('raw').notNull(),
-  syncedAt: timestamp('synced_at', { withTimezone: true }).notNull()
+  syncedAt: timestamp('synced_at', { withTimezone: true }).notNull(),
 });
 
 export const messages = waltSchema.table(
@@ -84,18 +87,30 @@ export const messages = waltSchema.table(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
     suggestion: text('suggestion'),
     suggestionGeneratedAt: timestamp('suggestion_generated_at', { withTimezone: true }),
-    raw: jsonb('raw').notNull()
+    raw: jsonb('raw').notNull(),
   },
   (table) => ({
-    uniq: uniqueIndex('messages_reservation_created_at_idx').on(table.reservationId, table.createdAt)
-  })
+    uniq: uniqueIndex('messages_reservation_created_at_idx').on(
+      table.reservationId,
+      table.createdAt,
+    ),
+  }),
 );
 ```
 
 You also need to add `integer`, `uniqueIndex` to the import at the top of schema.ts. The full updated import line:
 
 ```ts
-import { integer, jsonb, pgSchema, primaryKey, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import {
+  integer,
+  jsonb,
+  pgSchema,
+  primaryKey,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
 ```
 
 **Step 2: Typecheck the db package**
@@ -103,6 +118,7 @@ import { integer, jsonb, pgSchema, primaryKey, text, timestamp, uniqueIndex, uui
 ```bash
 pnpm --filter @walt/db typecheck
 ```
+
 Expected: passes with no errors.
 
 **Step 3: Commit**
@@ -117,6 +133,7 @@ git commit -m "feat(db): add reservations and messages tables"
 ### Task 3: Generate and apply the DB migration
 
 **Files:**
+
 - Create: `packages/db/drizzle/0001_reservations_messages.sql` (auto-generated)
 
 **Step 1: Generate the migration**
@@ -124,16 +141,19 @@ git commit -m "feat(db): add reservations and messages tables"
 ```bash
 pnpm --filter @walt/db db:generate
 ```
+
 Expected: creates `packages/db/drizzle/0001_*.sql` with the two CREATE TABLE statements.
 
 **Step 2: Apply the migration**
 
 For development with `DATABASE_URL` set:
+
 ```bash
 pnpm --filter @walt/db db:migrate
 ```
 
 If `DATABASE_URL` is not set locally, use push instead:
+
 ```bash
 pnpm --filter @walt/db db:push
 ```
@@ -150,6 +170,7 @@ git commit -m "feat(db): migration 0001 - reservations and messages tables"
 ### Task 4: Create DB singleton for `apps/web`
 
 **Files:**
+
 - Create: `apps/web/src/lib/db.ts`
 
 **Step 1: Create the singleton**
@@ -173,6 +194,7 @@ The `globalThis` singleton pattern prevents creating a new connection pool on ev
 ```bash
 pnpm typecheck
 ```
+
 Expected: passes.
 
 **Step 3: Commit**
@@ -187,6 +209,7 @@ git commit -m "feat(web): add DB singleton for Next.js"
 ### Task 5: Create Hospitable normalization helpers + tests
 
 **Files:**
+
 - Create: `apps/web/src/lib/hospitable-normalize.ts`
 - Create: `apps/web/src/lib/hospitable-normalize.test.ts`
 
@@ -214,7 +237,7 @@ test('normalizeReservation extracts core fields from Hospitable v2 payload', () 
     last_message_at: '2025-05-15T00:00:00Z',
     nights: 4,
     guest: { id: 'g1', first_name: 'Jane', last_name: 'Doe', email: 'jane@example.com' },
-    properties: [{ id: 'prop-1', name: 'Beach House' }]
+    properties: [{ id: 'prop-1', name: 'Beach House' }],
   };
 
   const result = normalizeReservation(raw);
@@ -242,7 +265,7 @@ test('normalizeMessage extracts core fields from Hospitable v2 message payload',
     body: 'What time is check-in?',
     sender_type: 'guest',
     sender: { full_name: 'Jane Doe' },
-    created_at: '2025-05-10T10:00:00Z'
+    created_at: '2025-05-10T10:00:00Z',
   };
 
   const result = normalizeMessage(raw, 'res-1');
@@ -253,7 +276,12 @@ test('normalizeMessage extracts core fields from Hospitable v2 message payload',
 });
 
 test('normalizeMessage returns null when body is empty', () => {
-  const raw = { reservation_id: 'res-1', body: '', sender_type: 'guest', created_at: '2025-05-10T10:00:00Z' };
+  const raw = {
+    reservation_id: 'res-1',
+    body: '',
+    sender_type: 'guest',
+    created_at: '2025-05-10T10:00:00Z',
+  };
   const result = normalizeMessage(raw, 'res-1');
   assert.equal(result, null);
 });
@@ -264,6 +292,7 @@ test('normalizeMessage returns null when body is empty', () => {
 ```bash
 pnpm --filter @walt/web test
 ```
+
 Expected: FAIL — `normalizeReservation` and `normalizeMessage` are not defined.
 
 **Step 3: Implement the normalization helpers**
@@ -294,7 +323,9 @@ function ts(v: unknown): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
-export function normalizeReservation(raw: Record<string, unknown>): Omit<ReservationInsert, 'syncedAt'> {
+export function normalizeReservation(
+  raw: Record<string, unknown>,
+): Omit<ReservationInsert, 'syncedAt'> {
   const guest = (raw.guest ?? {}) as Record<string, unknown>;
   const props = Array.isArray(raw.properties) ? (raw.properties as Record<string, unknown>[]) : [];
   const firstProp = props[0] ?? {};
@@ -318,13 +349,13 @@ export function normalizeReservation(raw: Record<string, unknown>): Omit<Reserva
     guestEmail: str(guest.email),
     propertyId: str(firstProp.id),
     propertyName: str(firstProp.name),
-    raw
+    raw,
   };
 }
 
 export function normalizeMessage(
   raw: Record<string, unknown>,
-  reservationId: string
+  reservationId: string,
 ): Omit<MessageInsert, 'id'> | null {
   const body = str(raw.body);
   if (!body) return null;
@@ -342,7 +373,7 @@ export function normalizeMessage(
     createdAt,
     suggestion: null,
     suggestionGeneratedAt: null,
-    raw
+    raw,
   };
 }
 ```
@@ -352,6 +383,7 @@ export function normalizeMessage(
 ```bash
 pnpm --filter @walt/web test
 ```
+
 Expected: 4 passing.
 
 **Step 5: Commit**
@@ -366,6 +398,7 @@ git commit -m "feat(web): add Hospitable normalization helpers with tests"
 ### Task 6: Add permissions for `/api/admin/` routes
 
 **Files:**
+
 - Modify: `apps/web/src/lib/auth/permissions.ts`
 
 **Step 1: Add admin route mapping**
@@ -398,6 +431,7 @@ git commit -m "feat(web): restrict /api/admin/* routes to platform.configure per
 ### Task 7: Create bulk sync route
 
 **Files:**
+
 - Create: `apps/web/src/app/api/admin/sync-hospitable/route.ts`
 
 **Step 1: Create the route**
@@ -418,11 +452,14 @@ type HospitableListResponse = {
 
 async function fetchAllReservations(config: { apiKey: string; baseUrl: string }) {
   const all: Record<string, unknown>[] = [];
-  let url: string | null = new URL('/v2/reservations?limit=100&includes[]=guest&includes[]=properties', config.baseUrl).toString();
+  let url: string | null = new URL(
+    '/v2/reservations?limit=100&includes[]=guest&includes[]=properties',
+    config.baseUrl,
+  ).toString();
 
   while (url) {
     const res = await fetch(url, {
-      headers: { accept: 'application/json', authorization: `Bearer ${config.apiKey}` }
+      headers: { accept: 'application/json', authorization: `Bearer ${config.apiKey}` },
     });
     if (!res.ok) throw new Error(`Hospitable reservations returned ${res.status}`);
     const body = (await res.json()) as HospitableListResponse;
@@ -433,10 +470,13 @@ async function fetchAllReservations(config: { apiKey: string; baseUrl: string })
   return all;
 }
 
-async function fetchMessagesForReservation(config: { apiKey: string; baseUrl: string }, reservationId: string) {
+async function fetchMessagesForReservation(
+  config: { apiKey: string; baseUrl: string },
+  reservationId: string,
+) {
   const url = new URL(`/v2/reservations/${reservationId}/messages?limit=100`, config.baseUrl);
   const res = await fetch(url, {
-    headers: { accept: 'application/json', authorization: `Bearer ${config.apiKey}` }
+    headers: { accept: 'application/json', authorization: `Bearer ${config.apiKey}` },
   });
   if (!res.ok) return [];
   const body = (await res.json()) as { data?: Record<string, unknown>[] };
@@ -446,10 +486,7 @@ async function fetchMessagesForReservation(config: { apiKey: string; baseUrl: st
 export async function POST() {
   const config = getHospitableApiConfig();
   if (!config) {
-    return NextResponse.json(
-      { error: 'Hospitable API not configured.' },
-      { status: 503 }
-    );
+    return NextResponse.json({ error: 'Hospitable API not configured.' }, { status: 503 });
   }
 
   const rawReservations = await fetchAllReservations(config);
@@ -464,7 +501,7 @@ export async function POST() {
       .values({ ...normalized, syncedAt: now })
       .onConflictDoUpdate({
         target: reservations.id,
-        set: { ...normalized, syncedAt: now }
+        set: { ...normalized, syncedAt: now },
       });
     reservationCount++;
 
@@ -485,6 +522,7 @@ export async function POST() {
 ```
 
 Note: `uuid` is not in `apps/web` yet. Add it:
+
 ```bash
 cd apps/web && pnpm add uuid && pnpm add -D @types/uuid
 ```
@@ -507,11 +545,13 @@ git commit -m "feat(web): add POST /api/admin/sync-hospitable bulk import route"
 ### Task 8: Update webhook to persist to DB + generate Claude suggestion
 
 **Files:**
+
 - Modify: `apps/web/src/app/api/integrations/hospitable/route.ts`
 
 **Step 1: Replace the existing POST handler body**
 
 The existing handler calls `ingestHospitableMessageInSingleton`. Replace that logic (keep the HMAC verification) to instead:
+
 1. Fetch the full reservation from Hospitable
 2. Upsert reservation + message to DB
 3. Call Claude to generate a suggestion
@@ -536,7 +576,7 @@ const webhookSchema = z.object({
   message: z.string().min(1),
   senderType: z.string().default('guest'),
   senderName: z.string().optional(),
-  sentAt: z.string().optional()
+  sentAt: z.string().optional(),
 });
 
 function verifySignature(request: Request, rawBody: string) {
@@ -548,31 +588,46 @@ function verifySignature(request: Request, rawBody: string) {
   const expected = createHmac('sha256', secret).update(`${timestamp}.${rawBody}`).digest('hex');
   const providedBuffer = Buffer.from(signature, 'hex');
   const expectedBuffer = Buffer.from(expected, 'hex');
-  if (providedBuffer.length !== expectedBuffer.length || !timingSafeEqual(providedBuffer, expectedBuffer)) {
+  if (
+    providedBuffer.length !== expectedBuffer.length ||
+    !timingSafeEqual(providedBuffer, expectedBuffer)
+  ) {
     throw new Error('Invalid webhook signature');
   }
 }
 
-async function fetchReservation(config: { apiKey: string; baseUrl: string }, reservationId: string) {
-  const url = new URL(`/v2/reservations/${reservationId}?includes[]=guest&includes[]=properties`, config.baseUrl);
+async function fetchReservation(
+  config: { apiKey: string; baseUrl: string },
+  reservationId: string,
+) {
+  const url = new URL(
+    `/v2/reservations/${reservationId}?includes[]=guest&includes[]=properties`,
+    config.baseUrl,
+  );
   const res = await fetch(url, {
-    headers: { accept: 'application/json', authorization: `Bearer ${config.apiKey}` }
+    headers: { accept: 'application/json', authorization: `Bearer ${config.apiKey}` },
   });
   if (!res.ok) return null;
   const body = (await res.json()) as { data?: Record<string, unknown> };
   return body.data ?? null;
 }
 
-async function generateSuggestion(reservation: Record<string, unknown>, messageBody: string): Promise<string | null> {
+async function generateSuggestion(
+  reservation: Record<string, unknown>,
+  messageBody: string,
+): Promise<string | null> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return null;
 
   const client = new Anthropic({ apiKey });
   const raw = reservation;
   const guestName = ((raw.guest as Record<string, unknown>)?.first_name as string) ?? 'the guest';
-  const propertyName = ((raw.properties as Record<string, unknown>[])?.[0]?.name as string) ?? 'the property';
+  const propertyName =
+    ((raw.properties as Record<string, unknown>[])?.[0]?.name as string) ?? 'the property';
   const checkIn = raw.check_in ? new Date(raw.check_in as string).toLocaleDateString() : 'unknown';
-  const checkOut = raw.check_out ? new Date(raw.check_out as string).toLocaleDateString() : 'unknown';
+  const checkOut = raw.check_out
+    ? new Date(raw.check_out as string).toLocaleDateString()
+    : 'unknown';
 
   const response = await client.messages.create({
     model: 'claude-sonnet-4-6',
@@ -583,7 +638,7 @@ Guest: ${guestName}
 Check-in: ${checkIn}
 Check-out: ${checkOut}
 Reply in the same language as the guest message. Keep it under 3 sentences unless the question requires more detail.`,
-    messages: [{ role: 'user', content: messageBody }]
+    messages: [{ role: 'user', content: messageBody }],
   });
 
   const block = response.content[0];
@@ -610,7 +665,7 @@ export async function POST(request: Request) {
           .values({ ...normalized, syncedAt: new Date() })
           .onConflictDoUpdate({
             target: reservations.id,
-            set: { ...normalized, syncedAt: new Date() }
+            set: { ...normalized, syncedAt: new Date() },
           });
       }
     }
@@ -621,7 +676,7 @@ export async function POST(request: Request) {
       body: parsed.message,
       sender_type: parsed.senderType,
       sender: { full_name: parsed.senderName ?? '' },
-      created_at: parsed.sentAt ?? new Date().toISOString()
+      created_at: parsed.sentAt ?? new Date().toISOString(),
     };
     const normalizedMsg = normalizeMessage(msgRaw, parsed.reservationId);
 
@@ -648,7 +703,8 @@ export async function POST(request: Request) {
   } catch (error) {
     const status =
       error instanceof Error &&
-      (error.message === 'Missing webhook signature headers' || error.message === 'Invalid webhook signature')
+      (error.message === 'Missing webhook signature headers' ||
+        error.message === 'Invalid webhook signature')
         ? 401
         : 400;
     return handleApiError({ error, route: '/api/integrations/hospitable', status });
@@ -680,6 +736,7 @@ git commit -m "feat(web): webhook persists to DB and generates Claude reply sugg
 ### Task 9: Create question analysis route
 
 **Files:**
+
 - Create: `apps/web/src/app/api/admin/analyze-questions/route.ts`
 
 **Step 1: Create the route**
@@ -726,9 +783,9 @@ Return valid JSON only: { "categories": [{ "name": string, "count": number, "exa
     messages: [
       {
         role: 'user',
-        content: `Here are ${inboundMessages.length} guest messages:\n\n${messageList}\n\nReturn JSON only.`
-      }
-    ]
+        content: `Here are ${inboundMessages.length} guest messages:\n\n${messageList}\n\nReturn JSON only.`,
+      },
+    ],
   });
 
   const block = response.content[0];
@@ -738,9 +795,15 @@ Return valid JSON only: { "categories": [{ "name": string, "count": number, "exa
 
   try {
     const parsed = JSON.parse(block.text) as { categories: QuestionCategory[] };
-    return NextResponse.json({ categories: parsed.categories, totalMessages: inboundMessages.length });
+    return NextResponse.json({
+      categories: parsed.categories,
+      totalMessages: inboundMessages.length,
+    });
   } catch {
-    return NextResponse.json({ error: 'Failed to parse Claude response', raw: block.text }, { status: 502 });
+    return NextResponse.json(
+      { error: 'Failed to parse Claude response', raw: block.text },
+      { status: 502 },
+    );
   }
 }
 ```
@@ -763,6 +826,7 @@ git commit -m "feat(web): add POST /api/admin/analyze-questions Claude-powered a
 ### Task 10: Update Reservations and Inbox pages to read from DB
 
 **Files:**
+
 - Modify: `apps/web/src/app/reservations/page.tsx`
 - Modify: `apps/web/src/app/inbox/page.tsx`
 
@@ -804,7 +868,7 @@ const rows = await db
     suggestion: messages.suggestion,
     reservationId: messages.reservationId,
     guestFirstName: reservations.guestFirstName,
-    guestLastName: reservations.guestLastName
+    guestLastName: reservations.guestLastName,
   })
   .from(messages)
   .leftJoin(reservations, eq(messages.reservationId, reservations.id))
@@ -833,6 +897,7 @@ git commit -m "feat(web): reservations and inbox pages read from DB instead of H
 ### Task 11: Add Questions page and nav link
 
 **Files:**
+
 - Create: `apps/web/src/app/questions/page.tsx`
 - Modify: `apps/web/src/app/layout.tsx`
 
@@ -860,8 +925,15 @@ export default function QuestionsPage() {
     setError(null);
     try {
       const res = await fetch('/api/admin/analyze-questions', { method: 'POST' });
-      const data = await res.json() as { categories?: Category[]; error?: string; totalMessages?: number };
-      if (data.error) { setError(data.error); return; }
+      const data = (await res.json()) as {
+        categories?: Category[];
+        error?: string;
+        totalMessages?: number;
+      };
+      if (data.error) {
+        setError(data.error);
+        return;
+      }
       setCategories(data.categories ?? []);
       setTotal(data.totalMessages ?? null);
     } catch (e) {
@@ -876,7 +948,9 @@ export default function QuestionsPage() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Common Questions</h1>
-          {total !== null && <p className="text-sm text-gray-500 mt-1">Analysed {total} guest messages</p>}
+          {total !== null && (
+            <p className="text-sm text-gray-500 mt-1">Analysed {total} guest messages</p>
+          )}
         </div>
         <button
           onClick={runAnalysis}
@@ -888,7 +962,9 @@ export default function QuestionsPage() {
       </div>
 
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800 text-sm mb-6">{error}</div>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800 text-sm mb-6">
+          {error}
+        </div>
       )}
 
       {categories.length === 0 && !loading && (
@@ -902,16 +978,26 @@ export default function QuestionsPage() {
           <div key={cat.name} className="rounded-lg border border-gray-200 bg-white p-5">
             <div className="flex items-center justify-between mb-2">
               <h2 className="font-medium text-gray-900">{cat.name}</h2>
-              <span className="text-xs text-gray-500">{cat.count} message{cat.count !== 1 ? 's' : ''}</span>
+              <span className="text-xs text-gray-500">
+                {cat.count} message{cat.count !== 1 ? 's' : ''}
+              </span>
             </div>
             <div className="mb-3">
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Examples</p>
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                Examples
+              </p>
               <ul className="text-sm text-gray-600 space-y-1">
-                {cat.examples.map((ex, i) => <li key={i} className="truncate">"{ex}"</li>)}
+                {cat.examples.map((ex, i) => (
+                  <li key={i} className="truncate">
+                    "{ex}"
+                  </li>
+                ))}
               </ul>
             </div>
             <div className="rounded bg-blue-50 border border-blue-100 p-3">
-              <p className="text-xs font-medium text-blue-700 uppercase tracking-wider mb-1">Suggested Answer</p>
+              <p className="text-xs font-medium text-blue-700 uppercase tracking-wider mb-1">
+                Suggested Answer
+              </p>
               <p className="text-sm text-blue-900">{cat.suggestedAnswer}</p>
             </div>
           </div>
@@ -925,6 +1011,7 @@ export default function QuestionsPage() {
 **Step 2: Add Questions to sidebar nav in layout.tsx**
 
 In the `navLinks` array in `apps/web/src/app/layout.tsx`, add:
+
 ```ts
 { href: '/questions', label: 'Questions' }
 ```
@@ -951,6 +1038,7 @@ git commit -m "feat(web): add Questions page with Claude-powered guest question 
 ```bash
 pnpm typecheck
 ```
+
 Expected: `Tasks: 10 successful, 10 total`
 
 **Step 2: Run lint**
@@ -958,6 +1046,7 @@ Expected: `Tasks: 10 successful, 10 total`
 ```bash
 pnpm lint
 ```
+
 Expected: `Tasks: 9 successful, 9 total`
 
 **Step 3: Run tests**
@@ -965,11 +1054,13 @@ Expected: `Tasks: 9 successful, 9 total`
 ```bash
 pnpm --filter @walt/web test
 ```
+
 Expected: 4 passing tests for normalization helpers.
 
 **Step 4: Verify env vars needed**
 
 Make sure these are set in production:
+
 - `DATABASE_URL` — Postgres connection string
 - `HOSPITABLE_API_KEY` — Hospitable bearer token
 - `HOSPITABLE_BASE_URL` — `https://public.api.hospitable.com`
@@ -979,6 +1070,7 @@ Make sure these are set in production:
 **Step 5: Trigger bulk sync**
 
 After deploying, call the sync endpoint once as an owner-role user:
+
 ```bash
 curl -X POST https://ai.walt-services.com/api/admin/sync-hospitable \
   -H "Cookie: <your-session-cookie>"

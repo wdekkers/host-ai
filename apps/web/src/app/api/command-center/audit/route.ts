@@ -39,7 +39,10 @@ export async function GET(request: Request) {
   }
 
   if (normalizedSince && normalizedUntil && normalizedSince > normalizedUntil) {
-    return NextResponse.json({ error: 'since must be earlier than or equal to until.' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'since must be earlier than or equal to until.' },
+      { status: 400 },
+    );
   }
 
   if (format !== 'json' && format !== 'csv') {
@@ -51,12 +54,21 @@ export async function GET(request: Request) {
     actorId,
     action: action as 'created' | 'edited' | 'approved' | 'sent' | 'rejected' | undefined,
     since: normalizedSince ?? undefined,
-    until: normalizedUntil ?? undefined
+    until: normalizedUntil ?? undefined,
   });
 
   if (format === 'csv') {
     const escapeCsv = (value: string) => `"${value.replace(/"/g, '""')}"`;
-    const header = ['draftId', 'reservationId', 'intent', 'action', 'actorId', 'timestamp', 'before', 'after'].join(',');
+    const header = [
+      'draftId',
+      'reservationId',
+      'intent',
+      'action',
+      'actorId',
+      'timestamp',
+      'before',
+      'after',
+    ].join(',');
     const rows = items.map((entry) =>
       [
         escapeCsv(entry.draftId),
@@ -66,12 +78,12 @@ export async function GET(request: Request) {
         escapeCsv(entry.actorId),
         escapeCsv(entry.timestamp),
         escapeCsv(entry.before ? JSON.stringify(entry.before) : ''),
-        escapeCsv(entry.after ? JSON.stringify(entry.after) : '')
-      ].join(',')
+        escapeCsv(entry.after ? JSON.stringify(entry.after) : ''),
+      ].join(','),
     );
     return new Response([header, ...rows].join('\n'), {
       status: 200,
-      headers: { 'content-type': 'text/csv; charset=utf-8' }
+      headers: { 'content-type': 'text/csv; charset=utf-8' },
     });
   }
 

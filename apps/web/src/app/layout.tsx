@@ -6,14 +6,14 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Walt Command Center',
-  description: 'AI communication and operations command center.'
+  description: 'AI communication and operations command center.',
 };
 
 const navLinks = [
   { href: '/inbox', label: 'Inbox' },
   { href: '/reservations', label: 'Reservations' },
   { href: '/properties', label: 'Properties' },
-  { href: '/questions', label: 'Questions' }
+  { href: '/questions', label: 'Questions' },
 ];
 
 export default function RootLayout({ children }: { children: ReactNode }) {
