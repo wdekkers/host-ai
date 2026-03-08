@@ -16,6 +16,7 @@
     "@walt/contracts": "workspace:*",
     "@walt/db": "workspace:*",
     "openai": "^6.27.0",
+    "twilio": "^5.5.1",
     "postcss": "^8.5.8",
     "tailwindcss": "^4.2.1",
     "uuid": "^13.0.0"
