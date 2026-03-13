@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import Fastify from 'fastify';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { createDb, taskCategories, tasks, taskAuditEvents } from '@walt/db';
 import {
   createTaskCategoryInputSchema,
@@ -9,6 +9,7 @@ import {
   createTaskInputSchema,
   updateTaskInputSchema,
 } from '@walt/contracts';
+import type { TaskAuditAction } from '@walt/contracts';
 
 type Db = ReturnType<typeof createDb>;
 
@@ -17,7 +18,7 @@ async function writeAudit(
   opts: {
     taskId: string;
     organizationId: string;
-    action: string;
+    action: TaskAuditAction;
     changedBy: string;
     delta: Record<string, unknown>;
   },
@@ -132,21 +133,25 @@ export function buildTasksApp(db: Db) {
       includeDeleted?: string;
     };
 
-    const rows = await db.select().from(tasks).where(eq(tasks.organizationId, org));
+    const conditions = [eq(tasks.organizationId, org)];
 
-    const includeDeleted = query.includeDeleted === 'true';
+    if (query.includeDeleted !== 'true') {
+      conditions.push(isNull(tasks.deletedAt));
+    }
+    if (query.status) conditions.push(eq(tasks.status, query.status));
+    if (query.priority) conditions.push(eq(tasks.priority, query.priority));
+    if (query.categoryId) conditions.push(eq(tasks.categoryId, query.categoryId));
+    if (query.assigneeId) conditions.push(eq(tasks.assigneeId, query.assigneeId));
+    if (query.propertyId) {
+      conditions.push(sql`${tasks.propertyIds} @> ARRAY[${query.propertyId}]::text[]`);
+    }
 
-    const filtered = rows.filter((t) => {
-      if (!includeDeleted && t.deletedAt !== null) return false;
-      if (query.propertyId && !t.propertyIds.includes(query.propertyId)) return false;
-      if (query.status && t.status !== query.status) return false;
-      if (query.priority && t.priority !== query.priority) return false;
-      if (query.categoryId && t.categoryId !== query.categoryId) return false;
-      if (query.assigneeId && t.assigneeId !== query.assigneeId) return false;
-      return true;
-    });
+    const items = await db
+      .select()
+      .from(tasks)
+      .where(and(...conditions));
 
-    return { items: filtered };
+    return { items };
   });
 
   app.get('/tasks/:id', async (request, reply) => {
@@ -227,14 +232,17 @@ export function buildTasksApp(db: Db) {
     const before = beforeRows[0];
     if (!before) return reply.status(404).send({ error: 'Task not found' });
 
-    const updates: Record<string, unknown> = {};
+    const updates: Partial<typeof tasks.$inferInsert> = {
+      updatedAt: new Date(),
+      updatedBy: user,
+    };
     const delta: Record<string, unknown> = {};
 
     if (parsed.data.title !== undefined && parsed.data.title !== before.title) {
       updates.title = parsed.data.title;
       delta.title = { from: before.title, to: parsed.data.title };
     }
-    if ('description' in parsed.data && parsed.data.description !== before.description) {
+    if (parsed.data.description !== undefined && parsed.data.description !== before.description) {
       updates.description = parsed.data.description ?? null;
       delta.description = { from: before.description, to: parsed.data.description ?? null };
     }
@@ -242,11 +250,11 @@ export function buildTasksApp(db: Db) {
       updates.priority = parsed.data.priority;
       delta.priority = { from: before.priority, to: parsed.data.priority };
     }
-    if ('categoryId' in parsed.data && parsed.data.categoryId !== before.categoryId) {
+    if (parsed.data.categoryId !== undefined && parsed.data.categoryId !== before.categoryId) {
       updates.categoryId = parsed.data.categoryId ?? null;
       delta.categoryId = { from: before.categoryId, to: parsed.data.categoryId ?? null };
     }
-    if ('assigneeId' in parsed.data && parsed.data.assigneeId !== before.assigneeId) {
+    if (parsed.data.assigneeId !== undefined && parsed.data.assigneeId !== before.assigneeId) {
       updates.assigneeId = parsed.data.assigneeId ?? null;
       delta.assigneeId = { from: before.assigneeId, to: parsed.data.assigneeId ?? null };
     }
@@ -254,19 +262,15 @@ export function buildTasksApp(db: Db) {
       updates.propertyIds = parsed.data.propertyIds;
       delta.propertyIds = { from: before.propertyIds, to: parsed.data.propertyIds };
     }
-    if ('dueDate' in parsed.data) {
+    if (parsed.data.dueDate !== undefined) {
       const newDueDate = parsed.data.dueDate ? new Date(parsed.data.dueDate) : null;
       updates.dueDate = newDueDate;
       delta.dueDate = { from: before.dueDate, to: newDueDate };
     }
 
-    const now = new Date();
-    updates.updatedAt = now;
-    updates.updatedBy = user;
-
     const [item] = await db
       .update(tasks)
-      .set(updates as Parameters<ReturnType<typeof db.update>['set']>[0])
+      .set(updates)
       .where(and(eq(tasks.id, id), eq(tasks.organizationId, org)))
       .returning();
 
@@ -298,8 +302,8 @@ export function buildTasksApp(db: Db) {
     if (!before) return reply.status(404).send({ error: 'Task not found' });
 
     const now = new Date();
-    let updates: Record<string, unknown>;
-    let action: string;
+    let updates: Partial<typeof tasks.$inferInsert>;
+    let action: TaskAuditAction;
 
     if (before.status === 'resolved') {
       // Toggle back to open (restore)
@@ -325,7 +329,7 @@ export function buildTasksApp(db: Db) {
 
     const [item] = await db
       .update(tasks)
-      .set(updates as Parameters<ReturnType<typeof db.update>['set']>[0])
+      .set(updates)
       .where(and(eq(tasks.id, id), eq(tasks.organizationId, org)))
       .returning();
 
