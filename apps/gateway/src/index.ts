@@ -9,6 +9,7 @@ import { authorizePlugin } from './plugins/authorize.js';
 
 const app = Fastify({ logger: true });
 const messagingServiceBaseUrl = process.env.MESSAGING_SERVICE_URL ?? 'http://127.0.0.1:4102';
+const tasksServiceBaseUrl = process.env.TASKS_SERVICE_URL ?? 'http://127.0.0.1:4105';
 
 await app.register(swagger, {
   openapi: {
@@ -52,7 +53,9 @@ app.get('/messaging/contacts', async (_request, reply) => {
   try {
     const response = await fetch(`${messagingServiceBaseUrl}/contacts`);
     if (!response.ok) {
-      return reply.status(response.status).send({ error: `Messaging service returned ${response.status}` });
+      return reply
+        .status(response.status)
+        .send({ error: `Messaging service returned ${response.status}` });
     }
 
     const payload = (await response.json()) as { items: unknown[] };
@@ -68,11 +71,13 @@ app.post('/messaging/contacts', async (request, reply) => {
     const response = await fetch(`${messagingServiceBaseUrl}/contacts`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', accept: 'application/json' },
-      body: JSON.stringify(request.body ?? {})
+      body: JSON.stringify(request.body ?? {}),
     });
     if (!response.ok) {
       const payload = (await response.json().catch(() => ({}))) as { error?: string };
-      return reply.status(response.status).send({ error: payload.error ?? `Messaging service returned ${response.status}` });
+      return reply
+        .status(response.status)
+        .send({ error: payload.error ?? `Messaging service returned ${response.status}` });
     }
 
     const payload = (await response.json()) as { item: unknown };
@@ -89,11 +94,13 @@ app.patch('/messaging/contacts/:id', async (request, reply) => {
     const response = await fetch(`${messagingServiceBaseUrl}/contacts/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json', accept: 'application/json' },
-      body: JSON.stringify(request.body ?? {})
+      body: JSON.stringify(request.body ?? {}),
     });
     if (!response.ok) {
       const payload = (await response.json().catch(() => ({}))) as { error?: string };
-      return reply.status(response.status).send({ error: payload.error ?? `Messaging service returned ${response.status}` });
+      return reply
+        .status(response.status)
+        .send({ error: payload.error ?? `Messaging service returned ${response.status}` });
     }
 
     const payload = (await response.json()) as { item: unknown };
@@ -110,7 +117,9 @@ app.get('/messaging/messages', async (request, reply) => {
     const query = contactId ? `?contactId=${encodeURIComponent(contactId)}` : '';
     const response = await fetch(`${messagingServiceBaseUrl}/messages${query}`);
     if (!response.ok) {
-      return reply.status(response.status).send({ error: `Messaging service returned ${response.status}` });
+      return reply
+        .status(response.status)
+        .send({ error: `Messaging service returned ${response.status}` });
     }
 
     const payload = (await response.json()) as { items: unknown[] };
@@ -126,11 +135,13 @@ app.post('/messaging/messages', async (request, reply) => {
     const response = await fetch(`${messagingServiceBaseUrl}/messages`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', accept: 'application/json' },
-      body: JSON.stringify(request.body ?? {})
+      body: JSON.stringify(request.body ?? {}),
     });
     if (!response.ok) {
       const payload = (await response.json().catch(() => ({}))) as { error?: string };
-      return reply.status(response.status).send({ error: payload.error ?? `Messaging service returned ${response.status}` });
+      return reply
+        .status(response.status)
+        .send({ error: payload.error ?? `Messaging service returned ${response.status}` });
     }
 
     const payload = (await response.json()) as { item: unknown };
@@ -140,6 +151,286 @@ app.post('/messaging/messages', async (request, reply) => {
     return reply.status(502).send({ error: 'Messaging service unavailable' });
   }
 });
+
+app.get(
+  '/task-categories',
+  { preHandler: app.requirePermission('dashboard.read') },
+  async (request, reply) => {
+    try {
+      const response = await fetch(`${tasksServiceBaseUrl}/task-categories`, {
+        headers: {
+          accept: 'application/json',
+          'x-org-id': request.auth?.orgId ?? '',
+          'x-user-id': request.auth?.userId ?? '',
+        },
+      });
+      if (!response.ok)
+        return reply
+          .status(response.status)
+          .send({ error: `Tasks service returned ${response.status}` });
+      return (await response.json()) as { items: unknown[] };
+    } catch {
+      return reply.status(502).send({ error: 'Tasks service unavailable' });
+    }
+  },
+);
+
+app.post(
+  '/task-categories',
+  { preHandler: app.requirePermission('dashboard.read') },
+  async (request, reply) => {
+    try {
+      const response = await fetch(`${tasksServiceBaseUrl}/task-categories`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          accept: 'application/json',
+          'x-org-id': request.auth?.orgId ?? '',
+          'x-user-id': request.auth?.userId ?? '',
+        },
+        body: JSON.stringify(request.body ?? {}),
+      });
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { error?: string };
+        return reply
+          .status(response.status)
+          .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
+      }
+      return reply.status(201).send(await response.json());
+    } catch {
+      return reply.status(502).send({ error: 'Tasks service unavailable' });
+    }
+  },
+);
+
+app.patch(
+  '/task-categories/:id',
+  { preHandler: app.requirePermission('dashboard.read') },
+  async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const response = await fetch(
+        `${tasksServiceBaseUrl}/task-categories/${encodeURIComponent(id)}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'content-type': 'application/json',
+            accept: 'application/json',
+            'x-org-id': request.auth?.orgId ?? '',
+            'x-user-id': request.auth?.userId ?? '',
+          },
+          body: JSON.stringify(request.body ?? {}),
+        },
+      );
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { error?: string };
+        return reply
+          .status(response.status)
+          .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
+      }
+      return await response.json();
+    } catch {
+      return reply.status(502).send({ error: 'Tasks service unavailable' });
+    }
+  },
+);
+
+app.delete(
+  '/task-categories/:id',
+  { preHandler: app.requirePermission('dashboard.read') },
+  async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const response = await fetch(
+        `${tasksServiceBaseUrl}/task-categories/${encodeURIComponent(id)}`,
+        {
+          method: 'DELETE',
+          headers: {
+            accept: 'application/json',
+            'x-org-id': request.auth?.orgId ?? '',
+            'x-user-id': request.auth?.userId ?? '',
+          },
+        },
+      );
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { error?: string };
+        return reply
+          .status(response.status)
+          .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
+      }
+      return await response.json();
+    } catch {
+      return reply.status(502).send({ error: 'Tasks service unavailable' });
+    }
+  },
+);
+
+app.get(
+  '/tasks',
+  { preHandler: app.requirePermission('dashboard.read') },
+  async (request, reply) => {
+    try {
+      const queryParams = new URLSearchParams();
+      const q = request.query as Record<string, string>;
+      for (const [key, val] of Object.entries(q)) {
+        if (val) queryParams.set(key, val);
+      }
+      const qs = queryParams.toString();
+      const response = await fetch(`${tasksServiceBaseUrl}/tasks${qs ? `?${qs}` : ''}`, {
+        headers: {
+          accept: 'application/json',
+          'x-org-id': request.auth?.orgId ?? '',
+          'x-user-id': request.auth?.userId ?? '',
+        },
+      });
+      if (!response.ok)
+        return reply
+          .status(response.status)
+          .send({ error: `Tasks service returned ${response.status}` });
+      return await response.json();
+    } catch {
+      return reply.status(502).send({ error: 'Tasks service unavailable' });
+    }
+  },
+);
+
+app.get(
+  '/tasks/:id',
+  { preHandler: app.requirePermission('dashboard.read') },
+  async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const response = await fetch(`${tasksServiceBaseUrl}/tasks/${encodeURIComponent(id)}`, {
+        headers: {
+          accept: 'application/json',
+          'x-org-id': request.auth?.orgId ?? '',
+          'x-user-id': request.auth?.userId ?? '',
+        },
+      });
+      if (!response.ok)
+        return reply
+          .status(response.status)
+          .send({ error: `Tasks service returned ${response.status}` });
+      return await response.json();
+    } catch {
+      return reply.status(502).send({ error: 'Tasks service unavailable' });
+    }
+  },
+);
+
+app.post(
+  '/tasks',
+  { preHandler: app.requirePermission('dashboard.read') },
+  async (request, reply) => {
+    try {
+      const response = await fetch(`${tasksServiceBaseUrl}/tasks`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          accept: 'application/json',
+          'x-org-id': request.auth?.orgId ?? '',
+          'x-user-id': request.auth?.userId ?? '',
+        },
+        body: JSON.stringify(request.body ?? {}),
+      });
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { error?: string };
+        return reply
+          .status(response.status)
+          .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
+      }
+      return reply.status(201).send(await response.json());
+    } catch {
+      return reply.status(502).send({ error: 'Tasks service unavailable' });
+    }
+  },
+);
+
+app.patch(
+  '/tasks/:id',
+  { preHandler: app.requirePermission('dashboard.read') },
+  async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const response = await fetch(`${tasksServiceBaseUrl}/tasks/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: {
+          'content-type': 'application/json',
+          accept: 'application/json',
+          'x-org-id': request.auth?.orgId ?? '',
+          'x-user-id': request.auth?.userId ?? '',
+        },
+        body: JSON.stringify(request.body ?? {}),
+      });
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { error?: string };
+        return reply
+          .status(response.status)
+          .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
+      }
+      return await response.json();
+    } catch {
+      return reply.status(502).send({ error: 'Tasks service unavailable' });
+    }
+  },
+);
+
+app.post(
+  '/tasks/:id/resolve',
+  { preHandler: app.requirePermission('dashboard.read') },
+  async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const response = await fetch(
+        `${tasksServiceBaseUrl}/tasks/${encodeURIComponent(id)}/resolve`,
+        {
+          method: 'POST',
+          headers: {
+            accept: 'application/json',
+            'x-org-id': request.auth?.orgId ?? '',
+            'x-user-id': request.auth?.userId ?? '',
+          },
+        },
+      );
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { error?: string };
+        return reply
+          .status(response.status)
+          .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
+      }
+      return await response.json();
+    } catch {
+      return reply.status(502).send({ error: 'Tasks service unavailable' });
+    }
+  },
+);
+
+app.delete(
+  '/tasks/:id',
+  { preHandler: app.requirePermission('dashboard.read') },
+  async (request, reply) => {
+    try {
+      const { id } = request.params as { id: string };
+      const response = await fetch(`${tasksServiceBaseUrl}/tasks/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: {
+          accept: 'application/json',
+          'x-org-id': request.auth?.orgId ?? '',
+          'x-user-id': request.auth?.userId ?? '',
+        },
+      });
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { error?: string };
+        return reply
+          .status(response.status)
+          .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
+      }
+      return await response.json();
+    } catch {
+      return reply.status(502).send({ error: 'Tasks service unavailable' });
+    }
+  },
+);
 
 const port = Number(process.env.PORT ?? 4000);
 await app.listen({ port, host: '0.0.0.0' });
