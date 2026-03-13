@@ -79,6 +79,12 @@ export default async function PropertiesPage() {
                   >
                     Inbox
                   </Link>
+                  <Link
+                    href={`/tasks?propertyId=${p.id}`}
+                    className="text-gray-600 hover:text-gray-900 underline underline-offset-2"
+                  >
+                    Tasks
+                  </Link>
                 </div>
               </div>
             );

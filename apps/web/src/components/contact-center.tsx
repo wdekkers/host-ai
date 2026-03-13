@@ -18,13 +18,33 @@ type Message = {
   sentAt: string;
 };
 
-const contactTypeSuggestions = ['pool-maintenance', 'plumber', 'handyman', 'cleaner', 'electrician'];
+const contactTypeSuggestions = [
+  'pool-maintenance',
+  'plumber',
+  'handyman',
+  'cleaner',
+  'electrician',
+];
+
+const channelLabel: Record<Contact['channel'], string> = {
+  sms: 'SMS',
+  email: 'Email',
+  airbnb: 'Airbnb',
+};
+
+const inputClass =
+  'w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-400';
+
+const btnPrimary =
+  'rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1 disabled:opacity-50 transition-colors';
+
 
 export function ContactCenter() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContactId, setSelectedContactId] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
 
   const [contactName, setContactName] = useState('');
   const [contactType, setContactType] = useState('');
@@ -33,15 +53,20 @@ export function ContactCenter() {
 
   const [composerBody, setComposerBody] = useState('');
   const [composerDirection, setComposerDirection] = useState<'inbound' | 'outbound'>('outbound');
+  const [sending, setSending] = useState(false);
 
   const selectedContact = useMemo(
     () => contacts.find((contact) => contact.id === selectedContactId) ?? null,
-    [contacts, selectedContactId]
+    [contacts, selectedContactId],
   );
 
   const resolvedTypeSuggestions = useMemo(() => {
-    const dynamic = contacts.map((contact) => contact.contactType.trim()).filter((value) => value.length > 0);
-    return Array.from(new Set([...contactTypeSuggestions, ...dynamic])).sort((a, b) => a.localeCompare(b));
+    const dynamic = contacts
+      .map((contact) => contact.contactType.trim())
+      .filter((value) => value.length > 0);
+    return Array.from(new Set([...contactTypeSuggestions, ...dynamic])).sort((a, b) =>
+      a.localeCompare(b),
+    );
   }, [contacts]);
 
   const loadContacts = async () => {
@@ -53,7 +78,6 @@ export function ContactCenter() {
     const data = (await res.json()) as { items: Contact[] };
     const sorted = data.items ?? [];
     setContacts(sorted);
-
     const preferred = sorted.find((contact) => contact.preferred);
     const nextId = preferred?.id ?? sorted[0]?.id ?? '';
     if (nextId && !sorted.some((c) => c.id === selectedContactId)) {
@@ -79,7 +103,7 @@ export function ContactCenter() {
       setError('Contact name, type, and contact details are required.');
       return;
     }
-
+    setAdding(true);
     const res = await fetch('/api/messaging/contacts', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -87,18 +111,18 @@ export function ContactCenter() {
         displayName: contactName.trim(),
         contactType: contactType.trim(),
         channel: contactChannel,
-        handle: contactHandle.trim()
-      })
+        handle: contactHandle.trim(),
+      }),
     });
-
+    setAdding(false);
     if (!res.ok) {
       setError('Unable to add contact.');
       return;
     }
-
     const payload = (await res.json()) as { item: Contact };
     setContactName('');
     setContactHandle('');
+    setContactType('');
     await loadContacts();
     setSelectedContactId(payload.item.id);
     setError(null);
@@ -108,14 +132,12 @@ export function ContactCenter() {
     const res = await fetch(`/api/messaging/contacts/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ preferred: true })
+      body: JSON.stringify({ preferred: true }),
     });
-
     if (!res.ok) {
       setError('Unable to update preferred contact.');
       return;
     }
-
     await loadContacts();
     setSelectedContactId(id);
     setError(null);
@@ -126,22 +148,21 @@ export function ContactCenter() {
       setError('Select a contact and enter a message.');
       return;
     }
-
+    setSending(true);
     const res = await fetch('/api/messaging/messages', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         contactId: selectedContactId,
         direction: composerDirection,
-        body: composerBody.trim()
-      })
+        body: composerBody.trim(),
+      }),
     });
-
+    setSending(false);
     if (!res.ok) {
       setError('Unable to send message.');
       return;
     }
-
     setComposerBody('');
     await Promise.all([loadMessages(selectedContactId), loadContacts()]);
     setError(null);
@@ -156,28 +177,37 @@ export function ContactCenter() {
   }, [selectedContactId]);
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Contacts</h1>
-        <p className="text-sm text-gray-500 mt-1">Manage contacts and run conversations directly in the portal.</p>
+    <div className="p-4 sm:p-8 max-w-5xl">
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold text-gray-900">Contacts</h1>
+        <p className="mt-1 text-sm text-gray-500">Manage vendor contacts and log conversations.</p>
       </div>
 
-      <section className="rounded-lg border bg-white p-4 space-y-3">
-        <h2 className="font-medium">Add Contact</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-2">
+      {error && (
+        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {/* Add contact */}
+      <div className="mb-6 rounded-lg border border-gray-200 bg-white p-5">
+        <h2 className="mb-4 text-sm font-semibold text-gray-700 uppercase tracking-wide">
+          Add Contact
+        </h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <input
-            className="border rounded px-2 py-1"
+            className={inputClass}
             value={contactName}
-            onChange={(event) => setContactName(event.target.value)}
-            placeholder="Contact name"
+            onChange={(e) => setContactName(e.target.value)}
+            placeholder="Name"
           />
           <div>
             <input
               list="contact-type-options"
-              className="border rounded px-2 py-1 w-full"
+              className={inputClass}
               value={contactType}
-              onChange={(event) => setContactType(event.target.value)}
-              placeholder="Contact type"
+              onChange={(e) => setContactType(e.target.value)}
+              placeholder="Type (e.g. plumber)"
             />
             <datalist id="contact-type-options">
               {resolvedTypeSuggestions.map((option) => (
@@ -185,95 +215,163 @@ export function ContactCenter() {
               ))}
             </datalist>
           </div>
-          <select className="border rounded px-2 py-1" value={contactChannel} onChange={(event) => setContactChannel(event.target.value as Contact['channel'])}>
-            <option value="sms">sms</option>
-            <option value="email">email</option>
-            <option value="airbnb">airbnb</option>
+          <select
+            className={inputClass}
+            value={contactChannel}
+            onChange={(e) => setContactChannel(e.target.value as Contact['channel'])}
+          >
+            <option value="sms">SMS</option>
+            <option value="email">Email</option>
+            <option value="airbnb">Airbnb</option>
           </select>
           <input
-            className="border rounded px-2 py-1"
+            className={inputClass}
             value={contactHandle}
-            onChange={(event) => setContactHandle(event.target.value)}
+            onChange={(e) => setContactHandle(e.target.value)}
             placeholder="Phone or email"
           />
-          <button className="border rounded px-3 py-1" onClick={() => void addContact()}>
-            Add Contact
+        </div>
+        <div className="mt-3 flex justify-end">
+          <button className={btnPrimary} disabled={adding} onClick={() => void addContact()}>
+            {adding ? 'Adding…' : 'Add Contact'}
           </button>
         </div>
-      </section>
+      </div>
 
-      <section className="rounded-lg border bg-white p-4 space-y-3">
-        <h2 className="font-medium">Contacts</h2>
-        {contacts.length === 0 ? (
-          <p className="text-sm text-gray-500">No contacts yet.</p>
-        ) : (
-          <ul className="space-y-2 text-sm">
-            {contacts.map((contact) => (
-              <li key={contact.id} className="rounded border p-2 flex items-center justify-between gap-3">
-                <div>
-                  <button className="font-medium text-left" onClick={() => setSelectedContactId(contact.id)}>
-                    {contact.displayName}
-                  </button>{' '}
-                  ({contact.contactType}) - {contact.handle}
-                </div>
-                <label className="flex items-center gap-1 text-xs text-gray-700">
-                  <input
-                    type="checkbox"
-                    checked={contact.preferred}
-                    onChange={() => void setPreferredContact(contact.id)}
-                  />
-                  preferred
-                </label>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className="rounded-lg border bg-white p-4 space-y-3">
-        <h2 className="font-medium">Conversation</h2>
-        {selectedContact ? (
-          <p className="text-sm text-gray-600">
-            Active contact: <strong>{selectedContact.displayName}</strong> ({selectedContact.contactType}) via {selectedContact.channel}
-          </p>
-        ) : (
-          <p className="text-sm text-gray-500">No contact selected yet.</p>
-        )}
-
-        <div className="grid gap-2">
-          <div className="flex gap-2">
-            <select
-              className="border rounded px-2 py-1"
-              value={composerDirection}
-              onChange={(event) => setComposerDirection(event.target.value as 'inbound' | 'outbound')}
-            >
-              <option value="outbound">outbound</option>
-              <option value="inbound">inbound</option>
-            </select>
-            <button className="border rounded px-3 py-1" onClick={() => void sendMessage()}>
-              Send Message
-            </button>
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        {/* Contact list */}
+        <div className="w-full lg:w-72 shrink-0">
+          <div className="rounded-lg border border-gray-200 bg-white divide-y divide-gray-100">
+            {contacts.length === 0 ? (
+              <p className="px-5 py-8 text-center text-sm text-gray-400">No contacts yet.</p>
+            ) : (
+              contacts.map((contact) => (
+                <button
+                  key={contact.id}
+                  onClick={() => setSelectedContactId(contact.id)}
+                  className={`w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors ${
+                    contact.id === selectedContactId ? 'bg-gray-50' : ''
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`text-sm font-medium truncate ${
+                          contact.id === selectedContactId ? 'text-gray-900' : 'text-gray-700'
+                        }`}
+                      >
+                        {contact.displayName}
+                      </span>
+                      {contact.preferred && (
+                        <span className="shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
+                          preferred
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-0.5 text-xs text-gray-400 truncate">
+                      {contact.contactType} · {channelLabel[contact.channel]}
+                    </p>
+                    <p className="text-xs text-gray-400 truncate">{contact.handle}</p>
+                  </div>
+                </button>
+              ))
+            )}
           </div>
-          <textarea
-            className="border rounded px-2 py-1"
-            value={composerBody}
-            onChange={(event) => setComposerBody(event.target.value)}
-            rows={2}
-            placeholder="Type message"
-          />
+          {selectedContact && !selectedContact.preferred && (
+            <button
+              className="mt-2 w-full text-xs text-gray-500 hover:text-gray-700 underline"
+              onClick={() => void setPreferredContact(selectedContact.id)}
+            >
+              Set as preferred
+            </button>
+          )}
         </div>
 
-        <ul className="space-y-2 text-sm">
-          {messages.map((message) => (
-            <li key={message.id} className="rounded border p-2">
-              <span className="font-medium">[{message.direction}]</span> {message.body}
-              <span className="text-gray-400 text-xs ml-2">{new Date(message.sentAt).toLocaleString()}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
+        {/* Conversation */}
+        <div className="flex-1 min-w-0 rounded-lg border border-gray-200 bg-white p-5 flex flex-col gap-4">
+          {selectedContact ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-gray-900">
+                {selectedContact.displayName}
+              </span>
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+                {selectedContact.contactType}
+              </span>
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+                {channelLabel[selectedContact.channel]}
+              </span>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-400">Select a contact to view the conversation.</p>
+          )}
 
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          {/* Messages */}
+          <div className="flex flex-col gap-2 min-h-[8rem]">
+            {messages.length === 0 && selectedContact && (
+              <p className="text-sm text-gray-400">No messages yet.</p>
+            )}
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex ${message.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap ${
+                    message.direction === 'outbound'
+                      ? 'bg-gray-900 text-white rounded-br-sm'
+                      : 'bg-white border border-gray-200 text-gray-900 rounded-bl-sm'
+                  }`}
+                >
+                  {message.body}
+                  <div
+                    className={`mt-1 text-xs ${
+                      message.direction === 'outbound' ? 'text-gray-400' : 'text-gray-400'
+                    }`}
+                  >
+                    {new Date(message.sentAt).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Composer */}
+          <div className="border-t border-gray-100 pt-4 flex flex-col gap-2">
+            <textarea
+              className={inputClass}
+              value={composerBody}
+              onChange={(e) => setComposerBody(e.target.value)}
+              rows={3}
+              placeholder={
+                selectedContact
+                  ? `Message ${selectedContact.displayName}…`
+                  : 'Select a contact first'
+              }
+              disabled={!selectedContact}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) void sendMessage();
+              }}
+            />
+            <div className="flex items-center justify-between">
+              <select
+                className="rounded-md border border-gray-300 px-2 py-1.5 text-xs text-gray-600 focus:outline-none"
+                value={composerDirection}
+                onChange={(e) => setComposerDirection(e.target.value as 'inbound' | 'outbound')}
+              >
+                <option value="outbound">Outbound</option>
+                <option value="inbound">Inbound</option>
+              </select>
+              <button
+                className={btnPrimary}
+                disabled={sending || !selectedContact}
+                onClick={() => void sendMessage()}
+              >
+                {sending ? 'Sending…' : 'Send'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

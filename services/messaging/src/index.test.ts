@@ -50,8 +50,8 @@ void test('POST /contacts creates a contact with free-text contactType', async (
       displayName: 'Apex Pool Co',
       contactType: 'pool-specialist-night-shift',
       channel: 'sms',
-      handle: '+1-555-0202'
-    }
+      handle: '+1-555-0202',
+    },
   });
 
   assert.equal(createResponse.statusCode, 201);
@@ -72,7 +72,7 @@ void test('PATCH /contacts/:id marks preferred contact', async () => {
   const patchResponse = await app.inject({
     method: 'PATCH',
     url: '/contacts/contact-002',
-    payload: { preferred: true }
+    payload: { preferred: true },
   });
 
   assert.equal(patchResponse.statusCode, 200);
@@ -92,17 +92,24 @@ void test('POST /messages appends a conversation message for selected contact', 
     payload: {
       contactId: 'contact-001',
       direction: 'outbound',
-      body: 'Pool vendor please confirm ETA for repair.'
-    }
+      body: 'Pool vendor please confirm ETA for repair.',
+    },
   });
 
   assert.equal(response.statusCode, 201);
-  const created = response.json() as { item: { contactId: string; body: string; direction: 'inbound' | 'outbound' } };
+  const created = response.json() as {
+    item: { contactId: string; body: string; direction: 'inbound' | 'outbound' };
+  };
   assert.equal(created.item.contactId, 'contact-001');
   assert.equal(created.item.direction, 'outbound');
 
-  const messagesResponse = await app.inject({ method: 'GET', url: '/messages?contactId=contact-001' });
+  const messagesResponse = await app.inject({
+    method: 'GET',
+    url: '/messages?contactId=contact-001',
+  });
   const payload = messagesResponse.json() as { items: Array<{ body: string }> };
-  assert.ok(payload.items.some((message) => message.body === 'Pool vendor please confirm ETA for repair.'));
+  assert.ok(
+    payload.items.some((message) => message.body === 'Pool vendor please confirm ETA for repair.'),
+  );
   await app.close();
 });
