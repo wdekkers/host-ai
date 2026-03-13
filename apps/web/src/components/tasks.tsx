@@ -504,7 +504,7 @@ export default function TasksPanel({ defaultPropertyId }: { defaultPropertyId?: 
                     setShowForm(false);
                     setShowCategories(true);
                   }}
-                  className="text-xs text-blue-600 hover:underline mt-1"
+                  className="text-xs text-blue-600 hover:underline mt-1 min-h-[36px] py-1 flex items-center"
                 >
                   Manage categories
                 </button>
