@@ -40,7 +40,7 @@ app.get(
 app.get(
   '/me',
   {
-    preHandler: app.requirePermission('dashboard.read'),
+    preHandler: async (request) => app.requirePermission('dashboard.read')(request),
   },
   async (request) => ({
     userId: request.auth?.userId,
