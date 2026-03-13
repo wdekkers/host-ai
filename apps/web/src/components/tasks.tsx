@@ -267,14 +267,24 @@ export default function TasksPanel({ defaultPropertyId }: { defaultPropertyId?: 
   }
 
   async function toggleResolve(task: Task) {
-    const response = await fetch(`/api/tasks/${task.id}/resolve`, { method: 'POST' });
-    if (response.ok) await fetchTasks();
+    try {
+      const response = await fetch(`/api/tasks/${task.id}/resolve`, { method: 'POST' });
+      if (!response.ok) throw new Error('Failed to update task');
+      await fetchTasks();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update task');
+    }
   }
 
   async function deleteTask(task: Task) {
     if (!confirm(`Delete "${task.title}"?`)) return;
-    const response = await fetch(`/api/tasks/${task.id}`, { method: 'DELETE' });
-    if (response.ok) await fetchTasks();
+    try {
+      const response = await fetch(`/api/tasks/${task.id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Failed to delete task');
+      await fetchTasks();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete task');
+    }
   }
 
   // ── Category actions ───────────────────────────────────────────────────────
@@ -292,6 +302,8 @@ export default function TasksPanel({ defaultPropertyId }: { defaultPropertyId?: 
       if (!response.ok) throw new Error('Failed to create category');
       setNewCategoryName('');
       await fetchCategories();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create category');
     } finally {
       setCategorySubmitting(false);
     }
