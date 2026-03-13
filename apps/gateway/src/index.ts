@@ -169,7 +169,8 @@ app.get(
           .status(response.status)
           .send({ error: `Tasks service returned ${response.status}` });
       return (await response.json()) as { items: unknown[] };
-    } catch {
+    } catch (error) {
+      app.log.error({ error }, 'Failed to load task categories from tasks service');
       return reply.status(502).send({ error: 'Tasks service unavailable' });
     }
   },
@@ -197,7 +198,8 @@ app.post(
           .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
       }
       return reply.status(201).send(await response.json());
-    } catch {
+    } catch (error) {
+      app.log.error({ error }, 'Failed to create task category in tasks service');
       return reply.status(502).send({ error: 'Tasks service unavailable' });
     }
   },
@@ -229,7 +231,8 @@ app.patch(
           .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
       }
       return await response.json();
-    } catch {
+    } catch (error) {
+      app.log.error({ error }, 'Failed to update task category in tasks service');
       return reply.status(502).send({ error: 'Tasks service unavailable' });
     }
   },
@@ -259,7 +262,8 @@ app.delete(
           .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
       }
       return await response.json();
-    } catch {
+    } catch (error) {
+      app.log.error({ error }, 'Failed to delete task category in tasks service');
       return reply.status(502).send({ error: 'Tasks service unavailable' });
     }
   },
@@ -288,7 +292,8 @@ app.get(
           .status(response.status)
           .send({ error: `Tasks service returned ${response.status}` });
       return await response.json();
-    } catch {
+    } catch (error) {
+      app.log.error({ error }, 'Failed to load tasks from tasks service');
       return reply.status(502).send({ error: 'Tasks service unavailable' });
     }
   },
@@ -312,7 +317,8 @@ app.get(
           .status(response.status)
           .send({ error: `Tasks service returned ${response.status}` });
       return await response.json();
-    } catch {
+    } catch (error) {
+      app.log.error({ error }, 'Failed to load task from tasks service');
       return reply.status(502).send({ error: 'Tasks service unavailable' });
     }
   },
@@ -340,7 +346,8 @@ app.post(
           .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
       }
       return reply.status(201).send(await response.json());
-    } catch {
+    } catch (error) {
+      app.log.error({ error }, 'Failed to create task in tasks service');
       return reply.status(502).send({ error: 'Tasks service unavailable' });
     }
   },
@@ -369,7 +376,8 @@ app.patch(
           .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
       }
       return await response.json();
-    } catch {
+    } catch (error) {
+      app.log.error({ error }, 'Failed to update task in tasks service');
       return reply.status(502).send({ error: 'Tasks service unavailable' });
     }
   },
@@ -399,7 +407,8 @@ app.post(
           .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
       }
       return await response.json();
-    } catch {
+    } catch (error) {
+      app.log.error({ error }, 'Failed to resolve task in tasks service');
       return reply.status(502).send({ error: 'Tasks service unavailable' });
     }
   },
@@ -426,7 +435,8 @@ app.delete(
           .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
       }
       return await response.json();
-    } catch {
+    } catch (error) {
+      app.log.error({ error }, 'Failed to delete task in tasks service');
       return reply.status(502).send({ error: 'Tasks service unavailable' });
     }
   },
