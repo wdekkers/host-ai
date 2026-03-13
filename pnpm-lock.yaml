@@ -192,6 +192,15 @@ importers:
         specifier: workspace:*
         version: link:../../packages/contracts
 
+  services/tasks:
+    dependencies:
+      '@walt/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@walt/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+
 packages:
   '@alloc/quick-lru@5.2.0':
     resolution:
