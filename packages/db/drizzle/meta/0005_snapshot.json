@@ -1,9 +1,65 @@
 {
-  "id": "9e34e804-5eb3-485b-832c-3427dc81c924",
-  "prevId": "6f6a9e1e-1636-445c-87de-09b278994f2a",
+  "id": "c071642b-74d6-4c99-9db5-6e1b586e00b4",
+  "prevId": "cd20fd7b-11de-4d1a-89ae-59d41174e1c6",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
+    "walt.audit_events": {
+      "name": "audit_events",
+      "schema": "walt",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "vendor_id": {
+          "name": "vendor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actor_type": {
+          "name": "actor_type",
+          "type": "actor_type",
+          "typeSchema": "walt",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_id": {
+          "name": "actor_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "walt.events": {
       "name": "events",
       "schema": "walt",
@@ -573,6 +629,202 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "walt.sms_consents": {
+      "name": "sms_consents",
+      "schema": "walt",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "vendor_id": {
+          "name": "vendor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "consent_status": {
+          "name": "consent_status",
+          "type": "consent_status",
+          "typeSchema": "walt",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "consent_method": {
+          "name": "consent_method",
+          "type": "consent_method",
+          "typeSchema": "walt",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "consent_text_version": {
+          "name": "consent_text_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "consent_text_snapshot": {
+          "name": "consent_text_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_domain": {
+          "name": "source_domain",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ip_address": {
+          "name": "ip_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_agent": {
+          "name": "user_agent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "checkbox_checked": {
+          "name": "checkbox_checked",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "confirmed_at": {
+          "name": "confirmed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "revoked_at": {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "sms_consents_vendor_id_vendors_id_fk": {
+          "name": "sms_consents_vendor_id_vendors_id_fk",
+          "tableFrom": "sms_consents",
+          "tableTo": "vendors",
+          "schemaTo": "walt",
+          "columnsFrom": ["vendor_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "walt.sms_message_logs": {
+      "name": "sms_message_logs",
+      "schema": "walt",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "vendor_id": {
+          "name": "vendor_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "direction": {
+          "name": "direction",
+          "type": "message_direction",
+          "typeSchema": "walt",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "twilio_message_sid": {
+          "name": "twilio_message_sid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "from_number": {
+          "name": "from_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "to_number": {
+          "name": "to_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "message_type": {
+          "name": "message_type",
+          "type": "message_type",
+          "typeSchema": "walt",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "delivery_status": {
+          "name": "delivery_status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "sms_message_logs_vendor_id_vendors_id_fk": {
+          "name": "sms_message_logs_vendor_id_vendors_id_fk",
+          "tableFrom": "sms_message_logs",
+          "tableTo": "vendors",
+          "schemaTo": "walt",
+          "columnsFrom": ["vendor_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "walt.task_audit_events": {
       "name": "task_audit_events",
       "schema": "walt",
@@ -865,9 +1117,109 @@
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
+    },
+    "walt.vendors": {
+      "name": "vendors",
+      "schema": "walt",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "company_name": {
+          "name": "company_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contact_name": {
+          "name": "contact_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phone_e164": {
+          "name": "phone_e164",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "vendor_status",
+          "typeSchema": "walt",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'invited'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "vendors_phone_e164_unique": {
+          "name": "vendors_phone_e164_unique",
+          "nullsNotDistinct": false,
+          "columns": ["phone_e164"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
     }
   },
-  "enums": {},
+  "enums": {
+    "walt.actor_type": {
+      "name": "actor_type",
+      "schema": "walt",
+      "values": ["system", "admin", "vendor"]
+    },
+    "walt.consent_method": {
+      "name": "consent_method",
+      "schema": "walt",
+      "values": ["web_form", "inbound_sms", "admin_import"]
+    },
+    "walt.consent_status": {
+      "name": "consent_status",
+      "schema": "walt",
+      "values": ["opted_in", "opted_out", "pending"]
+    },
+    "walt.message_direction": {
+      "name": "message_direction",
+      "schema": "walt",
+      "values": ["outbound", "inbound"]
+    },
+    "walt.message_type": {
+      "name": "message_type",
+      "schema": "walt",
+      "values": ["operational", "consent_confirmation", "help", "stop_confirmation"]
+    },
+    "walt.vendor_status": {
+      "name": "vendor_status",
+      "schema": "walt",
+      "values": ["invited", "active", "opted_out", "blocked"]
+    }
+  },
   "schemas": {
     "walt": "walt"
   },

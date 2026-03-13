@@ -442,5 +442,55 @@ app.delete(
   },
 );
 
+// Vendor admin routes — proxied to messaging service
+app.get('/vendors', async (_request, reply) => {
+  try {
+    const response = await fetch(`${messagingServiceBaseUrl}/vendors`);
+    if (!response.ok) {
+      return reply
+        .status(response.status)
+        .send({ error: `Messaging service returned ${response.status}` });
+    }
+    return reply.send(await response.json());
+  } catch (error) {
+    app.log.error({ error }, 'Failed to load vendors from messaging service');
+    return reply.status(502).send({ error: 'Messaging service unavailable' });
+  }
+});
+
+app.get('/vendors/:id/history', async (request, reply) => {
+  try {
+    const { id } = request.params as { id: string };
+    const response = await fetch(`${messagingServiceBaseUrl}/vendors/${id}/history`);
+    if (!response.ok) {
+      return reply
+        .status(response.status)
+        .send({ error: `Messaging service returned ${response.status}` });
+    }
+    return reply.send(await response.json());
+  } catch (error) {
+    app.log.error({ error }, 'Failed to load vendor history from messaging service');
+    return reply.status(502).send({ error: 'Messaging service unavailable' });
+  }
+});
+
+app.patch('/vendors/:id/disable', async (request, reply) => {
+  try {
+    const { id } = request.params as { id: string };
+    const response = await fetch(`${messagingServiceBaseUrl}/vendors/${id}/disable`, {
+      method: 'PATCH',
+    });
+    if (!response.ok) {
+      return reply
+        .status(response.status)
+        .send({ error: `Messaging service returned ${response.status}` });
+    }
+    return reply.send(await response.json());
+  } catch (error) {
+    app.log.error({ error }, 'Failed to disable vendor in messaging service');
+    return reply.status(502).send({ error: 'Messaging service unavailable' });
+  }
+});
+
 const port = Number(process.env.PORT ?? 4000);
 await app.listen({ port, host: '0.0.0.0' });

@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -132,6 +133,8 @@ export const messages = waltSchema.table(
   }),
 );
 
+// --- Tasks ---
+
 export const taskCategories = waltSchema.table(
   'task_categories',
   {
@@ -192,3 +195,91 @@ export const taskAuditEvents = waltSchema.table(
     taskIdx: index('task_audit_events_task_id_idx').on(table.taskId),
   }),
 );
+
+// --- Vendor Messaging Consent ---
+
+export const vendorStatusEnum = waltSchema.enum('vendor_status', [
+  'invited',
+  'active',
+  'opted_out',
+  'blocked',
+]);
+
+export const consentStatusEnum = waltSchema.enum('consent_status', [
+  'opted_in',
+  'opted_out',
+  'pending',
+]);
+
+export const consentMethodEnum = waltSchema.enum('consent_method', [
+  'web_form',
+  'inbound_sms',
+  'admin_import',
+]);
+
+export const messageDirectionEnum = waltSchema.enum('message_direction', ['outbound', 'inbound']);
+
+export const messageTypeEnum = waltSchema.enum('message_type', [
+  'operational',
+  'consent_confirmation',
+  'help',
+  'stop_confirmation',
+]);
+
+export const actorTypeEnum = waltSchema.enum('actor_type', ['system', 'admin', 'vendor']);
+
+export const vendors = waltSchema.table('vendors', {
+  id: uuid('id').primaryKey(),
+  companyName: text('company_name').notNull(),
+  contactName: text('contact_name').notNull(),
+  phoneE164: text('phone_e164').notNull().unique(),
+  email: text('email'),
+  status: vendorStatusEnum('status').notNull().default('invited'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
+});
+
+export const smsConsents = waltSchema.table('sms_consents', {
+  id: uuid('id').primaryKey(),
+  vendorId: uuid('vendor_id')
+    .notNull()
+    .references(() => vendors.id),
+  consentStatus: consentStatusEnum('consent_status').notNull(),
+  consentMethod: consentMethodEnum('consent_method').notNull(),
+  consentTextVersion: text('consent_text_version').notNull(),
+  consentTextSnapshot: text('consent_text_snapshot').notNull(),
+  sourceUrl: text('source_url').notNull(),
+  sourceDomain: text('source_domain').notNull(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  checkboxChecked: boolean('checkbox_checked').notNull(),
+  confirmedAt: timestamp('confirmed_at', { withTimezone: true }),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+});
+
+export const smsMessageLogs = waltSchema.table('sms_message_logs', {
+  id: uuid('id').primaryKey(),
+  vendorId: uuid('vendor_id')
+    .notNull()
+    .references(() => vendors.id),
+  direction: messageDirectionEnum('direction').notNull(),
+  twilioMessageSid: text('twilio_message_sid'),
+  fromNumber: text('from_number').notNull(),
+  toNumber: text('to_number').notNull(),
+  body: text('body').notNull(),
+  messageType: messageTypeEnum('message_type').notNull(),
+  deliveryStatus: text('delivery_status'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+});
+
+export const auditEvents = waltSchema.table('audit_events', {
+  id: uuid('id').primaryKey(),
+  // Not a FK so orphaned events survive vendor deletion
+  vendorId: uuid('vendor_id'),
+  actorType: actorTypeEnum('actor_type').notNull(),
+  actorId: text('actor_id'),
+  eventType: text('event_type').notNull(),
+  metadata: jsonb('metadata').notNull().$type<Record<string, unknown>>(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+});

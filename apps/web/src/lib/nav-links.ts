@@ -6,4 +6,5 @@ export const navLinks = [
   { href: '/reservations', label: 'Reservations' },
   { href: '/properties', label: 'Properties' },
   { href: '/questions', label: 'Questions' },
+  { href: '/admin/vendors', label: 'Vendors' },
 ] as const;

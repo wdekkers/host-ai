@@ -39,4 +39,7 @@ CREATE TABLE "walt"."tasks" (
 	"updated_by" text NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "walt"."task_audit_events" ADD CONSTRAINT "task_audit_events_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "walt"."tasks"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "walt"."task_audit_events" ADD CONSTRAINT "task_audit_events_task_id_tasks_id_fk" FOREIGN KEY ("task_id") REFERENCES "walt"."tasks"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "task_audit_events_task_id_idx" ON "walt"."task_audit_events" USING btree ("task_id");--> statement-breakpoint
+CREATE INDEX "task_categories_organization_id_idx" ON "walt"."task_categories" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX "tasks_organization_id_idx" ON "walt"."tasks" USING btree ("organization_id");

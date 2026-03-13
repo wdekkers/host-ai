@@ -2,175 +2,92 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { reservations, messages } from '@walt/db';
-import { eq } from 'drizzle-orm';
 
 import { handleApiError, log } from '@/lib/secure-logger';
-import { getHospitableApiConfig } from '@/lib/integrations-env';
-import { db } from '@/lib/db';
-import { normalizeReservation, normalizeMessage } from '@/lib/hospitable-normalize';
-import { generateReplySuggestion } from '@/lib/generate-reply-suggestion';
 
-const webhookSchema = z.object({
+import { ingestHospitableMessageInSingleton } from '@/lib/command-center-store';
+import { getHospitableWebhookSecret } from '@/lib/integrations-env';
+
+const hospitableWebhookSchema = z.object({
+  eventId: z.string().min(1),
   reservationId: z.string().min(1),
+  guestName: z.string().min(1),
   message: z.string().min(1),
-  senderType: z.string().default('guest'),
-  senderName: z.string().optional(),
-  sentAt: z.string().optional(),
+  sentAt: z.string().datetime().optional(),
 });
 
-function verifySignature(request: Request, rawBody: string) {
-  const secret = process.env.HOSPITABLE_WEBHOOK_SECRET?.trim();
-  if (!secret) return;
-  const timestamp = request.headers.get('x-hospitable-timestamp');
-  const signature = request.headers.get('x-hospitable-signature');
-  if (!timestamp || !signature) throw new Error('Missing webhook signature headers');
-  const expected = createHmac('sha256', secret).update(`${timestamp}.${rawBody}`).digest('hex');
-  const providedBuffer = Buffer.from(signature, 'hex');
-  const expectedBuffer = Buffer.from(expected, 'hex');
-  if (
-    providedBuffer.length !== expectedBuffer.length ||
-    !timingSafeEqual(providedBuffer, expectedBuffer)
-  ) {
-    throw new Error('Invalid webhook signature');
-  }
-}
-
-async function fetchReservation(
-  config: { apiKey: string; baseUrl: string },
-  reservationId: string,
-) {
-  const url = new URL(
-    `/v2/reservations/${reservationId}?includes[]=guest&includes[]=properties`,
-    config.baseUrl,
-  );
-  const res = await fetch(url, {
-    headers: { accept: 'application/json', authorization: `Bearer ${config.apiKey}` },
-  });
-  if (!res.ok) return null;
-  const body = (await res.json()) as { data?: Record<string, unknown> };
-  return body.data ?? null;
-}
-
 export async function POST(request: Request) {
-  const eventId = uuidv4();
-  const route = '/api/integrations/hospitable';
-
+  const correlationId = uuidv4();
   try {
     const rawBody = await request.text();
-    verifySignature(request, rawBody);
+    const secret = getHospitableWebhookSecret();
 
-    const body = JSON.parse(rawBody) as unknown;
-    const parsed = webhookSchema.parse(body);
+    if (secret) {
+      const timestamp = request.headers.get('x-hospitable-timestamp');
+      const signature = request.headers.get('x-hospitable-signature');
+      if (!timestamp || !signature) {
+        return NextResponse.json({ error: 'Missing webhook signature headers.' }, { status: 401 });
+      }
+
+      const parsedTimestamp = Number(timestamp);
+      if (!Number.isFinite(parsedTimestamp)) {
+        return NextResponse.json({ error: 'Invalid webhook timestamp.' }, { status: 401 });
+      }
+
+      const ageSeconds = Math.abs(Math.floor(Date.now() / 1000) - parsedTimestamp);
+      if (ageSeconds > 300) {
+        return NextResponse.json(
+          { error: 'Webhook timestamp is outside the allowed window.' },
+          { status: 401 },
+        );
+      }
+
+      const expectedSignature = createHmac('sha256', secret)
+        .update(`${timestamp}.${rawBody}`)
+        .digest('hex');
+      const receivedBuffer = Buffer.from(signature);
+      const expectedBuffer = Buffer.from(expectedSignature);
+      if (
+        receivedBuffer.length !== expectedBuffer.length ||
+        !timingSafeEqual(receivedBuffer, expectedBuffer)
+      ) {
+        return NextResponse.json({ error: 'Invalid webhook signature.' }, { status: 401 });
+      }
+    }
+
+    const parsed = hospitableWebhookSchema.parse(JSON.parse(rawBody));
 
     log('info', 'webhook_received', {
-      eventId,
-      route,
+      correlationId,
+      eventId: parsed.eventId,
       reservationId: parsed.reservationId,
-      senderType: parsed.senderType,
-      sentAt: parsed.sentAt ?? null,
     });
 
-    const config = getHospitableApiConfig();
+    const { item, duplicated } = ingestHospitableMessageInSingleton(parsed);
 
-    let reservationRaw: Record<string, unknown> | null = null;
-    if (config) {
-      reservationRaw = await fetchReservation(config, parsed.reservationId);
-      if (reservationRaw) {
-        const normalized = normalizeReservation(reservationRaw);
-        await db
-          .insert(reservations)
-          .values({ ...normalized, syncedAt: new Date() })
-          .onConflictDoUpdate({
-            target: reservations.id,
-            set: { ...normalized, syncedAt: new Date() },
-          });
-        log('info', 'reservation_upserted', { eventId, reservationId: parsed.reservationId });
-      } else {
-        log('warn', 'reservation_fetch_failed', { eventId, reservationId: parsed.reservationId });
-      }
-    } else {
-      log('warn', 'reservation_fetch_skipped', {
-        eventId,
+    if (duplicated) {
+      log('info', 'webhook_duplicate', {
+        correlationId,
+        eventId: parsed.eventId,
         reservationId: parsed.reservationId,
-        reason: 'no_hospitable_config',
+        queueItemId: item.id,
       });
-    }
-
-    const msgRaw: Record<string, unknown> = {
-      reservation_id: parsed.reservationId,
-      body: parsed.message,
-      sender_type: parsed.senderType,
-      sender: { full_name: parsed.senderName ?? '' },
-      created_at: parsed.sentAt ?? new Date().toISOString(),
-    };
-    const normalizedMsg = normalizeMessage(msgRaw, parsed.reservationId);
-
-    if (!normalizedMsg) {
-      log('warn', 'message_skip', {
-        eventId,
-        reservationId: parsed.reservationId,
-        reason: 'normalize_returned_null',
-        senderType: parsed.senderType,
-      });
-      return NextResponse.json({ ok: true }, { status: 202 });
-    }
-
-    const msgId = uuidv4();
-    await db
-      .insert(messages)
-      .values({ id: msgId, ...normalizedMsg })
-      .onConflictDoNothing();
-
-    log('info', 'message_inserted', {
-      eventId,
-      messageId: msgId,
-      reservationId: parsed.reservationId,
-      senderType: parsed.senderType,
-    });
-
-    if (parsed.senderType === 'guest' && reservationRaw) {
-      const guest = reservationRaw.guest as Record<string, unknown> | undefined;
-      const props = reservationRaw.properties as Record<string, unknown>[] | undefined;
-      const propId = (props?.[0]?.id as string | null) ?? null;
-      const suggestion = await generateReplySuggestion({
-        guestName: String(guest?.first_name ?? 'the guest'),
-        propertyName: String(props?.[0]?.name ?? 'the property'),
-        propertyId: propId,
-        checkIn: reservationRaw.check_in as string | null,
-        checkOut: reservationRaw.check_out as string | null,
-        messageBody: parsed.message,
-      });
-      if (suggestion) {
-        await db
-          .update(messages)
-          .set({ suggestion, suggestionGeneratedAt: new Date() })
-          .where(eq(messages.id, msgId));
-        log('info', 'suggestion_generated', { eventId, messageId: msgId });
-      } else {
-        log('warn', 'suggestion_skip', {
-          eventId,
-          messageId: msgId,
-          reason: 'generate_returned_null',
-        });
-      }
     } else {
-      log('info', 'suggestion_skip', {
-        eventId,
-        messageId: msgId,
-        reason: parsed.senderType !== 'guest' ? 'sender_not_guest' : 'no_reservation_data',
+      log('info', 'webhook_ingested', {
+        correlationId,
+        eventId: parsed.eventId,
+        reservationId: parsed.reservationId,
+        queueItemId: item.id,
+        intent: item.intent,
       });
     }
 
-    log('info', 'webhook_processed', { eventId, reservationId: parsed.reservationId });
-    return NextResponse.json({ ok: true }, { status: 202 });
+    return NextResponse.json({ item, duplicated }, { status: duplicated ? 200 : 202 });
   } catch (error) {
-    const status =
-      error instanceof Error &&
-      (error.message === 'Missing webhook signature headers' ||
-        error.message === 'Invalid webhook signature')
-        ? 401
-        : 400;
-    return handleApiError({ error, route, status, context: { eventId } });
+    return handleApiError({
+      error,
+      route: '/api/integrations/hospitable',
+      context: { correlationId },
+    });
   }
 }
