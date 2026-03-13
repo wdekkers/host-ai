@@ -14,8 +14,9 @@ export function buildTasksApp(db: Db) {
 
   // ── Categories ────────────────────────────────────────────────────────────────
 
-  app.get('/task-categories', async (request) => {
-    const org = (request.headers['x-org-id'] as string) ?? '';
+  app.get('/task-categories', async (request, reply) => {
+    const org = request.headers['x-org-id'] as string | undefined;
+    if (!org) return reply.status(400).send({ error: 'Missing x-org-id header' });
     const rows = await db
       .select()
       .from(taskCategories)
@@ -24,8 +25,10 @@ export function buildTasksApp(db: Db) {
   });
 
   app.post('/task-categories', async (request, reply) => {
-    const org = (request.headers['x-org-id'] as string) ?? '';
-    const user = (request.headers['x-user-id'] as string) ?? '';
+    const org = request.headers['x-org-id'] as string | undefined;
+    if (!org) return reply.status(400).send({ error: 'Missing x-org-id header' });
+    const user = request.headers['x-user-id'] as string | undefined;
+    if (!user) return reply.status(400).send({ error: 'Missing x-user-id header' });
     const parsed = createTaskCategoryInputSchema.safeParse(request.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.message });
 
@@ -45,7 +48,8 @@ export function buildTasksApp(db: Db) {
   });
 
   app.patch('/task-categories/:id', async (request, reply) => {
-    const org = (request.headers['x-org-id'] as string) ?? '';
+    const org = request.headers['x-org-id'] as string | undefined;
+    if (!org) return reply.status(400).send({ error: 'Missing x-org-id header' });
     const { id } = request.params as { id: string };
     const parsed = updateTaskCategoryInputSchema.safeParse(request.body);
     if (!parsed.success) return reply.status(400).send({ error: parsed.error.message });
@@ -61,14 +65,21 @@ export function buildTasksApp(db: Db) {
     const [item] = await db
       .update(taskCategories)
       .set(updates)
-      .where(and(eq(taskCategories.id, id), eq(taskCategories.organizationId, org)))
+      .where(
+        and(
+          eq(taskCategories.id, id),
+          eq(taskCategories.organizationId, org),
+          isNull(taskCategories.deletedAt),
+        ),
+      )
       .returning();
     if (!item) return reply.status(404).send({ error: 'Category not found' });
     return { item };
   });
 
   app.delete('/task-categories/:id', async (request, reply) => {
-    const org = (request.headers['x-org-id'] as string) ?? '';
+    const org = request.headers['x-org-id'] as string | undefined;
+    if (!org) return reply.status(400).send({ error: 'Missing x-org-id header' });
     const { id } = request.params as { id: string };
 
     const [item] = await db

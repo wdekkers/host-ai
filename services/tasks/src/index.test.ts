@@ -17,6 +17,16 @@ void test('GET /health returns ok', async () => {
   await app.close();
 });
 
+void test('GET /task-categories returns 400 when x-org-id header is missing', async () => {
+  const app = buildTasksApp(db);
+  const response = await app.inject({
+    method: 'GET',
+    url: '/task-categories',
+  });
+  assert.equal(response.statusCode, 400);
+  await app.close();
+});
+
 void test('GET /task-categories returns empty list for new org', async () => {
   const app = buildTasksApp(db);
   const orgId = randomUUID();
