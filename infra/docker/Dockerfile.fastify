@@ -22,6 +22,7 @@ COPY services/identity/package.json ./services/identity/
 COPY services/messaging/package.json ./services/messaging/
 COPY services/ops/package.json ./services/ops/
 COPY services/notifications/package.json ./services/notifications/
+COPY services/tasks/package.json ./services/tasks/
 
 RUN pnpm install --frozen-lockfile
 
@@ -36,7 +37,7 @@ COPY apps/gateway/ ./apps/gateway/
 COPY services/ ./services/
 
 # Build all Fastify services + their dependencies
-RUN pnpm turbo run build --filter=@walt/gateway... --filter=@walt/service-identity... --filter=@walt/service-messaging... --filter=@walt/service-ops... --filter=@walt/service-notifications...
+RUN pnpm turbo run build --filter=@walt/gateway... --filter=@walt/service-identity... --filter=@walt/service-messaging... --filter=@walt/service-ops... --filter=@walt/service-notifications... --filter=@walt/service-tasks...
 
 # ──────────────────────────────────────────────
 # Stage 4: runner — minimal production image
@@ -76,6 +77,8 @@ COPY --from=build /app/services/ops/dist ./services/ops/dist
 COPY --from=build /app/services/ops/package.json ./services/ops/
 COPY --from=build /app/services/notifications/dist ./services/notifications/dist
 COPY --from=build /app/services/notifications/package.json ./services/notifications/
+COPY --from=build /app/services/tasks/dist ./services/tasks/dist
+COPY --from=build /app/services/tasks/package.json ./services/tasks/
 
 USER walt
 

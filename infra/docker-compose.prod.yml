@@ -69,6 +69,7 @@ services:
         condition: service_completed_successfully
     environment:
       - PORT=4000
+      - TASKS_SERVICE_URL=http://tasks:4105
     command: ['apps/gateway/dist/index.js']
     deploy:
       resources:
@@ -125,6 +126,19 @@ services:
     environment:
       - PORT=4104
     command: ['services/notifications/dist/index.js']
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  tasks:
+    <<: *fastify
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      - PORT=4105
+    command: ['services/tasks/dist/index.js']
     deploy:
       resources:
         limits:
