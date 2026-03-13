@@ -239,6 +239,7 @@ export default function TasksPanel({ defaultPropertyId }: { defaultPropertyId?: 
   async function submitForm(e: React.FormEvent) {
     e.preventDefault();
     if (!formTitle.trim() || formPropertyIds.length === 0) return;
+    setError(null);
     setFormSubmitting(true);
     try {
       const body = {
@@ -247,7 +248,7 @@ export default function TasksPanel({ defaultPropertyId }: { defaultPropertyId?: 
         priority: formPriority,
         categoryId: formCategoryId || undefined,
         propertyIds: formPropertyIds,
-        dueDate: formDueDate || undefined,
+        dueDate: formDueDate ? new Date(formDueDate).toISOString() : undefined,
       };
       const url = editingTask ? `/api/tasks/${editingTask.id}` : '/api/tasks';
       const method = editingTask ? 'PATCH' : 'POST';
@@ -267,6 +268,7 @@ export default function TasksPanel({ defaultPropertyId }: { defaultPropertyId?: 
   }
 
   async function toggleResolve(task: Task) {
+    setError(null);
     try {
       const response = await fetch(`/api/tasks/${task.id}/resolve`, { method: 'POST' });
       if (!response.ok) throw new Error('Failed to update task');
@@ -278,6 +280,7 @@ export default function TasksPanel({ defaultPropertyId }: { defaultPropertyId?: 
 
   async function deleteTask(task: Task) {
     if (!confirm(`Delete "${task.title}"?`)) return;
+    setError(null);
     try {
       const response = await fetch(`/api/tasks/${task.id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete task');
@@ -311,8 +314,13 @@ export default function TasksPanel({ defaultPropertyId }: { defaultPropertyId?: 
 
   async function deleteCategory(cat: TaskCategory) {
     if (!confirm(`Delete category "${cat.name}"?`)) return;
-    const response = await fetch(`/api/task-categories/${cat.id}`, { method: 'DELETE' });
-    if (response.ok) await fetchCategories();
+    try {
+      const response = await fetch(`/api/task-categories/${cat.id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Failed to delete category');
+      await fetchCategories();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete category');
+    }
   }
 
   // ── Derived data ───────────────────────────────────────────────────────────

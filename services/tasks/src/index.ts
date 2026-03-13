@@ -162,7 +162,7 @@ export function buildTasksApp(db: Db) {
     const rows = await db
       .select()
       .from(tasks)
-      .where(and(eq(tasks.id, id), eq(tasks.organizationId, org)));
+      .where(and(eq(tasks.id, id), eq(tasks.organizationId, org), isNull(tasks.deletedAt)));
     const item = rows[0];
     if (!item) return reply.status(404).send({ error: 'Task not found' });
     return { item };
@@ -228,7 +228,7 @@ export function buildTasksApp(db: Db) {
     const beforeRows = await db
       .select()
       .from(tasks)
-      .where(and(eq(tasks.id, id), eq(tasks.organizationId, org)));
+      .where(and(eq(tasks.id, id), eq(tasks.organizationId, org), isNull(tasks.deletedAt)));
     const before = beforeRows[0];
     if (!before) return reply.status(404).send({ error: 'Task not found' });
 
