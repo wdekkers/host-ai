@@ -8,11 +8,16 @@ export const createDb = (connectionString: string) => {
   // chain verification (the connection is still TLS-encrypted).
   // Guard against undefined at build time (DATABASE_URL not available then).
   let connStr = connectionString;
+  let isLocalhost = false;
   if (connectionString) {
     const url = new URL(connectionString);
     url.searchParams.delete('sslmode');
     connStr = url.toString();
+    isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
   }
-  const pool = new Pool({ connectionString: connStr, ssl: { rejectUnauthorized: false } });
+  const pool = new Pool({
+    connectionString: connStr,
+    ssl: isLocalhost ? false : { rejectUnauthorized: false },
+  });
   return drizzle({ client: pool });
 };
