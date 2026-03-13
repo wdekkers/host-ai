@@ -130,3 +130,46 @@ export const messages = waltSchema.table(
     ),
   }),
 );
+
+export const taskCategories = waltSchema.table('task_categories', {
+  id: uuid('id').primaryKey(),
+  organizationId: uuid('organization_id').notNull(),
+  name: text('name').notNull(),
+  color: text('color'),
+  deletedAt: timestamp('deleted_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+  createdBy: text('created_by').notNull(),
+});
+
+export const tasks = waltSchema.table('tasks', {
+  id: uuid('id').primaryKey(),
+  organizationId: uuid('organization_id').notNull(),
+  title: text('title').notNull(),
+  description: text('description'),
+  status: text('status').notNull().default('open'),
+  priority: text('priority').notNull().default('medium'),
+  categoryId: uuid('category_id'),
+  assigneeId: text('assignee_id'),
+  propertyIds: text('property_ids').array().notNull().default([]),
+  dueDate: timestamp('due_date', { withTimezone: true }),
+  resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+  resolvedBy: text('resolved_by'),
+  deletedAt: timestamp('deleted_at', { withTimezone: true }),
+  deletedBy: text('deleted_by'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+  createdBy: text('created_by').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
+  updatedBy: text('updated_by').notNull(),
+});
+
+export const taskAuditEvents = waltSchema.table('task_audit_events', {
+  id: uuid('id').primaryKey(),
+  taskId: uuid('task_id')
+    .notNull()
+    .references(() => tasks.id),
+  organizationId: uuid('organization_id').notNull(),
+  action: text('action').notNull(),
+  changedBy: text('changed_by').notNull(),
+  changedAt: timestamp('changed_at', { withTimezone: true }).notNull(),
+  delta: jsonb('delta').notNull(),
+});

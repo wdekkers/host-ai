@@ -29,6 +29,13 @@
       "when": 1772906930969,
       "tag": "0003_friendly_sharon_carter",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1773417344268,
+      "tag": "0004_condemned_big_bertha",
+      "breakpoints": true
     }
   ]
 }
