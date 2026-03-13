@@ -16,8 +16,8 @@ export const taskCategorySchema = z.object({
   organizationId: z.string().uuid(),
   name: z.string(),
   color: z.string().nullish(),
-  deletedAt: z.string().nullish(),
-  createdAt: z.string(),
+  deletedAt: z.string().datetime().nullish(),
+  createdAt: z.string().datetime(),
   createdBy: z.string(),
 });
 
@@ -30,15 +30,15 @@ export const taskSchema = z.object({
   priority: taskPrioritySchema,
   categoryId: z.string().uuid().nullish(),
   assigneeId: z.string().nullish(),
-  propertyIds: z.array(z.string()),
-  dueDate: z.string().nullish(),
-  resolvedAt: z.string().nullish(),
+  propertyIds: z.array(z.string()).min(1),
+  dueDate: z.string().datetime().nullish(),
+  resolvedAt: z.string().datetime().nullish(),
   resolvedBy: z.string().nullish(),
-  deletedAt: z.string().nullish(),
+  deletedAt: z.string().datetime().nullish(),
   deletedBy: z.string().nullish(),
-  createdAt: z.string(),
+  createdAt: z.string().datetime(),
   createdBy: z.string(),
-  updatedAt: z.string(),
+  updatedAt: z.string().datetime(),
   updatedBy: z.string(),
 });
 
@@ -48,7 +48,7 @@ export const taskAuditEventSchema = z.object({
   organizationId: z.string().uuid(),
   action: taskAuditActionSchema,
   changedBy: z.string(),
-  changedAt: z.string(),
+  changedAt: z.string().datetime(),
   delta: z.record(z.unknown()),
 });
 
@@ -57,9 +57,9 @@ export const createTaskInputSchema = z.object({
   description: z.string().optional(),
   priority: taskPrioritySchema,
   categoryId: z.string().uuid().optional(),
-  assigneeId: z.string().optional(),
+  assigneeId: z.string().min(1).optional(),
   propertyIds: z.array(z.string()).min(1),
-  dueDate: z.string().optional(),
+  dueDate: z.string().datetime().optional(),
 });
 
 export const updateTaskInputSchema = z.object({
@@ -67,9 +67,9 @@ export const updateTaskInputSchema = z.object({
   description: z.string().nullish(),
   priority: taskPrioritySchema.optional(),
   categoryId: z.string().uuid().nullish(),
-  assigneeId: z.string().nullish(),
+  assigneeId: z.string().min(1).nullish(),
   propertyIds: z.array(z.string()).min(1).optional(),
-  dueDate: z.string().nullish(),
+  dueDate: z.string().datetime().nullish(),
 });
 
 export const createTaskCategoryInputSchema = z.object({
