@@ -55,6 +55,9 @@ export async function POST(request: Request) {
       }
     }
 
+    // Temporary: log raw body to diagnose Hospitable payload format
+    log('info', 'webhook_raw_body', { correlationId, body: rawBody.slice(0, 2000) });
+
     const parsed = hospitableWebhookSchema.parse(JSON.parse(rawBody));
 
     log('info', 'webhook_received', {

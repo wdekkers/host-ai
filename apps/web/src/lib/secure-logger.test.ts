@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { handleApiError, redactForLogs } from './secure-logger';
+import { handleApiError, log, redactForLogs } from './secure-logger';
 
 void test('redacts sensitive fields and pii for logs', () => {
   const payload = {
@@ -22,6 +22,70 @@ void test('redacts sensitive fields and pii for logs', () => {
   assert.equal(redacted.token, '[REDACTED]');
   assert.equal(nested.authorization, '[REDACTED]');
   assert.equal(String(nested.note).includes('support@example.com'), false);
+});
+
+void test('log() writes structured JSON to stdout with level, event, and timestamp', () => {
+  const captured: string[] = [];
+  const originalLog = console.log;
+  console.log = (...args: unknown[]) => {
+    captured.push(args.map((arg) => String(arg)).join(' '));
+  };
+
+  try {
+    log('info', 'webhook_received', { reservationId: 'res-001', eventId: 'evt-001' });
+
+    assert.equal(captured.length, 1);
+    const parsed = JSON.parse(captured[0]!) as Record<string, unknown>;
+    assert.equal(parsed.level, 'info');
+    assert.equal(parsed.event, 'webhook_received');
+    assert.equal(parsed.reservationId, 'res-001');
+    assert.equal(parsed.eventId, 'evt-001');
+    assert.equal(typeof parsed.timestamp, 'string');
+  } finally {
+    console.log = originalLog;
+  }
+});
+
+void test('log() redacts PII in structured log data', () => {
+  const captured: string[] = [];
+  const originalLog = console.log;
+  console.log = (...args: unknown[]) => {
+    captured.push(args.map((arg) => String(arg)).join(' '));
+  };
+
+  try {
+    log('warn', 'contact_created', {
+      handle: '+1 (415) 555-1212',
+      email: 'jane.doe@example.com',
+      token: 'secret-token',
+    });
+
+    const parsed = JSON.parse(captured[0]!) as Record<string, unknown>;
+    assert.equal(String(parsed.handle).includes('555-1212'), false);
+    assert.equal(parsed.token, '[REDACTED]');
+    assert.equal(parsed.level, 'warn');
+  } finally {
+    console.log = originalLog;
+  }
+});
+
+void test('log() works without data argument', () => {
+  const captured: string[] = [];
+  const originalLog = console.log;
+  console.log = (...args: unknown[]) => {
+    captured.push(args.map((arg) => String(arg)).join(' '));
+  };
+
+  try {
+    log('info', 'server_started');
+
+    assert.equal(captured.length, 1);
+    const parsed = JSON.parse(captured[0]!) as Record<string, unknown>;
+    assert.equal(parsed.level, 'info');
+    assert.equal(parsed.event, 'server_started');
+  } finally {
+    console.log = originalLog;
+  }
 });
 
 void test('api error handler logs masked context and returns safe response', async () => {
