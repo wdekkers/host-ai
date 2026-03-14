@@ -54,6 +54,7 @@ services:
     environment:
       - PORT=3000
       - HOSTNAME=0.0.0.0
+      - GATEWAY_BASE_URL=http://gateway:4000
     deploy:
       resources:
         limits:
@@ -69,6 +70,7 @@ services:
         condition: service_completed_successfully
     environment:
       - PORT=4000
+      - MESSAGING_SERVICE_URL=http://messaging:4102
       - TASKS_SERVICE_URL=http://tasks:4105
     command: ['apps/gateway/dist/index.js']
     deploy:
