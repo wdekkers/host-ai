@@ -135,10 +135,17 @@ jobs:
             # Always deploy the latest docker-compose from the repo
             echo "$COMPOSE_B64" | base64 -d > /opt/walt/docker-compose.prod.yml
 
+            # Derive Clerk JWT config from publishable key (base64url payload = frontend API domain)
+            CLERK_DOMAIN=$(printf '%s' "$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" | awk -F'_' '{print $NF}' | tr -- '-_' '+/' | base64 -d 2>/dev/null | tr -d '\0$')
+            CLERK_JWT_ISSUER="https://$CLERK_DOMAIN"
+            CLERK_JWKS_URL="https://$CLERK_DOMAIN/.well-known/jwks.json"
+
             cat > /opt/walt/.env.production << EOF
             DATABASE_URL=$DATABASE_URL
             NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
             CLERK_SECRET_KEY=$CLERK_SECRET_KEY
+            CLERK_JWT_ISSUER=$CLERK_JWT_ISSUER
+            CLERK_JWKS_URL=$CLERK_JWKS_URL
             HOSPITABLE_API_KEY=$HOSPITABLE_API_KEY
             HOSPITABLE_BASE_URL=$HOSPITABLE_BASE_URL
             OPENAI_API_KEY=$OPENAI_API_KEY
@@ -147,7 +154,7 @@ jobs:
             cd /opt/walt
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
-            docker image prune -f
+            docker image prune -a -f
         env:
           GHCR_TOKEN: ${{ steps.secrets.outputs.GHCR_TOKEN }}
           DATABASE_URL: ${{ steps.secrets.outputs.DATABASE_URL }}
