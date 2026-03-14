@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useAuth } from '@clerk/nextjs';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -144,6 +145,7 @@ function TaskCard({
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function TasksPanel({ defaultPropertyId }: { defaultPropertyId?: string }) {
+  const { getToken } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [categories, setCategories] = useState<TaskCategory[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
@@ -180,23 +182,31 @@ export default function TasksPanel({ defaultPropertyId }: { defaultPropertyId?: 
   // ── Data fetching ──────────────────────────────────────────────────────────
 
   const fetchTasks = useCallback(async () => {
+    const token = await getToken();
     const params = new URLSearchParams();
     if (filterPropertyId) params.set('propertyId', filterPropertyId);
     if (filterPriority) params.set('priority', filterPriority);
     if (filterCategoryId) params.set('categoryId', filterCategoryId);
     const qs = params.toString();
-    const response = await fetch(`/api/tasks${qs ? `?${qs}` : ''}`, { cache: 'no-store' });
+    const response = await fetch(`/api/tasks${qs ? `?${qs}` : ''}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      cache: 'no-store',
+    });
     if (!response.ok) throw new Error('Failed to load tasks');
     const payload = (await response.json()) as { items: Task[] };
     setTasks(payload.items);
-  }, [filterPropertyId, filterPriority, filterCategoryId]);
+  }, [getToken, filterPropertyId, filterPriority, filterCategoryId]);
 
   const fetchCategories = useCallback(async () => {
-    const response = await fetch('/api/task-categories', { cache: 'no-store' });
+    const token = await getToken();
+    const response = await fetch('/api/task-categories', {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      cache: 'no-store',
+    });
     if (!response.ok) return;
     const payload = (await response.json()) as { items: TaskCategory[] };
     setCategories(payload.items);
-  }, []);
+  }, [getToken]);
 
   const fetchProperties = useCallback(async () => {
     const response = await fetch('/api/properties', { cache: 'no-store' });
@@ -242,6 +252,7 @@ export default function TasksPanel({ defaultPropertyId }: { defaultPropertyId?: 
     setError(null);
     setFormSubmitting(true);
     try {
+      const token = await getToken();
       const body = {
         title: formTitle.trim(),
         description: formDescription.trim() || undefined,
@@ -254,7 +265,10 @@ export default function TasksPanel({ defaultPropertyId }: { defaultPropertyId?: 
       const method = editingTask ? 'PATCH' : 'POST';
       const response = await fetch(url, {
         method,
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(body),
       });
       if (!response.ok) throw new Error('Failed to save task');
@@ -270,7 +284,11 @@ export default function TasksPanel({ defaultPropertyId }: { defaultPropertyId?: 
   async function toggleResolve(task: Task) {
     setError(null);
     try {
-      const response = await fetch(`/api/tasks/${task.id}/resolve`, { method: 'POST' });
+      const token = await getToken();
+      const response = await fetch(`/api/tasks/${task.id}/resolve`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (!response.ok) throw new Error('Failed to update task');
       await fetchTasks();
     } catch (err) {
@@ -282,7 +300,11 @@ export default function TasksPanel({ defaultPropertyId }: { defaultPropertyId?: 
     if (!confirm(`Delete "${task.title}"?`)) return;
     setError(null);
     try {
-      const response = await fetch(`/api/tasks/${task.id}`, { method: 'DELETE' });
+      const token = await getToken();
+      const response = await fetch(`/api/tasks/${task.id}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (!response.ok) throw new Error('Failed to delete task');
       await fetchTasks();
     } catch (err) {
@@ -297,9 +319,13 @@ export default function TasksPanel({ defaultPropertyId }: { defaultPropertyId?: 
     if (!newCategoryName.trim()) return;
     setCategorySubmitting(true);
     try {
+      const token = await getToken();
       const response = await fetch('/api/task-categories', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ name: newCategoryName.trim(), color: newCategoryColor }),
       });
       if (!response.ok) throw new Error('Failed to create category');
@@ -315,7 +341,11 @@ export default function TasksPanel({ defaultPropertyId }: { defaultPropertyId?: 
   async function deleteCategory(cat: TaskCategory) {
     if (!confirm(`Delete category "${cat.name}"?`)) return;
     try {
-      const response = await fetch(`/api/task-categories/${cat.id}`, { method: 'DELETE' });
+      const token = await getToken();
+      const response = await fetch(`/api/task-categories/${cat.id}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (!response.ok) throw new Error('Failed to delete category');
       await fetchCategories();
     } catch (err) {
