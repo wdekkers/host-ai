@@ -43,6 +43,13 @@
       "when": 1773434420357,
       "tag": "0005_serious_eternity",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1773512371337,
+      "tag": "0006_pink_masked_marvel",
+      "breakpoints": true
     }
   ]
 }
