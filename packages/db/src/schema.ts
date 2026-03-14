@@ -24,7 +24,7 @@ export const events = waltSchema.table('events', {
 });
 
 export const organizations = waltSchema.table('organizations', {
-  id: uuid('id').primaryKey(),
+  id: text('id').primaryKey(),
   name: text('name').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
 });
@@ -32,7 +32,7 @@ export const organizations = waltSchema.table('organizations', {
 export const organizationMemberships = waltSchema.table(
   'organization_memberships',
   {
-    organizationId: uuid('organization_id')
+    organizationId: text('organization_id')
       .notNull()
       .references(() => organizations.id),
     userId: text('user_id').notNull(),
@@ -47,7 +47,7 @@ export const organizationMemberships = waltSchema.table(
 export const propertyAccess = waltSchema.table(
   'property_access',
   {
-    organizationId: uuid('organization_id')
+    organizationId: text('organization_id')
       .notNull()
       .references(() => organizations.id),
     userId: text('user_id').notNull(),
@@ -139,7 +139,7 @@ export const taskCategories = waltSchema.table(
   'task_categories',
   {
     id: uuid('id').primaryKey(),
-    organizationId: uuid('organization_id').notNull(),
+    organizationId: text('organization_id').notNull(),
     name: text('name').notNull(),
     color: text('color'),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
@@ -155,7 +155,7 @@ export const tasks = waltSchema.table(
   'tasks',
   {
     id: uuid('id').primaryKey(),
-    organizationId: uuid('organization_id').notNull(),
+    organizationId: text('organization_id').notNull(),
     title: text('title').notNull(),
     description: text('description'),
     status: text('status').notNull().default('open'),
@@ -185,7 +185,7 @@ export const taskAuditEvents = waltSchema.table(
     taskId: uuid('task_id')
       .notNull()
       .references(() => tasks.id),
-    organizationId: uuid('organization_id').notNull(),
+    organizationId: text('organization_id').notNull(),
     action: text('action').notNull(),
     changedBy: text('changed_by').notNull(),
     changedAt: timestamp('changed_at', { withTimezone: true }).notNull(),
