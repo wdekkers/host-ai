@@ -1,6 +1,6 @@
 import { createPublicKey, verify as verifySignature } from 'node:crypto';
 
-import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 
 type JwtHeader = {
   alg?: string;
@@ -31,7 +31,7 @@ type JwksResponse = {
   keys: Jwk[];
 };
 
-type AuthContext = {
+export type AuthContext = {
   userId: string;
   orgId: string | null;
   role: string;
@@ -130,39 +130,37 @@ function getBearerToken(request: FastifyRequest): string | null {
   return value;
 }
 
-export const authPlugin: FastifyPluginAsync = async (app) => {
+export async function authPreHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  request.auth = null;
+
+  if (request.url === '/health') {
+    return;
+  }
+
   const issuer = process.env.CLERK_JWT_ISSUER;
   const jwksUrl = process.env.CLERK_JWKS_URL;
 
-  app.addHook('preHandler', async (request, reply) => {
-    request.auth = null;
+  if (!issuer || !jwksUrl) {
+    reply.code(500);
+    throw new Error('Missing CLERK_JWT_ISSUER or CLERK_JWKS_URL configuration');
+  }
 
-    if (request.url === '/health') {
-      return;
-    }
+  const token = getBearerToken(request);
+  if (!token) {
+    reply.code(401);
+    throw new Error('Missing bearer token');
+  }
 
-    if (!issuer || !jwksUrl) {
-      reply.code(500);
-      throw new Error('Missing CLERK_JWT_ISSUER or CLERK_JWKS_URL configuration');
-    }
+  const payload = await verifyJwt(token, issuer, jwksUrl);
+  if (!payload.sub) {
+    reply.code(401);
+    throw new Error('JWT subject is missing');
+  }
 
-    const token = getBearerToken(request);
-    if (!token) {
-      reply.code(401);
-      throw new Error('Missing bearer token');
-    }
-
-    const payload = await verifyJwt(token, issuer, jwksUrl);
-    if (!payload.sub) {
-      reply.code(401);
-      throw new Error('JWT subject is missing');
-    }
-
-    request.auth = {
-      userId: payload.sub,
-      orgId: payload.org_id ?? null,
-      role: payload.org_role ?? 'viewer',
-      permissions: Array.isArray(payload.permissions) ? payload.permissions : [],
-    };
-  });
-};
+  request.auth = {
+    userId: payload.sub,
+    orgId: payload.org_id ?? null,
+    role: payload.org_role ?? 'viewer',
+    permissions: Array.isArray(payload.permissions) ? payload.permissions : [],
+  };
+}
