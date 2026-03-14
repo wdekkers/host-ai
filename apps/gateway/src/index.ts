@@ -4,7 +4,7 @@ import swaggerUi from '@fastify/swagger-ui';
 import { serviceHealthResponseSchema } from '@walt/contracts';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
-import { authPlugin } from './plugins/auth.js';
+import { registerAuthHook } from './plugins/auth.js';
 import { requirePermission } from './plugins/authorize.js';
 
 const app = Fastify({ logger: true });
@@ -21,7 +21,7 @@ await app.register(swagger, {
 });
 
 await app.register(swaggerUi, { routePrefix: '/docs' });
-await app.register(authPlugin);
+await registerAuthHook(app);
 
 app.get(
   '/health',
