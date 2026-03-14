@@ -154,7 +154,7 @@ app.post('/messaging/messages', async (request, reply) => {
 
 app.get(
   '/task-categories',
-  { preHandler: app.requirePermission('dashboard.read') },
+  { preHandler: async (request) => app.requirePermission('dashboard.read')(request) },
   async (request, reply) => {
     try {
       const response = await fetch(`${tasksServiceBaseUrl}/task-categories`, {
@@ -178,7 +178,7 @@ app.get(
 
 app.post(
   '/task-categories',
-  { preHandler: app.requirePermission('dashboard.read') },
+  { preHandler: async (request) => app.requirePermission('dashboard.read')(request) },
   async (request, reply) => {
     try {
       const response = await fetch(`${tasksServiceBaseUrl}/task-categories`, {
@@ -207,7 +207,7 @@ app.post(
 
 app.patch(
   '/task-categories/:id',
-  { preHandler: app.requirePermission('dashboard.read') },
+  { preHandler: async (request) => app.requirePermission('dashboard.read')(request) },
   async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
@@ -240,7 +240,7 @@ app.patch(
 
 app.delete(
   '/task-categories/:id',
-  { preHandler: app.requirePermission('dashboard.read') },
+  { preHandler: async (request) => app.requirePermission('dashboard.read')(request) },
   async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
@@ -271,7 +271,7 @@ app.delete(
 
 app.get(
   '/tasks',
-  { preHandler: app.requirePermission('dashboard.read') },
+  { preHandler: async (request) => app.requirePermission('dashboard.read')(request) },
   async (request, reply) => {
     try {
       const queryParams = new URLSearchParams();
@@ -301,7 +301,7 @@ app.get(
 
 app.get(
   '/tasks/:id',
-  { preHandler: app.requirePermission('dashboard.read') },
+  { preHandler: async (request) => app.requirePermission('dashboard.read')(request) },
   async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
@@ -326,7 +326,7 @@ app.get(
 
 app.post(
   '/tasks',
-  { preHandler: app.requirePermission('dashboard.read') },
+  { preHandler: async (request) => app.requirePermission('dashboard.read')(request) },
   async (request, reply) => {
     try {
       const response = await fetch(`${tasksServiceBaseUrl}/tasks`, {
@@ -355,7 +355,7 @@ app.post(
 
 app.patch(
   '/tasks/:id',
-  { preHandler: app.requirePermission('dashboard.read') },
+  { preHandler: async (request) => app.requirePermission('dashboard.read')(request) },
   async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
@@ -385,7 +385,7 @@ app.patch(
 
 app.post(
   '/tasks/:id/resolve',
-  { preHandler: app.requirePermission('dashboard.read') },
+  { preHandler: async (request) => app.requirePermission('dashboard.read')(request) },
   async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
@@ -416,7 +416,7 @@ app.post(
 
 app.delete(
   '/tasks/:id',
-  { preHandler: app.requirePermission('dashboard.read') },
+  { preHandler: async (request) => app.requirePermission('dashboard.read')(request) },
   async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
