@@ -1,5 +1,5 @@
+import { randomUUID } from 'node:crypto';
 import { desc, eq } from 'drizzle-orm';
-import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 
 import { auditEvents, smsConsents, smsMessageLogs, vendors } from '@walt/db';
@@ -59,7 +59,7 @@ export function registerConsentRoutes(
     const sourceDomain = new URL(sourceUrl).hostname;
 
     // Upsert vendor by phone number
-    const vendorId = uuidv4();
+    const vendorId = randomUUID();
     const [vendor] = await db
       .insert(vendors)
       .values({
@@ -83,7 +83,7 @@ export function registerConsentRoutes(
       .returning({ id: vendors.id });
 
     const resolvedVendorId = vendor!.id;
-    const consentId = uuidv4();
+    const consentId = randomUUID();
 
     await db.insert(smsConsents).values({
       id: consentId,
@@ -103,7 +103,7 @@ export function registerConsentRoutes(
     });
 
     await db.insert(auditEvents).values({
-      id: uuidv4(),
+      id: randomUUID(),
       vendorId: resolvedVendorId,
       actorType: 'vendor',
       actorId: phoneE164,
@@ -117,7 +117,7 @@ export function registerConsentRoutes(
         const sid = await sendSms({ to: phoneE164, body: CONFIRMATION_SMS });
         if (sid) {
           await db.insert(smsMessageLogs).values({
-            id: uuidv4(),
+            id: randomUUID(),
             vendorId: resolvedVendorId,
             direction: 'outbound',
             twilioMessageSid: sid,
@@ -183,7 +183,7 @@ export function registerConsentRoutes(
       .where(eq(vendors.id, vendor.id));
 
     await db.insert(auditEvents).values({
-      id: uuidv4(),
+      id: randomUUID(),
       vendorId: vendor.id,
       actorType: 'vendor',
       actorId: phoneE164,
@@ -197,7 +197,7 @@ export function registerConsentRoutes(
         const sid = await sendSms({ to: phoneE164, body: OPT_OUT_SMS });
         if (sid) {
           await db.insert(smsMessageLogs).values({
-            id: uuidv4(),
+            id: randomUUID(),
             vendorId: vendor.id,
             direction: 'outbound',
             twilioMessageSid: sid,
