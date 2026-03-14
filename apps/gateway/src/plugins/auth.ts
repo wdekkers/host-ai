@@ -1,6 +1,6 @@
 import { createPublicKey, verify as verifySignature } from 'node:crypto';
 
-import type { FastifyPluginAsync, FastifyRequest } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 
 type JwtHeader = {
   alg?: string;
@@ -130,7 +130,7 @@ function getBearerToken(request: FastifyRequest): string | null {
   return value;
 }
 
-export const authPlugin: FastifyPluginAsync = async (app) => {
+export async function registerAuthHook(app: FastifyInstance): Promise<void> {
   const issuer = process.env.CLERK_JWT_ISSUER;
   const jwksUrl = process.env.CLERK_JWKS_URL;
 
@@ -165,4 +165,4 @@ export const authPlugin: FastifyPluginAsync = async (app) => {
       permissions: Array.isArray(payload.permissions) ? payload.permissions : [],
     };
   });
-};
+}
