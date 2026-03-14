@@ -1,5 +1,5 @@
 import { desc, eq } from 'drizzle-orm';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'node:crypto';
 
 import { auditEvents, smsConsents, smsMessageLogs, vendors } from '@walt/db';
 
@@ -85,7 +85,7 @@ export function registerWebhookRoutes(
           .where(eq(vendors.id, vendor.id));
 
         await db.insert(auditEvents).values({
-          id: uuidv4(),
+          id: randomUUID(),
           vendorId: vendor.id,
           actorType: 'vendor',
           actorId: fromNumber,
@@ -95,7 +95,7 @@ export function registerWebhookRoutes(
         });
 
         await db.insert(smsMessageLogs).values({
-          id: uuidv4(),
+          id: randomUUID(),
           vendorId: vendor.id,
           direction: 'inbound',
           twilioMessageSid: body['MessageSid'] ?? null,
@@ -115,7 +115,7 @@ export function registerWebhookRoutes(
     if (START_KEYWORDS.has(rawText)) {
       if (vendor) {
         await db.insert(smsConsents).values({
-          id: uuidv4(),
+          id: randomUUID(),
           vendorId: vendor.id,
           consentStatus: 'opted_in',
           consentMethod: 'inbound_sms',
@@ -137,7 +137,7 @@ export function registerWebhookRoutes(
           .where(eq(vendors.id, vendor.id));
 
         await db.insert(auditEvents).values({
-          id: uuidv4(),
+          id: randomUUID(),
           vendorId: vendor.id,
           actorType: 'vendor',
           actorId: fromNumber,
@@ -157,7 +157,7 @@ export function registerWebhookRoutes(
     // General inbound message — store for shared inbox
     if (vendor) {
       await db.insert(smsMessageLogs).values({
-        id: uuidv4(),
+        id: randomUUID(),
         vendorId: vendor.id,
         direction: 'inbound',
         twilioMessageSid: body['MessageSid'] ?? null,

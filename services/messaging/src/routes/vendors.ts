@@ -1,5 +1,5 @@
 import { desc, eq } from 'drizzle-orm';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'node:crypto';
 
 import { auditEvents, smsConsents, smsMessageLogs, vendors } from '@walt/db';
 
@@ -93,7 +93,7 @@ export function registerVendorRoutes(app: FastifyInstance, db: ReturnType<typeof
     await db.update(vendors).set({ status: 'blocked', updatedAt: now }).where(eq(vendors.id, id));
 
     await db.insert(auditEvents).values({
-      id: uuidv4(),
+      id: randomUUID(),
       vendorId: id,
       actorType: 'admin',
       actorId: null,

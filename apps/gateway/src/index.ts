@@ -5,7 +5,7 @@ import { serviceHealthResponseSchema } from '@walt/contracts';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
 import { authPlugin } from './plugins/auth.js';
-import { authorizePlugin } from './plugins/authorize.js';
+import { requirePermission } from './plugins/authorize.js';
 
 const app = Fastify({ logger: true });
 const messagingServiceBaseUrl = process.env.MESSAGING_SERVICE_URL ?? 'http://127.0.0.1:4102';
@@ -22,7 +22,6 @@ await app.register(swagger, {
 
 await app.register(swaggerUi, { routePrefix: '/docs' });
 await app.register(authPlugin);
-await app.register(authorizePlugin);
 
 app.get(
   '/health',
@@ -40,7 +39,7 @@ app.get(
 app.get(
   '/me',
   {
-    preHandler: async (request) => app.requirePermission('dashboard.read')(request),
+    preHandler: requirePermission('dashboard.read'),
   },
   async (request) => ({
     userId: request.auth?.userId,
@@ -154,7 +153,7 @@ app.post('/messaging/messages', async (request, reply) => {
 
 app.get(
   '/task-categories',
-  { preHandler: async (request) => app.requirePermission('dashboard.read')(request) },
+  { preHandler: requirePermission('dashboard.read') },
   async (request, reply) => {
     try {
       const response = await fetch(`${tasksServiceBaseUrl}/task-categories`, {
@@ -178,7 +177,7 @@ app.get(
 
 app.post(
   '/task-categories',
-  { preHandler: async (request) => app.requirePermission('dashboard.read')(request) },
+  { preHandler: requirePermission('dashboard.read') },
   async (request, reply) => {
     try {
       const response = await fetch(`${tasksServiceBaseUrl}/task-categories`, {
@@ -207,7 +206,7 @@ app.post(
 
 app.patch(
   '/task-categories/:id',
-  { preHandler: async (request) => app.requirePermission('dashboard.read')(request) },
+  { preHandler: requirePermission('dashboard.read') },
   async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
@@ -240,7 +239,7 @@ app.patch(
 
 app.delete(
   '/task-categories/:id',
-  { preHandler: async (request) => app.requirePermission('dashboard.read')(request) },
+  { preHandler: requirePermission('dashboard.read') },
   async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
@@ -269,39 +268,35 @@ app.delete(
   },
 );
 
-app.get(
-  '/tasks',
-  { preHandler: async (request) => app.requirePermission('dashboard.read')(request) },
-  async (request, reply) => {
-    try {
-      const queryParams = new URLSearchParams();
-      const q = request.query as Record<string, string>;
-      for (const [key, val] of Object.entries(q)) {
-        if (val) queryParams.set(key, val);
-      }
-      const qs = queryParams.toString();
-      const response = await fetch(`${tasksServiceBaseUrl}/tasks${qs ? `?${qs}` : ''}`, {
-        headers: {
-          accept: 'application/json',
-          'x-org-id': request.auth?.orgId ?? '',
-          'x-user-id': request.auth?.userId ?? '',
-        },
-      });
-      if (!response.ok)
-        return reply
-          .status(response.status)
-          .send({ error: `Tasks service returned ${response.status}` });
-      return await response.json();
-    } catch (error) {
-      app.log.error({ error }, 'Failed to load tasks from tasks service');
-      return reply.status(502).send({ error: 'Tasks service unavailable' });
+app.get('/tasks', { preHandler: requirePermission('dashboard.read') }, async (request, reply) => {
+  try {
+    const queryParams = new URLSearchParams();
+    const q = request.query as Record<string, string>;
+    for (const [key, val] of Object.entries(q)) {
+      if (val) queryParams.set(key, val);
     }
-  },
-);
+    const qs = queryParams.toString();
+    const response = await fetch(`${tasksServiceBaseUrl}/tasks${qs ? `?${qs}` : ''}`, {
+      headers: {
+        accept: 'application/json',
+        'x-org-id': request.auth?.orgId ?? '',
+        'x-user-id': request.auth?.userId ?? '',
+      },
+    });
+    if (!response.ok)
+      return reply
+        .status(response.status)
+        .send({ error: `Tasks service returned ${response.status}` });
+    return await response.json();
+  } catch (error) {
+    app.log.error({ error }, 'Failed to load tasks from tasks service');
+    return reply.status(502).send({ error: 'Tasks service unavailable' });
+  }
+});
 
 app.get(
   '/tasks/:id',
-  { preHandler: async (request) => app.requirePermission('dashboard.read')(request) },
+  { preHandler: requirePermission('dashboard.read') },
   async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
@@ -324,38 +319,34 @@ app.get(
   },
 );
 
-app.post(
-  '/tasks',
-  { preHandler: async (request) => app.requirePermission('dashboard.read')(request) },
-  async (request, reply) => {
-    try {
-      const response = await fetch(`${tasksServiceBaseUrl}/tasks`, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          accept: 'application/json',
-          'x-org-id': request.auth?.orgId ?? '',
-          'x-user-id': request.auth?.userId ?? '',
-        },
-        body: JSON.stringify(request.body ?? {}),
-      });
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as { error?: string };
-        return reply
-          .status(response.status)
-          .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
-      }
-      return reply.status(201).send(await response.json());
-    } catch (error) {
-      app.log.error({ error }, 'Failed to create task in tasks service');
-      return reply.status(502).send({ error: 'Tasks service unavailable' });
+app.post('/tasks', { preHandler: requirePermission('dashboard.read') }, async (request, reply) => {
+  try {
+    const response = await fetch(`${tasksServiceBaseUrl}/tasks`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        accept: 'application/json',
+        'x-org-id': request.auth?.orgId ?? '',
+        'x-user-id': request.auth?.userId ?? '',
+      },
+      body: JSON.stringify(request.body ?? {}),
+    });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      return reply
+        .status(response.status)
+        .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
     }
-  },
-);
+    return reply.status(201).send(await response.json());
+  } catch (error) {
+    app.log.error({ error }, 'Failed to create task in tasks service');
+    return reply.status(502).send({ error: 'Tasks service unavailable' });
+  }
+});
 
 app.patch(
   '/tasks/:id',
-  { preHandler: async (request) => app.requirePermission('dashboard.read')(request) },
+  { preHandler: requirePermission('dashboard.read') },
   async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
@@ -385,7 +376,7 @@ app.patch(
 
 app.post(
   '/tasks/:id/resolve',
-  { preHandler: async (request) => app.requirePermission('dashboard.read')(request) },
+  { preHandler: requirePermission('dashboard.read') },
   async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
@@ -416,7 +407,7 @@ app.post(
 
 app.delete(
   '/tasks/:id',
-  { preHandler: async (request) => app.requirePermission('dashboard.read')(request) },
+  { preHandler: requirePermission('dashboard.read') },
   async (request, reply) => {
     try {
       const { id } = request.params as { id: string };
