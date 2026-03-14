@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 
 import { auditEvents, smsMessageLogs } from '@walt/db';
@@ -37,7 +37,7 @@ export function registerSmsRoutes(
     if (!guard.allowed) {
       // Log the blocked attempt for audit purposes
       await db.insert(auditEvents).values({
-        id: uuidv4(),
+        id: randomUUID(),
         vendorId,
         actorType: 'system',
         actorId: null,
@@ -60,7 +60,7 @@ export function registerSmsRoutes(
     }
 
     await db.insert(smsMessageLogs).values({
-      id: uuidv4(),
+      id: randomUUID(),
       vendorId,
       direction: 'outbound',
       twilioMessageSid: twilioSid,
