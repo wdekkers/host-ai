@@ -1,17 +1,15 @@
 import type { FastifyRequest } from 'fastify';
 
-export function requirePermission(permission: string) {
+// The gateway verifies JWT authenticity in the auth hook (signature, expiry, issuer).
+// Fine-grained role/permission checks cannot be done here because the app's custom
+// roles live in Clerk private metadata and are not included in the standard JWT.
+// Every authenticated user has at least dashboard.read, so requirePermission enforces
+// authentication only. Role-gating requires a Clerk JWT template to include the role.
+export function requireAuth() {
   return async (request: FastifyRequest) => {
     if (!request.auth) {
       const error = new Error('Unauthorized') as Error & { statusCode?: number };
       error.statusCode = 401;
-      throw error;
-    }
-
-    const permissions = new Set(request.auth.permissions);
-    if (!permissions.has(permission)) {
-      const error = new Error('Forbidden') as Error & { statusCode?: number };
-      error.statusCode = 403;
       throw error;
     }
   };

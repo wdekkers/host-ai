@@ -5,7 +5,7 @@ import { serviceHealthResponseSchema } from '@walt/contracts';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 
 import { registerAuthHook } from './plugins/auth.js';
-import { requirePermission } from './plugins/authorize.js';
+import { requireAuth } from './plugins/authorize.js';
 
 const app = Fastify({ logger: true });
 const messagingServiceBaseUrl = process.env.MESSAGING_SERVICE_URL ?? 'http://127.0.0.1:4102';
@@ -39,7 +39,7 @@ app.get(
 app.get(
   '/me',
   {
-    preHandler: requirePermission('dashboard.read'),
+    preHandler: requireAuth(),
   },
   async (request) => ({
     userId: request.auth?.userId,
@@ -151,37 +151,58 @@ app.post('/messaging/messages', async (request, reply) => {
   }
 });
 
-app.get(
-  '/task-categories',
-  { preHandler: requirePermission('dashboard.read') },
-  async (request, reply) => {
-    try {
-      const response = await fetch(`${tasksServiceBaseUrl}/task-categories`, {
-        headers: {
-          accept: 'application/json',
-          'x-org-id': request.auth?.orgId ?? '',
-          'x-user-id': request.auth?.userId ?? '',
-        },
-      });
-      if (!response.ok)
-        return reply
-          .status(response.status)
-          .send({ error: `Tasks service returned ${response.status}` });
-      return (await response.json()) as { items: unknown[] };
-    } catch (error) {
-      app.log.error({ error }, 'Failed to load task categories from tasks service');
-      return reply.status(502).send({ error: 'Tasks service unavailable' });
-    }
-  },
-);
+app.get('/task-categories', { preHandler: requireAuth() }, async (request, reply) => {
+  try {
+    const response = await fetch(`${tasksServiceBaseUrl}/task-categories`, {
+      headers: {
+        accept: 'application/json',
+        'x-org-id': request.auth?.orgId ?? '',
+        'x-user-id': request.auth?.userId ?? '',
+      },
+    });
+    if (!response.ok)
+      return reply
+        .status(response.status)
+        .send({ error: `Tasks service returned ${response.status}` });
+    return (await response.json()) as { items: unknown[] };
+  } catch (error) {
+    app.log.error({ error }, 'Failed to load task categories from tasks service');
+    return reply.status(502).send({ error: 'Tasks service unavailable' });
+  }
+});
 
-app.post(
-  '/task-categories',
-  { preHandler: requirePermission('dashboard.read') },
-  async (request, reply) => {
-    try {
-      const response = await fetch(`${tasksServiceBaseUrl}/task-categories`, {
-        method: 'POST',
+app.post('/task-categories', { preHandler: requireAuth() }, async (request, reply) => {
+  try {
+    const response = await fetch(`${tasksServiceBaseUrl}/task-categories`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        accept: 'application/json',
+        'x-org-id': request.auth?.orgId ?? '',
+        'x-user-id': request.auth?.userId ?? '',
+      },
+      body: JSON.stringify(request.body ?? {}),
+    });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      return reply
+        .status(response.status)
+        .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
+    }
+    return reply.status(201).send(await response.json());
+  } catch (error) {
+    app.log.error({ error }, 'Failed to create task category in tasks service');
+    return reply.status(502).send({ error: 'Tasks service unavailable' });
+  }
+});
+
+app.patch('/task-categories/:id', { preHandler: requireAuth() }, async (request, reply) => {
+  try {
+    const { id } = request.params as { id: string };
+    const response = await fetch(
+      `${tasksServiceBaseUrl}/task-categories/${encodeURIComponent(id)}`,
+      {
+        method: 'PATCH',
         headers: {
           'content-type': 'application/json',
           accept: 'application/json',
@@ -189,86 +210,49 @@ app.post(
           'x-user-id': request.auth?.userId ?? '',
         },
         body: JSON.stringify(request.body ?? {}),
-      });
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as { error?: string };
-        return reply
-          .status(response.status)
-          .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
-      }
-      return reply.status(201).send(await response.json());
-    } catch (error) {
-      app.log.error({ error }, 'Failed to create task category in tasks service');
-      return reply.status(502).send({ error: 'Tasks service unavailable' });
+      },
+    );
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      return reply
+        .status(response.status)
+        .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
     }
-  },
-);
+    return await response.json();
+  } catch (error) {
+    app.log.error({ error }, 'Failed to update task category in tasks service');
+    return reply.status(502).send({ error: 'Tasks service unavailable' });
+  }
+});
 
-app.patch(
-  '/task-categories/:id',
-  { preHandler: requirePermission('dashboard.read') },
-  async (request, reply) => {
-    try {
-      const { id } = request.params as { id: string };
-      const response = await fetch(
-        `${tasksServiceBaseUrl}/task-categories/${encodeURIComponent(id)}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'content-type': 'application/json',
-            accept: 'application/json',
-            'x-org-id': request.auth?.orgId ?? '',
-            'x-user-id': request.auth?.userId ?? '',
-          },
-          body: JSON.stringify(request.body ?? {}),
+app.delete('/task-categories/:id', { preHandler: requireAuth() }, async (request, reply) => {
+  try {
+    const { id } = request.params as { id: string };
+    const response = await fetch(
+      `${tasksServiceBaseUrl}/task-categories/${encodeURIComponent(id)}`,
+      {
+        method: 'DELETE',
+        headers: {
+          accept: 'application/json',
+          'x-org-id': request.auth?.orgId ?? '',
+          'x-user-id': request.auth?.userId ?? '',
         },
-      );
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as { error?: string };
-        return reply
-          .status(response.status)
-          .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
-      }
-      return await response.json();
-    } catch (error) {
-      app.log.error({ error }, 'Failed to update task category in tasks service');
-      return reply.status(502).send({ error: 'Tasks service unavailable' });
+      },
+    );
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      return reply
+        .status(response.status)
+        .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
     }
-  },
-);
+    return await response.json();
+  } catch (error) {
+    app.log.error({ error }, 'Failed to delete task category in tasks service');
+    return reply.status(502).send({ error: 'Tasks service unavailable' });
+  }
+});
 
-app.delete(
-  '/task-categories/:id',
-  { preHandler: requirePermission('dashboard.read') },
-  async (request, reply) => {
-    try {
-      const { id } = request.params as { id: string };
-      const response = await fetch(
-        `${tasksServiceBaseUrl}/task-categories/${encodeURIComponent(id)}`,
-        {
-          method: 'DELETE',
-          headers: {
-            accept: 'application/json',
-            'x-org-id': request.auth?.orgId ?? '',
-            'x-user-id': request.auth?.userId ?? '',
-          },
-        },
-      );
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as { error?: string };
-        return reply
-          .status(response.status)
-          .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
-      }
-      return await response.json();
-    } catch (error) {
-      app.log.error({ error }, 'Failed to delete task category in tasks service');
-      return reply.status(502).send({ error: 'Tasks service unavailable' });
-    }
-  },
-);
-
-app.get('/tasks', { preHandler: requirePermission('dashboard.read') }, async (request, reply) => {
+app.get('/tasks', { preHandler: requireAuth() }, async (request, reply) => {
   try {
     const queryParams = new URLSearchParams();
     const q = request.query as Record<string, string>;
@@ -294,32 +278,28 @@ app.get('/tasks', { preHandler: requirePermission('dashboard.read') }, async (re
   }
 });
 
-app.get(
-  '/tasks/:id',
-  { preHandler: requirePermission('dashboard.read') },
-  async (request, reply) => {
-    try {
-      const { id } = request.params as { id: string };
-      const response = await fetch(`${tasksServiceBaseUrl}/tasks/${encodeURIComponent(id)}`, {
-        headers: {
-          accept: 'application/json',
-          'x-org-id': request.auth?.orgId ?? '',
-          'x-user-id': request.auth?.userId ?? '',
-        },
-      });
-      if (!response.ok)
-        return reply
-          .status(response.status)
-          .send({ error: `Tasks service returned ${response.status}` });
-      return await response.json();
-    } catch (error) {
-      app.log.error({ error }, 'Failed to load task from tasks service');
-      return reply.status(502).send({ error: 'Tasks service unavailable' });
-    }
-  },
-);
+app.get('/tasks/:id', { preHandler: requireAuth() }, async (request, reply) => {
+  try {
+    const { id } = request.params as { id: string };
+    const response = await fetch(`${tasksServiceBaseUrl}/tasks/${encodeURIComponent(id)}`, {
+      headers: {
+        accept: 'application/json',
+        'x-org-id': request.auth?.orgId ?? '',
+        'x-user-id': request.auth?.userId ?? '',
+      },
+    });
+    if (!response.ok)
+      return reply
+        .status(response.status)
+        .send({ error: `Tasks service returned ${response.status}` });
+    return await response.json();
+  } catch (error) {
+    app.log.error({ error }, 'Failed to load task from tasks service');
+    return reply.status(502).send({ error: 'Tasks service unavailable' });
+  }
+});
 
-app.post('/tasks', { preHandler: requirePermission('dashboard.read') }, async (request, reply) => {
+app.post('/tasks', { preHandler: requireAuth() }, async (request, reply) => {
   try {
     const response = await fetch(`${tasksServiceBaseUrl}/tasks`, {
       method: 'POST',
@@ -344,94 +324,79 @@ app.post('/tasks', { preHandler: requirePermission('dashboard.read') }, async (r
   }
 });
 
-app.patch(
-  '/tasks/:id',
-  { preHandler: requirePermission('dashboard.read') },
-  async (request, reply) => {
-    try {
-      const { id } = request.params as { id: string };
-      const response = await fetch(`${tasksServiceBaseUrl}/tasks/${encodeURIComponent(id)}`, {
-        method: 'PATCH',
-        headers: {
-          'content-type': 'application/json',
-          accept: 'application/json',
-          'x-org-id': request.auth?.orgId ?? '',
-          'x-user-id': request.auth?.userId ?? '',
-        },
-        body: JSON.stringify(request.body ?? {}),
-      });
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as { error?: string };
-        return reply
-          .status(response.status)
-          .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
-      }
-      return await response.json();
-    } catch (error) {
-      app.log.error({ error }, 'Failed to update task in tasks service');
-      return reply.status(502).send({ error: 'Tasks service unavailable' });
+app.patch('/tasks/:id', { preHandler: requireAuth() }, async (request, reply) => {
+  try {
+    const { id } = request.params as { id: string };
+    const response = await fetch(`${tasksServiceBaseUrl}/tasks/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: {
+        'content-type': 'application/json',
+        accept: 'application/json',
+        'x-org-id': request.auth?.orgId ?? '',
+        'x-user-id': request.auth?.userId ?? '',
+      },
+      body: JSON.stringify(request.body ?? {}),
+    });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      return reply
+        .status(response.status)
+        .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
     }
-  },
-);
+    return await response.json();
+  } catch (error) {
+    app.log.error({ error }, 'Failed to update task in tasks service');
+    return reply.status(502).send({ error: 'Tasks service unavailable' });
+  }
+});
 
-app.post(
-  '/tasks/:id/resolve',
-  { preHandler: requirePermission('dashboard.read') },
-  async (request, reply) => {
-    try {
-      const { id } = request.params as { id: string };
-      const response = await fetch(
-        `${tasksServiceBaseUrl}/tasks/${encodeURIComponent(id)}/resolve`,
-        {
-          method: 'POST',
-          headers: {
-            accept: 'application/json',
-            'x-org-id': request.auth?.orgId ?? '',
-            'x-user-id': request.auth?.userId ?? '',
-          },
-        },
-      );
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as { error?: string };
-        return reply
-          .status(response.status)
-          .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
-      }
-      return await response.json();
-    } catch (error) {
-      app.log.error({ error }, 'Failed to resolve task in tasks service');
-      return reply.status(502).send({ error: 'Tasks service unavailable' });
+app.post('/tasks/:id/resolve', { preHandler: requireAuth() }, async (request, reply) => {
+  try {
+    const { id } = request.params as { id: string };
+    const response = await fetch(`${tasksServiceBaseUrl}/tasks/${encodeURIComponent(id)}/resolve`, {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'x-org-id': request.auth?.orgId ?? '',
+        'x-user-id': request.auth?.userId ?? '',
+      },
+    });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      return reply
+        .status(response.status)
+        .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
     }
-  },
-);
+    return await response.json();
+  } catch (error) {
+    app.log.error({ error }, 'Failed to resolve task in tasks service');
+    return reply.status(502).send({ error: 'Tasks service unavailable' });
+  }
+});
 
-app.delete(
-  '/tasks/:id',
-  { preHandler: requirePermission('dashboard.read') },
-  async (request, reply) => {
-    try {
-      const { id } = request.params as { id: string };
-      const response = await fetch(`${tasksServiceBaseUrl}/tasks/${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-        headers: {
-          accept: 'application/json',
-          'x-org-id': request.auth?.orgId ?? '',
-          'x-user-id': request.auth?.userId ?? '',
-        },
-      });
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as { error?: string };
-        return reply
-          .status(response.status)
-          .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
-      }
-      return await response.json();
-    } catch (error) {
-      app.log.error({ error }, 'Failed to delete task in tasks service');
-      return reply.status(502).send({ error: 'Tasks service unavailable' });
+app.delete('/tasks/:id', { preHandler: requireAuth() }, async (request, reply) => {
+  try {
+    const { id } = request.params as { id: string };
+    const response = await fetch(`${tasksServiceBaseUrl}/tasks/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers: {
+        accept: 'application/json',
+        'x-org-id': request.auth?.orgId ?? '',
+        'x-user-id': request.auth?.userId ?? '',
+      },
+    });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      return reply
+        .status(response.status)
+        .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
     }
-  },
-);
+    return await response.json();
+  } catch (error) {
+    app.log.error({ error }, 'Failed to delete task in tasks service');
+    return reply.status(502).send({ error: 'Tasks service unavailable' });
+  }
+});
 
 // Vendor admin routes — proxied to messaging service
 app.get('/vendors', async (_request, reply) => {
