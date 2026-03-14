@@ -160,7 +160,9 @@ export async function registerAuthHook(app: FastifyInstance): Promise<void> {
 
     request.auth = {
       userId: payload.sub,
-      orgId: payload.org_id ?? null,
+      // Fall back to userId as the org namespace when no Clerk org is active,
+      // matching the same pattern used in apps/web/src/lib/auth/get-auth-context.ts
+      orgId: payload.org_id ?? payload.sub,
       role: payload.org_role ?? 'viewer',
       permissions: Array.isArray(payload.permissions) ? payload.permissions : [],
     };
