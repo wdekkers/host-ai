@@ -3,7 +3,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { properties, reservations, messages } from '@walt/db';
 import { db } from '@/lib/db';
 import { getHospitableApiConfig } from '@/lib/integrations-env';
-import { normalizeReservation, normalizeMessage } from '@/lib/hospitable-normalize';
+import {
+  normalizeReservation,
+  normalizeMessage,
+  normalizeProperty,
+} from '@/lib/hospitable-normalize';
 
 type HospitableListResponse = {
   data: Record<string, unknown>[];
@@ -105,19 +109,6 @@ function extractGuestFromMessages(rawMessages: Record<string, unknown>[]) {
   if (!fullName) return { first_name: null, last_name: null };
   const [first, ...rest] = fullName.split(' ');
   return { first_name: first ?? null, last_name: rest.length > 0 ? rest.join(' ') : null };
-}
-
-function normalizeProperty(raw: Record<string, unknown>) {
-  // v2 API returns a nested address object: { street, city, state, country, ... }
-  const addr = (raw.address ?? {}) as Record<string, unknown>;
-  return {
-    id: String(raw.id),
-    name: String(raw.name ?? raw.public_name ?? ''),
-    address: String(addr.street ?? addr.display ?? ''),
-    city: String(addr.city ?? ''),
-    status: raw.listed === false ? 'inactive' : 'active',
-    raw: raw as Record<string, unknown>,
-  };
 }
 
 export async function POST() {

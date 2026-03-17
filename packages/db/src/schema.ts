@@ -92,6 +92,24 @@ export const reservations = waltSchema.table('reservations', {
   syncedAt: timestamp('synced_at', { withTimezone: true }).notNull(),
 });
 
+export const reviews = waltSchema.table('reviews', {
+  id: text('id').primaryKey(), // Hospitable review UUID
+  reservationId: text('reservation_id'),
+  propertyId: text('property_id'),
+  platform: text('platform'), // airbnb | direct
+  rating: integer('rating'),
+  publicReview: text('public_review'),
+  publicResponse: text('public_response'),
+  privateFeedback: text('private_feedback'),
+  guestFirstName: text('guest_first_name'),
+  guestLastName: text('guest_last_name'),
+  reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+  respondedAt: timestamp('responded_at', { withTimezone: true }),
+  canRespond: boolean('can_respond'),
+  raw: jsonb('raw').notNull(),
+  syncedAt: timestamp('synced_at', { withTimezone: true }).notNull(),
+});
+
 export const propertyFaqs = waltSchema.table(
   'property_faqs',
   {
