@@ -35,7 +35,7 @@ export const GET = withPermission(
 );
 
 export const POST = withPermission(
-  'dashboard.read',
+  'ops.write',
   async (request: Request, { params }: Params, authContext) => {
     try {
       const { id: propertyId } = await params;
