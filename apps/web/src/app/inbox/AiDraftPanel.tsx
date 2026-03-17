@@ -37,14 +37,15 @@ export function AiDraftPanel({
   const [manualReply, setManualReply] = useState('');
   const [pendingFacts, setPendingFacts] = useState<Array<{ text: string; type: string }>>([]);
 
-  // Auto-generate draft when a new unreplied message appears
+  // Reset state whenever the unreplied message changes (including when it becomes null after a reply is sent)
   useEffect(() => {
-    if (!unrepliedMessage) return;
     setDismissed(false);
     setSuggestion(null);
     setActiveChips([]);
     setExtraContext('');
-    void generate(unrepliedMessage.id, [], '');
+    if (unrepliedMessage) {
+      void generate(unrepliedMessage.id, [], '');
+    }
   }, [unrepliedMessage?.id]); // intentionally omit generate — it's defined inline and stable
 
   // The message id to use for AI generation
