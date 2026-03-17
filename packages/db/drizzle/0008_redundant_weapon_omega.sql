@@ -41,11 +41,7 @@ CREATE INDEX "property_guidebook_entries_organization_id_idx" ON "walt"."propert
 CREATE INDEX "property_guidebook_entries_property_id_idx" ON "walt"."property_guidebook_entries" USING btree ("property_id");--> statement-breakpoint
 CREATE INDEX "property_memory_organization_id_idx" ON "walt"."property_memory" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "property_memory_property_id_idx" ON "walt"."property_memory" USING btree ("property_id");
-
-CREATE UNIQUE INDEX "agent_configs_global_unique_idx"
-  ON "walt"."agent_configs" ("organization_id")
-  WHERE "scope" = 'global';
-
-CREATE UNIQUE INDEX "agent_configs_property_unique_idx"
-  ON "walt"."agent_configs" ("organization_id", "property_id")
-  WHERE "scope" = 'property';
+--> statement-breakpoint
+CREATE UNIQUE INDEX "agent_configs_global_unique_idx" ON "walt"."agent_configs" ("organization_id") WHERE "scope" = 'global';
+--> statement-breakpoint
+CREATE UNIQUE INDEX "agent_configs_property_unique_idx" ON "walt"."agent_configs" ("organization_id", "property_id") WHERE "scope" = 'property';
