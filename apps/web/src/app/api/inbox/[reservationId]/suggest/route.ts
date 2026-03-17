@@ -21,6 +21,10 @@ export const POST = withPermission(
       };
       const { messageId, chips, extraContext } = body;
 
+      if (!messageId) {
+        return NextResponse.json({ error: 'messageId is required' }, { status: 400 });
+      }
+
       const [reservation] = await db
         .select()
         .from(reservations)
