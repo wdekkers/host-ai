@@ -30,16 +30,17 @@ export function InboxClient() {
     <div className="flex h-screen overflow-hidden" style={{ background: '#071428' }}>
       {/* Left column — hidden on mobile when thread is open */}
       <div
-        className={`flex-shrink-0 border-r overflow-hidden flex-col w-full md:w-[30%] ${
-          showThread ? 'hidden md:flex' : 'flex'
-        }`}
-        style={{ borderColor: '#1a3a5c' }}
+        className={`border-r overflow-hidden flex-col ${showThread ? 'hidden md:flex' : 'flex'}`}
+        style={{ width: '30%', flexShrink: 0, borderColor: '#1a3a5c' }}
       >
         <ConversationList selectedId={selectedId} onSelect={setSelectedId} />
       </div>
 
       {/* Right column — hidden on mobile when no thread is open */}
-      <div className={`flex-col overflow-hidden flex-1 ${showThread ? 'flex' : 'hidden md:flex'}`}>
+      <div
+        className={`overflow-hidden flex-col ${showThread ? 'flex' : 'hidden md:flex'}`}
+        style={{ flex: 1, minWidth: 0 }}
+      >
         {selectedId ? (
           <ConversationThread reservationId={selectedId} onBack={() => setSelectedId(null)} />
         ) : (

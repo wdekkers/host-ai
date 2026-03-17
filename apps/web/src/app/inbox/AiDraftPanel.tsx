@@ -18,11 +18,13 @@ export function AiDraftPanel({
   reservationId,
   propertyId,
   unrepliedMessage,
+  latestGuestMessage,
   onSent,
 }: {
   reservationId: string;
   propertyId: string | null;
   unrepliedMessage: Message | null;
+  latestGuestMessage: Message | null;
   onSent: () => void;
 }) {
   const { getToken } = useAuth();
@@ -32,6 +34,7 @@ export function AiDraftPanel({
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [aiAssistOpen, setAiAssistOpen] = useState(false);
   const [manualReply, setManualReply] = useState('');
   const [pendingFacts, setPendingFacts] = useState<Array<{ text: string; type: string }>>([]);
 
@@ -39,11 +42,15 @@ export function AiDraftPanel({
   useEffect(() => {
     if (!unrepliedMessage) return;
     setDismissed(false);
+    setAiAssistOpen(false);
     setSuggestion(null);
     setActiveChips([]);
     setExtraContext('');
     void generate(unrepliedMessage.id, [], '');
   }, [unrepliedMessage?.id]); // intentionally omit generate — it's defined inline and stable
+
+  // The message id to use for AI generation
+  const generateMessageId = (unrepliedMessage ?? latestGuestMessage)?.id ?? null;
 
   async function generate(messageId: string, chips: string[], context: string) {
     setLoading(true);
@@ -129,14 +136,14 @@ export function AiDraftPanel({
         />
       )}
 
-      {/* Draft section — only when there is an unreplied guest message */}
-      {unrepliedMessage && !dismissed && (
+      {/* Draft section — auto-shown for unreplied messages, or manually opened via AI Assist */}
+      {((unrepliedMessage && !dismissed) || aiAssistOpen) && generateMessageId && (
         <div className="px-4 py-3 border-b" style={{ borderColor: '#1a3a5c' }}>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
               <span style={{ color: '#60a5fa', fontSize: '12px' }}>✦</span>
               <span className="text-xs font-semibold" style={{ color: '#93c5fd' }}>
-                AI Draft
+                {unrepliedMessage && !dismissed ? 'AI Draft' : 'AI Assist'}
               </span>
               {loading && (
                 <span className="text-xs" style={{ color: '#334155' }}>
@@ -157,7 +164,7 @@ export function AiDraftPanel({
               )}
               {suggestion && !loading && (
                 <button
-                  onClick={() => void generate(unrepliedMessage.id, activeChips, extraContext)}
+                  onClick={() => void generate(generateMessageId, activeChips, extraContext)}
                   className="text-xs px-2.5 py-1.5 rounded-md border transition-colors"
                   style={{ background: '#0d1f38', borderColor: '#1a3a5c', color: '#94a3b8' }}
                 >
@@ -165,7 +172,11 @@ export function AiDraftPanel({
                 </button>
               )}
               <button
-                onClick={() => setDismissed(true)}
+                onClick={() => {
+                  setDismissed(true);
+                  setAiAssistOpen(false);
+                  setSuggestion(null);
+                }}
                 className="text-xs px-2 py-1.5 rounded-md border"
                 style={{ background: '#0d1f38', borderColor: '#1a3a5c', color: '#475569' }}
               >
@@ -173,6 +184,34 @@ export function AiDraftPanel({
               </button>
             </div>
           </div>
+
+          {/* AI Assist: show context input first if no suggestion yet and no unreplied message */}
+          {aiAssistOpen && !unrepliedMessage && !suggestion && !loading && (
+            <div className="mb-2">
+              <input
+                type="text"
+                placeholder="What would you like to say? (e.g. check-in instructions, follow-up)…"
+                value={extraContext}
+                onChange={(e) => setExtraContext(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && extraContext.trim()) {
+                    void generate(generateMessageId, activeChips, extraContext);
+                  }
+                }}
+                className="w-full text-xs px-3 py-2 rounded-lg border outline-none mb-2"
+                style={{ background: '#071428', borderColor: '#1a3a5c', color: '#94a3b8' }}
+                autoFocus
+              />
+              <button
+                onClick={() => void generate(generateMessageId, activeChips, extraContext)}
+                disabled={!extraContext.trim()}
+                className="text-xs px-3 py-1.5 rounded-md border disabled:opacity-50"
+                style={{ background: '#1d4ed8', borderColor: '#1d4ed8', color: '#fff' }}
+              >
+                ✦ Generate
+              </button>
+            </div>
+          )}
 
           {suggestion && !loading && (
             <>
@@ -210,7 +249,7 @@ export function AiDraftPanel({
                 onChange={(e) => setExtraContext(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && (activeChips.length > 0 || extraContext.trim())) {
-                    void generate(unrepliedMessage.id, activeChips, extraContext);
+                    void generate(generateMessageId, activeChips, extraContext);
                   }
                 }}
                 className="w-full text-xs px-3 py-2 rounded-lg border outline-none"
@@ -218,7 +257,7 @@ export function AiDraftPanel({
               />
               {(activeChips.length > 0 || extraContext.trim()) && (
                 <button
-                  onClick={() => void generate(unrepliedMessage.id, activeChips, extraContext)}
+                  onClick={() => void generate(generateMessageId, activeChips, extraContext)}
                   className="mt-2 text-xs px-3 py-1.5 rounded-md border"
                   style={{ background: '#1d4ed8', borderColor: '#1d4ed8', color: '#fff' }}
                 >
@@ -232,9 +271,26 @@ export function AiDraftPanel({
 
       {/* Manual reply */}
       <div className="px-4 py-3 flex gap-2 items-center">
+        {/* AI Assist toggle — shown when draft section is closed and a guest message exists */}
+        {!aiAssistOpen && (dismissed || !unrepliedMessage) && latestGuestMessage && (
+          <button
+            onClick={() => {
+              setAiAssistOpen(true);
+              setDismissed(false);
+              setSuggestion(null);
+              setActiveChips([]);
+              setExtraContext('');
+            }}
+            className="text-xs px-2.5 py-2 rounded-lg border flex-shrink-0"
+            style={{ background: '#0d1f38', borderColor: '#1a3a5c', color: '#60a5fa' }}
+            title="Get AI help composing a message"
+          >
+            ✦
+          </button>
+        )}
         <input
           type="text"
-          placeholder="Or type your own message…"
+          placeholder="Type a message…"
           value={manualReply}
           onChange={(e) => setManualReply(e.target.value)}
           onKeyDown={(e) => {
