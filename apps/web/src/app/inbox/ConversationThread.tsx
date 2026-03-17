@@ -116,6 +116,7 @@ export function ConversationThread({
   const latestIsGuest =
     messages.length > 0 && messages[messages.length - 1]?.senderType === 'guest';
   const unrepliedMessage = latestIsGuest ? (messages[messages.length - 1] ?? null) : null;
+  const latestGuestMessage = [...messages].reverse().find((m) => m.senderType === 'guest') ?? null;
 
   const guestName =
     [reservation?.guestFirstName, reservation?.guestLastName].filter(Boolean).join(' ') || 'Guest';
@@ -228,6 +229,7 @@ export function ConversationThread({
           reservationId={reservationId}
           propertyId={reservation.propertyId}
           unrepliedMessage={unrepliedMessage}
+          latestGuestMessage={latestGuestMessage}
           onSent={() => {
             void fetchMessages().then((data) => {
               setMessages(data.messages);
