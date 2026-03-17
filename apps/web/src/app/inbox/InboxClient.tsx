@@ -28,20 +28,26 @@ export function InboxClient() {
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: '#071428' }}>
-      {/* Left column — use visibility/positioning (NOT display:none) to preserve scroll position on mobile */}
+      {/* Left column — slides out on mobile when thread is selected */}
       <div
-        className={`flex-shrink-0 border-r overflow-hidden flex w-full md:w-[30%] ${
+        className={`flex-shrink-0 border-r overflow-hidden flex w-full md:w-[30%] transition-transform duration-300 ${
           showThread
-            ? 'absolute inset-0 opacity-0 pointer-events-none md:relative md:opacity-100 md:pointer-events-auto'
-            : ''
+            ? '-translate-x-full md:translate-x-0 absolute inset-0 md:relative'
+            : 'translate-x-0'
         }`}
         style={{ borderColor: '#1a3a5c' }}
       >
         <ConversationList selectedId={selectedId} onSelect={setSelectedId} />
       </div>
 
-      {/* Right column — hidden on mobile when no thread selected */}
-      <div className={`flex-1 overflow-hidden ${!showThread ? 'hidden md:flex' : 'flex'} flex-col`}>
+      {/* Right column — slides in from right on mobile when thread is selected */}
+      <div
+        className={`flex-1 overflow-hidden flex flex-col transition-transform duration-300 ${
+          !showThread
+            ? 'translate-x-full md:translate-x-0 absolute inset-0 md:relative pointer-events-none md:pointer-events-auto'
+            : 'translate-x-0'
+        }`}
+      >
         {selectedId ? (
           <ConversationThread reservationId={selectedId} onBack={() => setSelectedId(null)} />
         ) : (

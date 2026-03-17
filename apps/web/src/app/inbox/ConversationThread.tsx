@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@clerk/nextjs';
 
 type Message = {
@@ -51,6 +51,8 @@ export function ConversationThread({
   const [reservation, setReservation] = useState<ReservationInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const topSentinelRef = useRef<HTMLDivElement>(null);
 
   const fetchMessages = useCallback(
     async (before?: string) => {
@@ -81,13 +83,34 @@ export function ConversationThread({
     });
   }, [reservationId, fetchMessages]);
 
-  async function loadOlder() {
+  const loadOlder = useCallback(async () => {
+    if (loadingOlder || !hasMore) return;
     const oldest = messages[0]?.createdAt;
     if (!oldest) return;
-    const data = await fetchMessages(oldest);
-    setMessages((prev) => [...data.messages, ...prev]);
-    setHasMore(data.hasMore);
-  }
+    setLoadingOlder(true);
+    try {
+      const data = await fetchMessages(oldest);
+      setMessages((prev) => [...data.messages, ...prev]);
+      setHasMore(data.hasMore);
+    } finally {
+      setLoadingOlder(false);
+    }
+  }, [loadingOlder, hasMore, messages, fetchMessages]);
+
+  useEffect(() => {
+    const sentinel = topSentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasMore && !loadingOlder) {
+          void loadOlder();
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, loadingOlder, loadOlder]);
 
   const latestIsGuest =
     messages.length > 0 && messages[messages.length - 1]?.senderType === 'guest';
@@ -136,13 +159,13 @@ export function ConversationThread({
         ) : (
           <>
             {hasMore && (
-              <button
-                onClick={() => void loadOlder()}
-                className="text-xs text-center w-full py-1"
-                style={{ color: '#475569' }}
+              <div
+                ref={topSentinelRef}
+                className="py-1 text-xs text-center"
+                style={{ color: '#334155' }}
               >
-                Load older messages
-              </button>
+                {loadingOlder ? 'Loading…' : ''}
+              </div>
             )}
             {messages.map((m) => {
               const isHost = m.senderType === 'host';

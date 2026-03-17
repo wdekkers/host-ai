@@ -29,14 +29,20 @@ export function ConversationList({
   const { getToken } = useAuth();
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [threads, setThreads] = useState<InboxThread[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const fetchThreads = useCallback(async () => {
     setLoading(true);
     try {
       const token = await getToken();
-      const params = new URLSearchParams({ filter, search, per_page: '50' });
+      const params = new URLSearchParams({ filter, search: debouncedSearch, per_page: '50' });
       const res = await fetch(`/api/inbox?${params}`, {
         headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       });
@@ -45,7 +51,7 @@ export function ConversationList({
     } finally {
       setLoading(false);
     }
-  }, [filter, search, getToken]);
+  }, [filter, debouncedSearch, getToken]);
 
   useEffect(() => {
     void fetchThreads();
