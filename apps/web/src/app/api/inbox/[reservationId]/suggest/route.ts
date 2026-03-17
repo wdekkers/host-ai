@@ -40,14 +40,11 @@ export const POST = withPermission(
         return NextResponse.json({ error: 'Message not found' }, { status: 404 });
       }
 
-      const guestName =
-        [reservation.guestFirstName, reservation.guestLastName].filter(Boolean).join(' ') ||
-        'the guest';
-
       const organizationId = authContext.orgId;
 
       const suggestion = await generateReplySuggestion({
-        guestName,
+        guestFirstName: reservation.guestFirstName ?? null,
+        guestLastName: reservation.guestLastName ?? null,
         propertyName: reservation.propertyName ?? 'the property',
         propertyId: reservation.propertyId ?? null,
         organizationId,

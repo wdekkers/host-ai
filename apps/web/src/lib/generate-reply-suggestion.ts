@@ -12,7 +12,8 @@ const CHIP_INSTRUCTIONS: Record<string, string> = {
 };
 
 export async function generateReplySuggestion({
-  guestName,
+  guestFirstName,
+  guestLastName,
   propertyName,
   propertyId,
   organizationId,
@@ -22,7 +23,8 @@ export async function generateReplySuggestion({
   chips,
   extraContext,
 }: {
-  guestName: string;
+  guestFirstName: string | null;
+  guestLastName: string | null;
   propertyName: string;
   propertyId: string | null;
   organizationId: string;
@@ -164,10 +166,12 @@ export async function generateReplySuggestion({
     .filter(Boolean)
     .join('\n');
 
+  const guestFullName = [guestFirstName, guestLastName].filter(Boolean).join(' ') || 'the guest';
+
   const systemPrompt = `You are a short-term rental host assistant drafting a reply to a guest.
 
 Property: ${propertyName}
-Guest: ${guestName}
+Guest full name: ${guestFullName}${guestFirstName ? `\nGuest first name: ${guestFirstName}` : ''}
 Check-in: ${formatDate(checkIn)}
 Check-out: ${formatDate(checkOut)}
 
