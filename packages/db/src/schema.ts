@@ -301,3 +301,65 @@ export const auditEvents = waltSchema.table('audit_events', {
   metadata: jsonb('metadata').notNull().$type<Record<string, unknown>>(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
 });
+
+// --- Inbox Redesign ---
+
+export const propertyGuidebookEntries = waltSchema.table(
+  'property_guidebook_entries',
+  {
+    id: uuid('id').primaryKey(), // supply via uuidv4() at application layer — no defaultRandom()
+    organizationId: text('organization_id').notNull(),
+    propertyId: text('property_id').notNull(),
+    category: text('category').notNull(),
+    title: text('title').notNull(),
+    description: text('description').notNull(),
+    mediaUrl: text('media_url'),
+    aiUseCount: integer('ai_use_count').notNull().default(0),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
+  },
+  (table) => ({
+    orgIdx: index('property_guidebook_entries_organization_id_idx').on(table.organizationId),
+    propIdx: index('property_guidebook_entries_property_id_idx').on(table.propertyId),
+  }),
+);
+
+// NOTE: property_memory intentionally has NO updatedAt — facts are immutable by design.
+// Editing a fact before saving creates a new row; existing rows are never updated.
+export const propertyMemory = waltSchema.table(
+  'property_memory',
+  {
+    id: uuid('id').primaryKey(), // supply via uuidv4() at application layer — no defaultRandom()
+    organizationId: text('organization_id').notNull(),
+    propertyId: text('property_id').notNull(),
+    fact: text('fact').notNull(),
+    source: text('source').notNull(), // 'learned' | 'manual'
+    sourceReservationId: text('source_reservation_id'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+  },
+  (table) => ({
+    orgIdx: index('property_memory_organization_id_idx').on(table.organizationId),
+    propIdx: index('property_memory_property_id_idx').on(table.propertyId),
+  }),
+);
+
+export const agentConfigs = waltSchema.table(
+  'agent_configs',
+  {
+    id: uuid('id').primaryKey(), // supply via uuidv4() at application layer
+    organizationId: text('organization_id').notNull(),
+    scope: text('scope').notNull(), // 'global' | 'property'
+    propertyId: text('property_id'), // null for global scope
+    tone: text('tone'),
+    emojiUse: text('emoji_use'),
+    responseLength: text('response_length'),
+    escalationRules: text('escalation_rules'),
+    specialInstructions: text('special_instructions'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
+  },
+  (table) => ({
+    orgIdx: index('agent_configs_organization_id_idx').on(table.organizationId),
+  }),
+);
