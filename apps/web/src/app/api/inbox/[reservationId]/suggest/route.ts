@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { withPermission } from '@/lib/auth/authorize';
@@ -34,9 +34,13 @@ export const POST = withPermission(
         return NextResponse.json({ error: 'Reservation not found' }, { status: 404 });
       }
 
-      const [message] = await db.select().from(messages).where(eq(messages.id, messageId));
+      const thread = await db
+        .select({ id: messages.id, body: messages.body, senderType: messages.senderType })
+        .from(messages)
+        .where(eq(messages.reservationId, reservationId))
+        .orderBy(asc(messages.createdAt));
 
-      if (!message) {
+      if (thread.length === 0) {
         return NextResponse.json({ error: 'Message not found' }, { status: 404 });
       }
 
@@ -50,7 +54,7 @@ export const POST = withPermission(
         organizationId,
         checkIn: reservation.checkIn,
         checkOut: reservation.checkOut,
-        messageBody: message.body,
+        conversationHistory: thread,
         chips,
         extraContext,
       });
