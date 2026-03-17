@@ -12,7 +12,8 @@ const CHIP_INSTRUCTIONS: Record<string, string> = {
 };
 
 export async function generateReplySuggestion({
-  guestName,
+  guestFirstName,
+  guestLastName,
   propertyName,
   propertyId,
   organizationId,
@@ -22,7 +23,8 @@ export async function generateReplySuggestion({
   chips,
   extraContext,
 }: {
-  guestName: string;
+  guestFirstName: string | null;
+  guestLastName: string | null;
   propertyName: string;
   propertyId: string | null;
   organizationId: string;
@@ -164,13 +166,12 @@ export async function generateReplySuggestion({
     .filter(Boolean)
     .join('\n');
 
-  // --- Extra context ---
-  const extraLine = extraContext ? `\nExtra context for this reply: ${extraContext}` : '';
+  const guestFullName = [guestFirstName, guestLastName].filter(Boolean).join(' ') || 'the guest';
 
   const systemPrompt = `You are a short-term rental host assistant drafting a reply to a guest.
 
 Property: ${propertyName}
-Guest: ${guestName}
+Guest full name: ${guestFullName}${guestFirstName ? `\nGuest first name: ${guestFirstName}` : ''}
 Check-in: ${formatDate(checkIn)}
 Check-out: ${formatDate(checkOut)}
 
@@ -178,8 +179,8 @@ Tone: ${tone}
 Emoji use: ${emojiUse}
 Length: ${responseLength}
 ${specialInstructions ? `Special instructions: ${specialInstructions}` : ''}
-${chipLines ? `Style modifiers for this reply:\n${chipLines}` : ''}${extraLine}
-
+${chipLines ? `Style modifiers for this reply:\n${chipLines}` : ''}
+${extraContext ? `IMPORTANT additional instructions for this reply (follow these precisely):\n${extraContext}\n` : ''}
 Reply in the same language as the guest message. Do not start with "Of course" or "Certainly".${faqContext}${guidebookContext}${memoryContext}`;
 
   const response = await client.chat.completions.create({
