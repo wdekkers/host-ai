@@ -1,8 +1,10 @@
-import type { reservations, messages } from '@walt/db';
+import type { reservations, messages, properties, reviews } from '@walt/db';
 import type { InferInsertModel } from 'drizzle-orm';
 
 type ReservationInsert = InferInsertModel<typeof reservations>;
 type MessageInsert = InferInsertModel<typeof messages>;
+type PropertyInsert = InferInsertModel<typeof properties>;
+type ReviewInsert = InferInsertModel<typeof reviews>;
 
 function str(v: unknown): string | null {
   if (v === null || v === undefined) return null;
@@ -47,6 +49,48 @@ export function normalizeReservation(
     guestEmail: str(guest.email),
     propertyId: str(firstProp.id),
     propertyName: str(firstProp.name),
+    raw,
+  };
+}
+
+export function normalizeProperty(raw: Record<string, unknown>): Omit<PropertyInsert, 'syncedAt'> {
+  const addr = (raw.address ?? {}) as Record<string, unknown>;
+  return {
+    id: String(raw.id),
+    name: String(raw.name ?? raw.public_name ?? ''),
+    address: str(addr.street ?? addr.display) ?? null,
+    city: str(addr.city) ?? null,
+    status: raw.listed === false ? 'inactive' : 'active',
+    raw,
+  };
+}
+
+export function normalizeReview(
+  raw: Record<string, unknown>,
+): Omit<ReviewInsert, 'syncedAt'> | null {
+  const id = str(raw.id);
+  if (!id) return null;
+
+  const pub = (raw.public ?? {}) as Record<string, unknown>;
+  const priv = (raw.private ?? {}) as Record<string, unknown>;
+  const guest = (raw.guest ?? {}) as Record<string, unknown>;
+  const reservation = (raw.reservation ?? {}) as Record<string, unknown>;
+  const property = (raw.property ?? {}) as Record<string, unknown>;
+
+  return {
+    id,
+    reservationId: str(reservation.id) ?? null,
+    propertyId: str(property.id) ?? null,
+    platform: str(raw.platform) ?? null,
+    rating: typeof pub.rating === 'number' ? pub.rating : null,
+    publicReview: str(pub.review) ?? null,
+    publicResponse: str(pub.response) ?? null,
+    privateFeedback: str(priv.feedback) ?? null,
+    guestFirstName: str(guest.first_name) ?? null,
+    guestLastName: str(guest.last_name) ?? null,
+    reviewedAt: ts(raw.reviewed_at),
+    respondedAt: ts(raw.responded_at),
+    canRespond: typeof raw.can_respond === 'boolean' ? raw.can_respond : null,
     raw,
   };
 }

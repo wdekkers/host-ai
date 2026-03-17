@@ -1,0 +1,1788 @@
+https://developer.hospitable.com/docs/public-api-docs/0c89462f0c6f5-receive-reservation-post
+post
+Reservation
+📘 Includes:
+
+guest
+financials (required: financials:read scope)
+listings (required: listing:read scope)
+properties (required: property:read scope) - review (required: review:read scope)
+NOTE: Includes are added automatically based on the scopes that are enabled for your integration.
+
+We will fire the reservation webhook when the following data is changed on a reservation:
+
+status_changed
+arrival_date
+departure_date
+guests
+status
+check_in
+check_out
+financials
+issue_alert
+Request
+Body
+
+application/json
+
+application/json
+id
+string<uuid>
+data
+Reservation
+id
+string<uuid>
+required
+The reservation uuid that is used in your query parameters. This cannot be used to manually search within the Hospitable Inbox UI.
+
+Example:
+6f58fd0a-a9cb-3746-9219-384a156ff7bb
+conversation_id
+string<uuid>
+required
+Example:
+6f58fd0a-a9cb-3746-9219-384a156ff7bb
+platform
+string
+read-only
+required
+Allowed values:
+airbnb
+homeaway
+booking
+direct
+manual
+Example:
+homeaway
+platform_id
+string
+required
+This is the unique identifier for the reservation that is visible in the Hospitable UI and to the guest in the booking platform.
+
+Example:
+ABC123
+booking_date
+string<date-time>
+required
+Example:
+2019-01-01T12:00:00Z
+arrival_date
+string<date-time>
+required
+This provides only the date, not the exact check-in time. Refer to check_in.
+
+Example:
+2019-01-03T00:00:00-05:00
+departure_date
+string<date-time>
+required
+This provides only the date, not the exact check-out time. Refer to check_out.
+
+Example:
+2019-01-05T00:00:00-05:00
+nights
+integer
+required
+check_in
+string<date-time>
+required
+Example:
+2019-01-03T13:00:00-05:00
+check_out
+string<date-time>
+required
+Example:
+2019-01-05T11:00:00-05:00
+last_message_at
+string<date-time>
+required
+Example:
+2019-01-05T11:00:00-00:00
+status
+string
+deprecated
+required
+Example:
+booking
+reservation_status
+object
+required
+status_history
+array[object]
+deprecated
+required
+guests
+object
+required
+issue_alert
+string
+Any guest issues that have been detected on the reservation
+
+Default:
+null
+Example:
+Broken AC
+stay_type
+string
+Allowed values:
+guest_stay
+owner_stay
+owner_stay
+object or null
+If this reservation has a stay_type of owner_stay this attribute will provide information about the owner stay options.
+
+note
+string
+Any conversation notes that have been added.
+
+financials
+object
+Example:
+{"guest":{"accommodation":{"amount":12345,"formatted":"$123.45","label":"Accommodation","category":"Accommodation"},"fees":[{"amount":12345,"formatted":"$123.45","label":"Guest Service Fee","category":"Service fees"}],"discounts":[{"amount":-12345,"formatted":"$-123.45","label":"Guest Discount","category":"Discount"}],"taxes":[{"amount":12345,"formatted":"$123.45","label":"Lodging taxes","category":"Pass-through taxes"}],"adjustments":[{"amount":-12345,"formatted":"$-123.45","label":"Resolution Adjustment","category":"Total payouts"},{"amount":12345,"formatted":"$123.45","label":"Resolution Adjustment","category":"Total payouts"}],"total_price":{"amount":12345,"formatted":"$123.45","label":"Guest Total Price","category":"Total payment"}},"host":{"accommodation":{"amount":12345,"formatted":"$123.45","label":"Accommodation","category":"Accommodation"},"accommodation_breakdown":[{"amount":12345,"formatted":"$123.45","label":"2024-01-01","category":"Accommodation"}],"guest_fees":[{"amount":-12345,"formatted":"$-123.45","label":"Cleaning Fee","category":"Guest fees"}],"host_fees":[{"amount":-12345,"formatted":"$-123.45","label":"Host Service Fee","category":"Service fees"}],"discounts":[{"amount":-12345,"formatted":"$-123.45","label":"Guest Discount","category":"Discount"}],"adjustments":[{"amount":-12345,"formatted":"$-123.45","label":"Resolution Adjustment","category":"Total payouts"},{"amount":12345,"formatted":"$123.45","label":"Resolution Adjustment","category":"Total payouts"}],"taxes":[{"amount":12345,"formatted":"$123.45","label":"City taxes","category":"Host Tax"}],"revenue":{"amount":12345,"formatted":"$123.45","label":"Gross Revenue","category":"Revenue"}},"currency":"USD"}
+properties
+array[Property]
+listings
+array[object]
+guest
+object
+user
+user
+review
+Reviewnull
+
+one of: Review
+smartlock_code
+string
+action
+string
+Allowed values:
+reservation.created
+reservation.changed
+triggers
+array[string]
+Allowed values:
+status_changed
+dates_changed
+guests_changed
+listing_changed
+checkin_changed
+checkout_changed
+financials_changed
+guest_issue_detected
+test
+historic_reservation
+created
+string<date-time>
+Example:
+2024-10-08T07:03:34Z
+version
+string
+Example:
+v2
+Responses
+200
+Return a 200 status to indicate that the data was received successfully
+
+{
+  "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+  "data": {
+    "id": "6f58fd0a-a9cb-3746-9219-384a156ff7bb",
+    "conversation_id": "6f58fd0a-a9cb-3746-9219-384a156ff7bb",
+    "platform": "airbnb",
+    "platform_id": "ABC123",
+    "booking_date": "2019-01-01T12:00:00Z",
+    "arrival_date": "2019-01-03T00:00:00-05:00",
+    "departure_date": "2019-01-05T00:00:00-05:00",
+    "nights": 0,
+    "check_in": "2019-01-03T13:00:00-05:00",
+    "check_out": "2019-01-05T11:00:00-05:00",
+    "last_message_at": "2019-01-05T11:00:00-00:00",
+    "status": "booking",
+    "reservation_status": {
+      "current": {
+        "category": "request",
+        "sub_category": "pending verification"
+      },
+      "history": [
+        {
+          "category": "request",
+          "sub_category": "pending verification",
+          "changed_at": "2019-01-03T12:00:00-05:00"
+        }
+      ]
+    },
+    "status_history": [
+      {
+        "category": "accepted",
+        "sub_category": "accepted",
+        "changed_at": "2019-01-03T12:00:00-05:00"
+      }
+    ],
+    "guests": {
+      "total": 0,
+      "adult_count": 0,
+      "child_count": 0,
+      "infant_count": 0,
+      "pet_count": 0
+    },
+    "issue_alert": null,
+    "stay_type": "guest_stay",
+    "owner_stay": {
+      "schedule_cleaning": true
+    },
+    "note": "string",
+    "financials": {
+      "guest": {
+        "accommodation": {
+          "amount": 12345,
+          "formatted": "$123.45",
+          "label": "Accommodation",
+          "category": "Accommodation"
+        },
+        "fees": [
+          {
+            "amount": 12345,
+            "formatted": "$123.45",
+            "label": "Guest Service Fee",
+            "category": "Service fees"
+          }
+        ],
+        "discounts": [
+          {
+            "amount": -12345,
+            "formatted": "$-123.45",
+            "label": "Guest Discount",
+            "category": "Discount"
+          }
+        ],
+        "taxes": [
+          {
+            "amount": 12345,
+            "formatted": "$123.45",
+            "label": "Lodging taxes",
+            "category": "Pass-through taxes"
+          }
+        ],
+        "adjustments": [
+          {
+            "amount": -12345,
+            "formatted": "$-123.45",
+            "label": "Resolution Adjustment",
+            "category": "Total payouts"
+          },
+          {
+            "amount": 12345,
+            "formatted": "$123.45",
+            "label": "Resolution Adjustment",
+            "category": "Total payouts"
+          }
+        ],
+        "total_price": {
+          "amount": 12345,
+          "formatted": "$123.45",
+          "label": "Guest Total Price",
+          "category": "Total payment"
+        }
+      },
+      "host": {
+        "accommodation": {
+          "amount": 12345,
+          "formatted": "$123.45",
+          "label": "Accommodation",
+          "category": "Accommodation"
+        },
+        "accommodation_breakdown": [
+          {
+            "amount": 12345,
+            "formatted": "$123.45",
+            "label": "2024-01-01",
+            "category": "Accommodation"
+          }
+        ],
+        "guest_fees": [
+          {
+            "amount": -12345,
+            "formatted": "$-123.45",
+            "label": "Cleaning Fee",
+            "category": "Guest fees"
+          }
+        ],
+        "host_fees": [
+          {
+            "amount": -12345,
+            "formatted": "$-123.45",
+            "label": "Host Service Fee",
+            "category": "Service fees"
+          }
+        ],
+        "discounts": [
+          {
+            "amount": -12345,
+            "formatted": "$-123.45",
+            "label": "Guest Discount",
+            "category": "Discount"
+          }
+        ],
+        "adjustments": [
+          {
+            "amount": -12345,
+            "formatted": "$-123.45",
+            "label": "Resolution Adjustment",
+            "category": "Total payouts"
+          },
+          {
+            "amount": 12345,
+            "formatted": "$123.45",
+            "label": "Resolution Adjustment",
+            "category": "Total payouts"
+          }
+        ],
+        "taxes": [
+          {
+            "amount": 12345,
+            "formatted": "$123.45",
+            "label": "City taxes",
+            "category": "Host Tax"
+          }
+        ],
+        "revenue": {
+          "amount": 12345,
+          "formatted": "$123.45",
+          "label": "Gross Revenue",
+          "category": "Revenue"
+        }
+      },
+      "currency": "USD"
+    },
+    "properties": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "name": "Relaxing Villa near the sea",
+        "public_name": "Relaxing Villa near the sea",
+        "picture": "https://cdn2.thecatapi.com/images/d9m.jpg",
+        "address": {
+          "number": "32",
+          "street": "Senefelderplatz",
+          "city": "Berlin",
+          "state": "string",
+          "country": "DE",
+          "postcode": "10405",
+          "coordinates": {
+            "latitude": 50.8514786,
+            "longitude": 4.364562
+          },
+          "display": "37a Senefelderplatz, 10405 Berlin, DE"
+        },
+        "timezone": "+0200",
+        "listed": true,
+        "amenities": [
+          "shower"
+        ],
+        "description": "Example Description",
+        "summary": "Example Summary",
+        "check-in": "12:30",
+        "check-out": "12:30",
+        "currency": "EUR",
+        "capacity": {
+          "max": 2,
+          "bedrooms": 1,
+          "beds": 1,
+          "bathrooms": 1.5
+        },
+        "room_details": [
+          {
+            "type": "king_size",
+            "quantity": 1
+          }
+        ],
+        "house_rules": {
+          "pets_allowed": true,
+          "smoking_allowed": false,
+          "events_allowed": null
+        },
+        "listings": [
+          {
+            "platform": "airbnb",
+            "platform_id": "24488",
+            "platform_user_id": "string",
+            "co_hosts": [
+              {
+                "user_id": "12345",
+                "channel_name": "Co-hosted channel"
+              }
+            ],
+            "platform_name": "string",
+            "platform_email": "string"
+          }
+        ],
+        "ical_imports": [
+          {
+            "uuid": "550e8400-e29b-41d4-a716-446655440000",
+            "url": "https://example.com/calendar.ics",
+            "name": "Vacation Rental Calendar",
+            "host": {
+              "first_name": "John",
+              "last_name": "Doe"
+            },
+            "last_sync_at": "2019-01-01T12:00:00Z",
+            "disconnected_at": "2019-01-01T12:00:00Z"
+          }
+        ],
+        "tags": [
+          "Tag"
+        ],
+        "property_type": "string",
+        "room_type": "string",
+        "calendar_restricted": true,
+        "parent_child": {
+          "type": "parent",
+          "parent": "550e8400-e29b-41d4-a716-446655440000",
+          "children": [
+            "550e8400-e29b-41d4-a716-446655440000"
+          ],
+          "siblings": [
+            "550e8400-e29b-41d4-a716-446655440000"
+          ]
+        }
+      }
+    ],
+    "listings": [
+      {
+        "platform": "airbnb",
+        "platform_id": "24488",
+        "platform_name": "string",
+        "platform_email": "string"
+      }
+    ],
+    "guest": {
+      "id": "12345",
+      "profile_picture": "string",
+      "location": "London, United Kingdom",
+      "first_name": "John",
+      "last_name": "Doe",
+      "email": "john.doe@example.com",
+      "phone_numbers": [
+        "string"
+      ]
+    },
+    "user": {
+      "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+      "email": "user@example.com",
+      "name": "string"
+    },
+    "review": {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "platform": "airbnb",
+      "public": {
+        "rating": 1,
+        "review": "Great place we will be back!",
+        "response": "So happy you enjoyed it so much!"
+      },
+      "private": {
+        "feedback": "downstairs was a bit cold.",
+        "detailed_ratings": [
+          {
+            "type": "cleanliness",
+            "rating": 1,
+            "comment": "The cabin was cozy and comfy."
+          }
+        ]
+      },
+      "responded_at": "2019-08-24T14:15:22Z",
+      "reviewed_at": "2024-03-19T10:00:00Z",
+      "can_respond": true,
+      "guest": {
+        "first_name": "string",
+        "last_name": "string",
+        "language": "string"
+      },
+      "reservation": {
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "code": "string",
+        "check_in": "2019-08-24T14:15:22Z",
+        "check_out": "2019-08-24T14:15:22Z"
+      },
+      "property": {
+        "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+        "name": "string",
+        "public_name": "string"
+      },
+      "listing": {
+        "platform": "airbnb",
+        "platform_id": "string"
+      }
+    },
+    "smartlock_code": "string"
+  },
+  "action": "reservation.created",
+  "triggers": [
+    "status_changed"
+  ],
+  "created": "2024-10-08T07:03:34Z",
+  "version": "v2"
+}
+{
+  "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+  "data": {
+    "id": "6f58fd0a-a9cb-3746-9219-384a156ff7bb",
+    "conversation_id": "6f58fd0a-a9cb-3746-9219-384a156ff7bb",
+    "platform": "airbnb",
+    "platform_id": "ABC123",
+    "booking_date": "2019-01-01T12:00:00Z",
+    "arrival_date": "2019-01-03T00:00:00-05:00",
+    "departure_date": "2019-01-05T00:00:00-05:00",
+    "nights": 0,
+    "check_in": "2019-01-03T13:00:00-05:00",
+    "check_out": "2019-01-05T11:00:00-05:00",
+    "last_message_at": "2019-01-05T11:00:00-00:00",
+    "status": "booking",
+    "reservation_status": {
+      "current": {
+        "category": "request",
+        "sub_category": "pending verification"
+      },
+      "history": [
+        {
+          "category": "request",
+          "sub_category": "pending verification",
+          "changed_at": "2019-01-03T12:00:00-05:00"
+        }
+      ]
+    },
+    "status_history": [
+      {
+        "category": "accepted",
+        "sub_category": "accepted",
+        "changed_at": "2019-01-03T12:00:00-05:00"
+      }
+    ],
+    "guests": {
+      "total": 0,
+      "adult_count": 0,
+      "child_count": 0,
+      "infant_count": 0,
+      "pet_count": 0
+    },
+    "issue_alert": null,
+    "stay_type": "guest_stay",
+    "owner_stay": {
+      "schedule_cleaning": true
+    },
+    "note": "string",
+    "financials": {
+      "guest": {
+        "accommodation": {
+          "amount": 12345,
+          "formatted": "$123.45",
+          "label": "Accommodation",
+          "category": "Accommodation"
+        },
+        "fees": [
+          {
+            "amount": 12345,
+            "formatted": "$123.45",
+            "label": "Guest Service Fee",
+            "category": "Service fees"
+          }
+        ],
+        "discounts": [
+          {
+            "amount": -12345,
+            "formatted": "$-123.45",
+            "label": "Guest Discount",
+            "category": "Discount"
+          }
+        ],
+        "taxes": [
+          {
+            "amount": 12345,
+            "formatted": "$123.45",
+            "label": "Lodging taxes",
+            "category": "Pass-through taxes"
+          }
+        ],
+        "adjustments": [
+          {
+            "amount": -12345,
+            "formatted": "$-123.45",
+            "label": "Resolution Adjustment",
+            "category": "Total payouts"
+          },
+          {
+            "amount": 12345,
+            "formatted": "$123.45",
+            "label": "Resolution Adjustment",
+            "category": "Total payouts"
+          }
+        ],
+        "total_price": {
+          "amount": 12345,
+          "formatted": "$123.45",
+          "label": "Guest Total Price",
+          "category": "Total payment"
+        }
+      },
+      "host": {
+        "accommodation": {
+          "amount": 12345,
+          "formatted": "$123.45",
+          "label": "Accommodation",
+          "category": "Accommodation"
+        },
+        "accommodation_breakdown": [
+          {
+            "amount": 12345,
+            "formatted": "$123.45",
+            "label": "2024-01-01",
+            "category": "Accommodation"
+          }
+        ],
+        "guest_fees": [
+          {
+            "amount": -12345,
+            "formatted": "$-123.45",
+            "label": "Cleaning Fee",
+            "category": "Guest fees"
+          }
+        ],
+        "host_fees": [
+          {
+            "amount": -12345,
+            "formatted": "$-123.45",
+            "label": "Host Service Fee",
+            "category": "Service fees"
+          }
+        ],
+        "discounts": [
+          {
+            "amount": -12345,
+            "formatted": "$-123.45",
+            "label": "Guest Discount",
+            "category": "Discount"
+          }
+        ],
+        "adjustments": [
+          {
+            "amount": -12345,
+            "formatted": "$-123.45",
+            "label": "Resolution Adjustment",
+            "category": "Total payouts"
+          },
+          {
+            "amount": 12345,
+            "formatted": "$123.45",
+            "label": "Resolution Adjustment",
+            "category": "Total payouts"
+          }
+        ],
+        "taxes": [
+https://developer.hospitable.com/docs/public-api-docs/d219ade7c7f8e-receive-integration-disconnected-post
+post
+Integration Disconnected
+When a user disconnects from your integration, you will receive a integration.disconnected webhook. This is useful for cleaning up any data that is no longer needed.
+
+Request
+Body
+
+application/json
+
+application/json
+id
+string<uuid>
+data
+object
+user
+string<uuid>
+Example:
+550e8400-e29b-41d4-a716-446655440000
+disconnected_at
+string<date-time>
+Example:
+2024-10-08T07:03:34Z
+action
+any
+Allowed value:
+integration.disconnected
+created
+string<date-time>
+Example:
+2024-10-08T07:03:34Z
+version
+string
+Example:
+v2
+Responses
+200
+Return a 200 status to indicate that the data was received successfully
+
+{
+  "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+  "data": {
+    "user": "550e8400-e29b-41d4-a716-446655440000",
+    "disconnected_at": "2024-10-08T07:03:34Z"
+  },
+  "action": "integration.disconnected",
+  "created": "2024-10-08T07:03:34Z",
+  "version": "v2"
+}
+{
+  "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+  "data": {
+    "user": "550e8400-e29b-41d4-a716-446655440000",
+    "disconnected_at": "2024-10-08T07:03:34Z"
+  },
+  "action": "integration.disconnected",
+  "created": "2024-10-08T07:03:34Z",
+  "version": "v2"
+}
+https://developer.hospitable.com/docs/public-api-docs/b3bacad709e30-receive-property-post
+post
+Property
+📘 Includes:
+
+listings (required: listing:read scope)
+details
+bookings
+NOTE: Includes are added automatically based on the scopes that are enabled for your integration
+
+This property webhook will be sent whenever a property is created or updated, this includes when its contained listings change as a result of a merge
+
+Request
+Body
+
+application/json
+
+application/json
+id
+string<uuid>
+data
+PropertyFull
+Example:
+{"id":"550e8400-e29b-41d4-a716-446655440000","name":"Relaxing Villa near the sea","public_name":"Relaxing Villa near the sea","picture":"https://cdn2.thecatapi.com/images/d9m.jpg","address":{"number":"32","street":"Senefelderplatz","city":"Berlin","state":"string","country":"DE","postcode":"10405","coordinates":{"latitude":50.8514786,"longitude":4.364562},"display":"37a Senefelderplatz, 10405 Berlin, DE"},"timezone":"+0200","listed":true,"amenities":["shower"],"description":"Example Description","summary":"Example Summary","check-in":"12:30","check-out":"12:30","currency":"EUR","capacity":{"max":2,"bedrooms":1,"beds":1,"bathrooms":1.5},"room_details":[{"type":"king_size","quantity":1}],"house_rules":{"pets_allowed":true,"smoking_allowed":false,"events_allowed":null},"listings":[{"platform":"airbnb","platform_id":"24488","platform_user_id":"string","co_hosts":[{"user_id":"12345","channel_name":"Co-hosted channel"}],"platform_name":"string","platform_email":"string"}],"ical_imports":[{"uuid":"550e8400-e29b-41d4-a716-446655440000","url":"https://example.com/calendar.ics","name":"Vacation Rental Calendar","host":{"first_name":"John","last_name":"Doe"},"last_sync_at":"2019-01-01T12:00:00Z","disconnected_at":"2019-01-01T12:00:00Z"}],"tags":["Tag"],"property_type":"string","room_type":"string","calendar_restricted":true,"parent_child":{"type":"parent","parent":"550e8400-e29b-41d4-a716-446655440000","children":["550e8400-e29b-41d4-a716-446655440000"],"siblings":["550e8400-e29b-41d4-a716-446655440000"]}}
+id
+string
+required
+Example:
+550e8400-e29b-41d4-a716-446655440000
+name
+string
+required
+Example:
+Relaxing Villa near the sea
+public_name
+string
+required
+Example:
+Relaxing Villa near the sea
+picture
+string
+required
+Example:
+https://cdn2.thecatapi.com/images/d9m.jpg
+address
+object
+required
+timezone
+string
+required
+Example:
++0200
+listed
+boolean
+required
+Default:
+true
+Example:
+true
+amenities
+array[string]
+required
+description
+string
+required
+Example:
+Example Description
+summary
+string
+required
+Example:
+Example Summary
+check-in
+string
+required
+The default checkin time for the property.
+
+Example:
+12:30
+check-out
+string
+required
+The default checkout time for the property.
+
+Example:
+12:30
+currency
+string
+required
+Example:
+EUR
+capacity
+object
+required
+room_details
+array[object]
+required
+house_rules
+object
+required
+listings
+array[object]
+required
+ical_imports
+array[object]
+iCal import feeds for this property. Only included when 'listings' is included.
+
+tags
+array[string]
+required
+property_type
+string
+required
+room_type
+string
+required
+calendar_restricted
+boolean
+required
+If a property is calendar_restricted its calendar will not be able to be updated using the Update Property Calendar endpoint
+
+parent_child
+object or null
+If the property is in a Parent/Child setup then this will contain all the information about that relationship.
+
+bookings
+Property_bookings
+Example:
+{"booking_policies":{"cancellation":["100% refund 24 hours after booking accepted, if booking is requested at least 24 hours before check-in"],"payment_terms":{"status":"manual","description":["20% due at booking","30% due 45 days before check-in","50% due 10 days before check-in"],"grace_period":"48 hours"}},"listing_markups":[{"platform":"booking","type":"percent","value":15}],"security_deposits":[{"name":"base","type":"fixed","value":{"amount":12345,"formatted":"$123.45"}},{"name":"direct","type":"fixed","value":{"amount":12345,"formatted":"$123.45"}}],"occupancy_based_rules":{"guests_included":1,"extra_guest_fee":{"type":"fixed","value":{"amount":12345,"formatted":"$123.45"}},"pet_fee":{"type":"fixed","value":{"amount":12345,"formatted":"$123.45"}}},"fees":[{"name":"cleaning_fee","type":"fixed","value":{"amount":12345,"formatted":"$123.45"}},{"name":"managment_fee","type":"percent","value":10}],"discounts":[{"name":"weekly","type":"percent","value":10},{"name":"monthly","type":"percent","value":10}],"site_urls":["https://yoursite.hospitable.rentals/property/your-property"]}
+details
+Property_details
+user
+user
+action
+string
+Allowed values:
+property.created
+property.changed
+triggers
+array[string]
+Allowed values:
+name
+picture
+address
+amenities
+description
+summary
+checkin_checkout
+currency
+capacity
+house_rules
+listings
+property_type
+room_type
+calendar_restricted
+details
+parent_child
+test
+created
+string<date-time>
+Example:
+2024-10-08T07:03:34Z
+version
+string
+Example:
+v2
+Responses
+200
+Return a 200 status to indicate that the data was received successfully
+
+{
+  "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Relaxing Villa near the sea",
+    "public_name": "Relaxing Villa near the sea",
+    "picture": "https://cdn2.thecatapi.com/images/d9m.jpg",
+    "address": {
+      "number": "32",
+      "street": "Senefelderplatz",
+      "city": "Berlin",
+      "state": "string",
+      "country": "DE",
+      "postcode": "10405",
+      "coordinates": {
+        "latitude": 50.8514786,
+        "longitude": 4.364562
+      },
+      "display": "37a Senefelderplatz, 10405 Berlin, DE"
+    },
+    "timezone": "+0200",
+    "listed": true,
+    "amenities": [
+      "shower"
+    ],
+    "description": "Example Description",
+    "summary": "Example Summary",
+    "check-in": "12:30",
+    "check-out": "12:30",
+    "currency": "EUR",
+    "capacity": {
+      "max": 2,
+      "bedrooms": 1,
+      "beds": 1,
+      "bathrooms": 1.5
+    },
+    "room_details": [
+      {
+        "type": "king_size",
+        "quantity": 1
+      }
+    ],
+    "house_rules": {
+      "pets_allowed": true,
+      "smoking_allowed": false,
+      "events_allowed": null
+    },
+    "listings": [
+      {
+        "platform": "airbnb",
+        "platform_id": "24488",
+        "platform_user_id": "string",
+        "co_hosts": [
+          {
+            "user_id": "12345",
+            "channel_name": "Co-hosted channel"
+          }
+        ],
+        "platform_name": "string",
+        "platform_email": "string"
+      }
+    ],
+    "ical_imports": [
+      {
+        "uuid": "550e8400-e29b-41d4-a716-446655440000",
+        "url": "https://example.com/calendar.ics",
+        "name": "Vacation Rental Calendar",
+        "host": {
+          "first_name": "John",
+          "last_name": "Doe"
+        },
+        "last_sync_at": "2019-01-01T12:00:00Z",
+        "disconnected_at": "2019-01-01T12:00:00Z"
+      }
+    ],
+    "tags": [
+      "Tag"
+    ],
+    "property_type": "string",
+    "room_type": "string",
+    "calendar_restricted": true,
+    "parent_child": {
+      "type": "parent",
+      "parent": "550e8400-e29b-41d4-a716-446655440000",
+      "children": [
+        "550e8400-e29b-41d4-a716-446655440000"
+      ],
+      "siblings": [
+        "550e8400-e29b-41d4-a716-446655440000"
+      ]
+    },
+    "bookings": {
+      "booking_policies": {
+        "cancellation": [
+          "100% refund 24 hours after booking accepted, if booking is requested at least 24 hours before check-in"
+        ],
+        "payment_terms": {
+          "status": "manual",
+          "description": [
+            "20% due at booking",
+            "30% due 45 days before check-in",
+            "50% due 10 days before check-in"
+          ],
+          "grace_period": "48 hours"
+        }
+      },
+      "listing_markups": [
+        {
+          "platform": "booking",
+          "type": "percent",
+          "value": 15
+        }
+      ],
+      "security_deposits": [
+        {
+          "name": "base",
+          "type": "fixed",
+          "value": {
+            "amount": 12345,
+            "formatted": "$123.45"
+          }
+        },
+        {
+          "name": "direct",
+          "type": "fixed",
+          "value": {
+            "amount": 12345,
+            "formatted": "$123.45"
+          }
+        }
+      ],
+      "occupancy_based_rules": {
+        "guests_included": 1,
+        "extra_guest_fee": {
+          "type": "fixed",
+          "value": {
+            "amount": 12345,
+            "formatted": "$123.45"
+          }
+        },
+        "pet_fee": {
+          "type": "fixed",
+          "value": {
+            "amount": 12345,
+            "formatted": "$123.45"
+          }
+        }
+      },
+      "fees": [
+        {
+          "name": "cleaning_fee",
+          "type": "fixed",
+          "value": {
+            "amount": 12345,
+            "formatted": "$123.45"
+          }
+        },
+        {
+          "name": "managment_fee",
+          "type": "percent",
+          "value": 10
+        }
+      ],
+      "discounts": [
+        {
+          "name": "weekly",
+          "type": "percent",
+          "value": 10
+        },
+        {
+          "name": "monthly",
+          "type": "percent",
+          "value": 10
+        }
+      ],
+      "site_urls": [
+        "https://yoursite.hospitable.rentals/property/your-property"
+      ]
+    },
+    "details": {
+      "space_overview": "string",
+      "guest_access": "string",
+      "house_manual": "string",
+      "other_details": "string",
+      "additional_rules": "string",
+      "neighborhood_description": "string",
+      "getting_around": "string",
+      "wifi_name": "string",
+      "wifi_password": "string"
+    },
+    "user": {
+      "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+      "email": "user@example.com",
+      "name": "string"
+    }
+  },
+  "action": "property.created",
+  "triggers": [
+    "name"
+  ],
+  "created": "2024-10-08T07:03:34Z",
+  "version": "v2"
+}
+{
+  "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Relaxing Villa near the sea",
+    "public_name": "Relaxing Villa near the sea",
+    "picture": "https://cdn2.thecatapi.com/images/d9m.jpg",
+    "address": {
+      "number": "32",
+      "street": "Senefelderplatz",
+      "city": "Berlin",
+      "state": "string",
+      "country": "DE",
+      "postcode": "10405",
+      "coordinates": {
+        "latitude": 50.8514786,
+        "longitude": 4.364562
+      },
+      "display": "37a Senefelderplatz, 10405 Berlin, DE"
+    },
+    "timezone": "+0200",
+    "listed": true,
+    "amenities": [
+      "shower"
+    ],
+    "description": "Example Description",
+    "summary": "Example Summary",
+    "check-in": "12:30",
+    "check-out": "12:30",
+    "currency": "EUR",
+    "capacity": {
+      "max": 2,
+      "bedrooms": 1,
+      "beds": 1,
+      "bathrooms": 1.5
+    },
+    "room_details": [
+      {
+        "type": "king_size",
+        "quantity": 1
+      }
+    ],
+    "house_rules": {
+      "pets_allowed": true,
+      "smoking_allowed": false,
+      "events_allowed": null
+    },
+    "listings": [
+      {
+        "platform": "airbnb",
+        "platform_id": "24488",
+        "platform_user_id": "string",
+        "co_hosts": [
+          {
+            "user_id": "12345",
+            "channel_name": "Co-hosted channel"
+          }
+        ],
+        "platform_name": "string",
+        "platform_email": "string"
+      }
+    ],
+    "ical_imports": [
+      {
+        "uuid": "550e8400-e29b-41d4-a716-446655440000",
+        "url": "https://example.com/calendar.ics",
+        "name": "Vacation Rental Calendar",
+        "host": {
+          "first_name": "John",
+          "last_name": "Doe"
+        },
+        "last_sync_at": "2019-01-01T12:00:00Z",
+        "disconnected_at": "2019-01-01T12:00:00Z"
+      }
+    ],
+    "tags": [
+      "Tag"
+    ],
+    "property_type": "string",
+    "room_type": "string",
+    "calendar_restricted": true,
+    "parent_child": {
+      "type": "parent",
+      "parent": "550e8400-e29b-41d4-a716-446655440000",
+      "children": [
+        "550e8400-e29b-41d4-a716-446655440000"
+      ],
+      "siblings": [
+        "550e8400-e29b-41d4-a716-446655440000"
+      ]
+    },
+    "bookings": {
+      "booking_policies": {
+        "cancellation": [
+          "100% refund 24 hours after booking accepted, if booking is requested at least 24 hours before check-in"
+        ],
+        "payment_terms": {
+          "status": "manual",
+          "description": [
+            "20% due at booking",
+            "30% due 45 days before check-in",
+            "50% due 10 days before check-in"
+          ],
+          "grace_period": "48 hours"
+        }
+      },
+      "listing_markups": [
+        {
+          "platform": "booking",
+          "type": "percent",
+          "value": 15
+        }
+      ],
+      "security_deposits": [
+        {
+          "name": "base",
+          "type": "fixed",
+          "value": {
+            "amount": 12345,
+            "formatted": "$123.45"
+          }
+        },
+        {
+          "name": "direct",
+          "type": "fixed",
+          "value": {
+            "amount": 12345,
+            "formatted": "$123.45"
+          }
+        }
+      ],
+      "occupancy_based_rules": {
+        "guests_included": 1,
+        "extra_guest_fee": {
+          "type": "fixed",
+          "value": {
+            "amount": 12345,
+            "formatted": "$123.45"
+          }
+        },
+        "pet_fee": {
+          "type": "fixed",
+          "value": {
+            "amount": 12345,
+            "formatted": "$123.45"
+          }
+        }
+      },
+      "fees": [
+        {
+          "name": "cleaning_fee",
+          "type": "fixed",
+          "value": {
+            "amount": 12345,
+            "formatted": "$123.45"
+          }
+        
+https://developer.hospitable.com/docs/public-api-docs/55160f634b662-receive-property-deleted-post
+post
+Property Deleted
+This property webhook will be sent whenever a property is deleted.
+
+Request
+Body
+
+application/json
+
+application/json
+id
+string<uuid>
+data
+object
+id
+string<uuid>
+Example:
+550e8400-e29b-41d4-a716-446655440000
+action
+any
+Allowed value:
+property.deleted
+created
+string<date-time>
+Example:
+2024-10-08T07:03:34Z
+version
+string
+Example:
+v2
+Responses
+200
+Return a 200 status to indicate that the data was received successfully
+
+{
+  "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000"
+  },
+  "action": "property.deleted",
+  "created": "2024-10-08T07:03:34Z",
+  "version": "v2"
+}
+{
+  "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000"
+  },
+  "action": "property.deleted",
+  "created": "2024-10-08T07:03:34Z",
+  "version": "v2"
+}
+https://developer.hospitable.com/docs/public-api-docs/b15f690088a43-receive-property-merged-post
+post
+Property Merged
+This webhook will be sent when a property is merged with another that results in one of the properties being deleted. It can be used to map any existing property id's to the new property id.
+
+We will also send a property.changed webhook for the new property as its listings will have been updated.
+
+We will not send a property.deleted webhook for the old property as it can be handled with this webhook.
+
+Request
+Body
+
+application/json
+
+application/json
+id
+string<uuid>
+data
+object
+previous_id
+string<uuid>
+Example:
+550e8400-e29b-41d4-a716-446655440000
+new_id
+string<uuid>
+Example:
+550e8400-e29b-41d4-a716-446655440000
+action
+any
+Allowed value:
+property.merged
+created
+string<date-time>
+Example:
+2024-10-08T07:03:34Z
+version
+string
+Example:
+v2
+Responses
+200
+Return a 200 status to indicate that the data was received successfully
+
+{
+  "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+  "data": {
+    "previous_id": "550e8400-e29b-41d4-a716-446655440000",
+    "new_id": "550e8400-e29b-41d4-a716-446655440000"
+  },
+  "action": "property.merged",
+  "created": "2024-10-08T07:03:34Z",
+  "version": "v2"
+}
+{
+  "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+  "data": {
+    "previous_id": "550e8400-e29b-41d4-a716-446655440000",
+    "new_id": "550e8400-e29b-41d4-a716-446655440000"
+  },
+  "action": "property.merged",
+  "created": "2024-10-08T07:03:34Z",
+  
+https://developer.hospitable.com/docs/public-api-docs/d4fc1ec0f3959-receive-message-post
+post
+Message
+This webhook will be sent when a new message is created in Hospitable. We will not send messages older than 12 hours, to retrieve historic messages when a new channel is connected please use the messages API.
+
+Request
+Body
+
+application/json
+
+application/json
+id
+string<uuid>
+data
+Message
+Message
+action
+any
+Allowed value:
+message.created
+created
+string<date-time>
+Example:
+2024-10-08T07:03:34Z
+version
+string
+Example:
+v2
+Responses
+200
+Return a 200 status to indicate that the data was received successfully
+
+{
+  "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+  "data": {
+    "": {
+      "platform": "airbnb",
+      "platform_id": 0,
+      "conversation_id": "becd1474-ccd1-40bf-9ce8-04456bfa338d",
+      "reservation_id": "becd1474-ccd1-40bf-9ce8-04456bfa338d",
+      "content_type": "text/plain",
+      "body": "Hello, there.",
+      "attachments": [
+        {
+          "type": "image",
+          "url": "The image location URL"
+        }
+      ],
+      "sender_type": "host",
+      "sender_role": "host|null",
+      "sender": {
+        "first_name": "Jane",
+        "full_name": "Jane Doe",
+        "locale": "en",
+        "picture_url": "https://a0.muscache.com/im/pictures/user/f391da23-c76e-4728-a9f2-25cc139a13cc.jpg?aki_policy=profile_x_medium",
+        "thumbnail_url": "https://a0.muscache.com/im/pictures/user/f391da23-c76e-4728-a9f2-25cc139a13cc.jpg?aki_policy=profile_x_medium",
+        "location": null
+      },
+      "user": {
+        "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+        "email": "user@example.com",
+        "name": "string"
+      },
+      "created_at": "2019-07-29T19:01:14Z",
+      "source": "public_api",
+      "integration": "string",
+      "sent_reference_id": "string",
+      "reactions": [
+        {
+          "emoji": "string",
+          "sender_type": "host",
+          "sender": {
+            "first_name": "Jane",
+            "full_name": "Jane Doe",
+            "locale": "en",
+            "picture_url": "https://a0.muscache.com/im/pictures/user/f391da23-c76e-4728-a9f2-25cc139a13cc.jpg?aki_policy=profile_x_medium",
+            "thumbnail_url": "https://a0.muscache.com/im/pictures/user/f391da23-c76e-4728-a9f2-25cc139a13cc.jpg?aki_policy=profile_x_medium",
+            "location": null
+          },
+          "reacted_at": "2019-08-24T14:15:22Z"
+        }
+      ],
+      "property": {
+        "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+        "name": "Relaxing Villa near the sea",
+        "public_name": "Relaxing Villa near the sea"
+      },
+      "listing": {
+        "platform": "airbnb",
+        "platform_id": "24488"
+      }
+    }
+  },
+  "action": "message.created",
+  "created": "2024-10-08T07:03:34Z",
+  "version": "v2"
+}
+{
+  "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+  "data": {
+    "": {
+      "platform": "airbnb",
+      "platform_id": 0,
+      "conversation_id": "becd1474-ccd1-40bf-9ce8-04456bfa338d",
+      "reservation_id": "becd1474-ccd1-40bf-9ce8-04456bfa338d",
+      
+https://developer.hospitable.com/docs/public-api-docs/e57621b952db2-receive-message-updated-post
+post
+Message Updated
+This webhook will be sent when a message is updated in Hospitable.
+
+Request
+Body
+
+application/json
+
+application/json
+id
+string<uuid>
+data
+Message
+platform
+string
+Example:
+airbnb
+platform_id
+integer
+Default:
+0
+Example:
+1130024
+conversation_id
+string
+Example:
+becd1474-ccd1-40bf-9ce8-04456bfa338d
+reservation_id
+stringnull
+
+any of: string
+content_type
+string
+Example:
+text/plain
+body
+string
+Example:
+Hello, there.
+attachments
+array[object]
+sender_type
+string
+Allowed values:
+host
+guest
+Example:
+host|guest
+sender_role
+string
+deprecated
+Example:
+host|null
+sender
+sender
+user
+object
+created_at
+string
+Example:
+2019-07-29T19:01:14Z
+source
+string
+The source of the message:Show all...
+
+Allowed values:
+public_api
+platform
+AI
+automated
+hospitable
+integration
+string or null
+Personal Access Token only!Show all...
+
+sent_reference_id
+string or null
+The message identifier provided if the message was sent using on of the Send Message endpoints.
+
+reactions
+array[object]
+action
+any
+Allowed value:
+message.updated
+triggers
+array
+Allowed value:
+reaction_added
+created
+string<date-time>
+Example:
+2024-10-08T07:03:34Z
+version
+string
+Example:
+v2
+Responses
+200
+Return a 200 status to indicate that the data was received successfully
+
+{
+  "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+  "data": {
+    "platform": "airbnb",
+    "platform_id": 0,
+    "conversation_id": "becd1474-ccd1-40bf-9ce8-04456bfa338d",
+    "reservation_id": "becd1474-ccd1-40bf-9ce8-04456bfa338d",
+    "content_type": "text/plain",
+    "body": "Hello, there.",
+    "attachments": [
+      {
+        "type": "image",
+        "url": "The image location URL"
+      }
+    ],
+    "sender_type": "host",
+    "sender_role": "host|null",
+    "sender": {
+      "first_name": "Jane",
+      "full_name": "Jane Doe",
+      "locale": "en",
+      "picture_url": "https://a0.muscache.com/im/pictures/user/f391da23-c76e-4728-a9f2-25cc139a13cc.jpg?aki_policy=profile_x_medium",
+      "thumbnail_url": "https://a0.muscache.com/im/pictures/user/f391da23-c76e-4728-a9f2-25cc139a13cc.jpg?aki_policy=profile_x_medium",
+      "location": null
+    },
+    "user": {
+      "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+      "email": "user@example.com",
+      "name": "string"
+    },
+    "created_at": "2019-07-29T19:01:14Z",
+    "source": "public_api",
+    "integration": "string",
+    "sent_reference_id": "string",
+    "reactions": [
+      {
+        "emoji": "string",
+        "sender_type": "host",
+        "sender": {
+          "first_name": "Jane",
+          "full_name": "Jane Doe",
+          "locale": "en",
+          "picture_url": "https://a0.muscache.com/im/pictures/user/f391da23-c76e-4728-a9f2-25cc139a13cc.jpg?aki_policy=profile_x_medium",
+          "thumbnail_url": "https://a0.muscache.com/im/pictures/user/f391da23-c76e-4728-a9f2-25cc139a13cc.jpg?aki_policy=profile_x_medium",
+          "location": null
+        },
+        "reacted_at": "2019-08-24T14:15:22Z"
+      }
+    ]
+  },
+  "action": "message.updated",
+  "triggers": [
+    "reaction_added"
+  ],
+  "created": "2024-10-08T07:03:34Z",
+  "version": "v2"
+}
+{
+  "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+  "data": {
+    "platform": "airbnb",
+    "platform_id": 0,
+    "conversation_id": "becd1474-ccd1-40bf-9ce8-04456bfa338d",
+    "reservation_id": "becd1474-ccd1-40bf-9ce8-04456bfa338d",
+    "content_type": "text/plain",
+    
+https://developer.hospitable.com/docs/public-api-docs/284f6fd0ef513-receive-review-post
+post
+Review
+This webhook will be sent when a new review is received.
+
+Currently, we source review data from Airbnb and our own direct bookings.
+
+📘 Includes:
+
+listing (required: listings:read scope)
+property (required: property:read scope)
+NOTE: Includes are added automatically based on the scopes that are enabled for your integration.
+
+Request
+Body
+
+application/json
+
+application/json
+id
+string<uuid>
+data
+Review
+id
+string<uuid>
+required
+Example:
+550e8400-e29b-41d4-a716-446655440000
+platform
+string
+required
+Allowed values:
+airbnb
+direct
+Example:
+airbnb
+public
+object
+required
+private
+object
+required
+responded_at
+string<date-time>
+reviewed_at
+string<date-time>
+Example:
+2024-03-19T10:00:00Z
+can_respond
+boolean
+guest
+object
+reservation
+object
+property
+object
+listing
+object
+action
+any
+Allowed value:
+review.created
+created
+string<date-time>
+Example:
+2024-10-08T07:03:34Z
+version
+string
+Example:
+v2
+Responses
+200
+Return a 200 status to indicate that the data was received successfully
+
+{
+  "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "platform": "airbnb",
+    "public": {
+      "rating": 1,
+      "review": "Great place we will be back!",
+      "response": "So happy you enjoyed it so much!"
+    },
+    "private": {
+      "feedback": "downstairs was a bit cold.",
+      "detailed_ratings": [
+        {
+          "type": "cleanliness",
+          "rating": 1,
+          "comment": "The cabin was cozy and comfy."
+        }
+      ]
+    },
+    "responded_at": "2019-08-24T14:15:22Z",
+    "reviewed_at": "2024-03-19T10:00:00Z",
+    "can_respond": true,
+    "guest": {
+      "first_name": "string",
+      "last_name": "string",
+      "language": "string"
+    },
+    "reservation": {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "code": "string",
+      "check_in": "2019-08-24T14:15:22Z",
+      "check_out": "2019-08-24T14:15:22Z"
+    },
+    "property": {
+      "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+      "name": "string",
+      "public_name": "string"
+    },
+    "listing": {
+      "platform": "airbnb",
+      "platform_id": "string"
+    }
+  },
+  "action": "review.created",
+  "created": "2024-10-08T07:03:34Z",
+  "version": "v2"
+}
+{
+  "id": "497f6eca-6276-4993-bfeb-53cbbbba6f08",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "platform": "airbnb",
+    "public": {
+      "rating": 1,
+      "review": "Great place we will be back!",
+      
