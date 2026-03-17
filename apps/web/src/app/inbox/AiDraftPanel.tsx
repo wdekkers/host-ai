@@ -87,19 +87,18 @@ export function AiDraftPanel({
       // Detect learnings async
       // Spec §5.1: fire detect if extraContext OR chips were used
       if ((extraContext.trim() || activeChips.length > 0) && propertyId) {
-        const t = await getToken();
         void fetch(`/api/properties/${propertyId}/memory/detect`, {
           method: 'POST',
           headers: {
             'content-type': 'application/json',
-            ...(t ? { Authorization: `Bearer ${t}` } : {}),
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({ hintText: extraContext, chips: activeChips, reservationId }),
         })
           .then((r) => r.json() as Promise<{ facts: Array<{ text: string; type: string }> }>)
           .then((data) => {
-            const property_facts = data.facts?.filter((f) => f.type === 'property_fact') ?? [];
-            if (property_facts.length > 0) setPendingFacts(data.facts);
+            const propertyFacts = data.facts?.filter((f) => f.type === 'property_fact') ?? [];
+            if (propertyFacts.length > 0) setPendingFacts(data.facts);
           });
       }
 
