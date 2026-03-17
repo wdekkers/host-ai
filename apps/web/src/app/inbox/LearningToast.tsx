@@ -25,12 +25,13 @@ export function LearningToast({
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editText, setEditText] = useState('');
   const [saving, setSaving] = useState(false);
+  const [savedCount, setSavedCount] = useState(0);
 
   async function saveAll() {
     setSaving(true);
     try {
       const token = await getToken();
-      await Promise.all(
+      const responses = await Promise.all(
         propertyFacts.map((f) =>
           fetch(`/api/properties/${propertyId}/memory`, {
             method: 'POST',
@@ -46,7 +47,13 @@ export function LearningToast({
           }),
         ),
       );
+      const anyFailed = responses.some((r) => !r.ok);
+      if (anyFailed) {
+        console.error('Some memory saves failed');
+      }
       onSaved();
+    } catch {
+      console.error('Failed to save memory facts');
     } finally {
       setSaving(false);
     }
@@ -56,7 +63,7 @@ export function LearningToast({
     setSaving(true);
     try {
       const token = await getToken();
-      await fetch(`/api/properties/${propertyId}/memory`, {
+      const response = await fetch(`/api/properties/${propertyId}/memory`, {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
@@ -64,8 +71,15 @@ export function LearningToast({
         },
         body: JSON.stringify({ fact: text, source: 'learned', sourceReservationId: reservationId }),
       });
+      if (!response.ok) {
+        console.error('Failed to save memory fact');
+      }
+      const newCount = savedCount + 1;
+      setSavedCount(newCount);
       setEditingIdx(null);
-      if (propertyFacts.length === 1) onSaved();
+      if (newCount >= propertyFacts.length) onSaved();
+    } catch {
+      console.error('Failed to save memory fact');
     } finally {
       setSaving(false);
     }
@@ -93,7 +107,7 @@ export function LearningToast({
       <div className="flex flex-col gap-1.5 mb-3">
         {propertyFacts.map((f, i) => (
           <div
-            key={f.text}
+            key={i}
             className="flex items-start gap-2 rounded-lg px-2.5 py-2"
             style={{ background: '#071428', border: '1px solid #1a3a5c' }}
           >
@@ -148,9 +162,9 @@ export function LearningToast({
           </div>
         ))}
 
-        {situational.map((f) => (
+        {situational.map((f, i) => (
           <div
-            key={`s-${f.text}`}
+            key={i}
             className="flex items-start gap-2 rounded-lg px-2.5 py-2 opacity-40"
             style={{ background: '#071428', border: '1px solid #1a3a5c' }}
           >
