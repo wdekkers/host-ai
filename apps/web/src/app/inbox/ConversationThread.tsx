@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@clerk/nextjs';
+import { AiDraftPanel } from './AiDraftPanel';
 
 type Message = {
   id: string;
@@ -222,14 +223,18 @@ export function ConversationThread({
         )}
       </div>
 
-      {/* AI Draft Panel placeholder — will be implemented in Task 9 */}
-      {reservation && unrepliedMessage && (
-        <div
-          className="flex-shrink-0 border-t px-5 py-3"
-          style={{ borderColor: '#1a3a5c', color: '#334155', fontSize: '11px' }}
-        >
-          AI Draft Panel (Task 9)
-        </div>
+      {reservation && (
+        <AiDraftPanel
+          reservationId={reservationId}
+          propertyId={reservation.propertyId}
+          unrepliedMessage={unrepliedMessage}
+          onSent={() => {
+            void fetchMessages().then((data) => {
+              setMessages(data.messages);
+              setHasMore(data.hasMore);
+            });
+          }}
+        />
       )}
     </div>
   );
