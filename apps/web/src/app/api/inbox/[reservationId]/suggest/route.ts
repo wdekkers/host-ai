@@ -11,10 +11,15 @@ type Params = { params: Promise<{ reservationId: string }> };
 
 export const POST = withPermission(
   'dashboard.read',
-  async (request: Request, { params }: Params) => {
+  async (request: Request, { params }: Params, authContext) => {
     try {
       const { reservationId } = await params;
-      const { messageId } = (await request.json()) as { messageId: string };
+      const body = (await request.json()) as {
+        messageId: string;
+        chips?: string[];
+        extraContext?: string;
+      };
+      const { messageId, chips, extraContext } = body;
 
       const [reservation] = await db
         .select()
@@ -35,13 +40,18 @@ export const POST = withPermission(
         [reservation.guestFirstName, reservation.guestLastName].filter(Boolean).join(' ') ||
         'the guest';
 
+      const organizationId = authContext.orgId;
+
       const suggestion = await generateReplySuggestion({
         guestName,
         propertyName: reservation.propertyName ?? 'the property',
         propertyId: reservation.propertyId ?? null,
+        organizationId,
         checkIn: reservation.checkIn,
         checkOut: reservation.checkOut,
         messageBody: message.body,
+        chips,
+        extraContext,
       });
 
       if (!suggestion) {
