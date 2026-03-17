@@ -24,13 +24,15 @@ export const GET = withPermission('dashboard.read', async (_req: Request, _p, au
 export const PUT = withPermission('ops.write', async (request: Request, _p, authContext) => {
   try {
     const organizationId = authContext.orgId;
-    const body = (await request.json()) as {
-      tone?: string;
-      emojiUse?: string;
-      responseLength?: string;
-      escalationRules?: string;
-      specialInstructions?: string;
-    };
+    const { tone, emojiUse, responseLength, escalationRules, specialInstructions } =
+      (await request.json()) as {
+        tone?: string;
+        emojiUse?: string;
+        responseLength?: string;
+        escalationRules?: string;
+        specialInstructions?: string;
+      };
+    const sanitised = { tone, emojiUse, responseLength, escalationRules, specialInstructions };
 
     const [existing] = await db
       .select({ id: agentConfigs.id })
@@ -42,7 +44,7 @@ export const PUT = withPermission('ops.write', async (request: Request, _p, auth
     if (existing) {
       const [updated] = await db
         .update(agentConfigs)
-        .set({ ...body, updatedAt: now })
+        .set({ ...sanitised, updatedAt: now })
         .where(eq(agentConfigs.id, existing.id))
         .returning();
       return NextResponse.json({ config: updated });
@@ -53,7 +55,7 @@ export const PUT = withPermission('ops.write', async (request: Request, _p, auth
           id: uuidv4(),
           organizationId,
           scope: 'global',
-          ...body,
+          ...sanitised,
           createdAt: now,
           updatedAt: now,
         })

@@ -39,13 +39,15 @@ export const PUT = withPermission(
     try {
       const { id: propertyId } = await params;
       const organizationId = authContext.orgId;
-      const body = (await request.json()) as {
-        tone?: string;
-        emojiUse?: string;
-        responseLength?: string;
-        escalationRules?: string;
-        specialInstructions?: string;
-      };
+      const { tone, emojiUse, responseLength, escalationRules, specialInstructions } =
+        (await request.json()) as {
+          tone?: string;
+          emojiUse?: string;
+          responseLength?: string;
+          escalationRules?: string;
+          specialInstructions?: string;
+        };
+      const sanitised = { tone, emojiUse, responseLength, escalationRules, specialInstructions };
 
       const [existing] = await db
         .select({ id: agentConfigs.id })
@@ -63,7 +65,7 @@ export const PUT = withPermission(
       if (existing) {
         const [updated] = await db
           .update(agentConfigs)
-          .set({ ...body, updatedAt: now })
+          .set({ ...sanitised, updatedAt: now })
           .where(eq(agentConfigs.id, existing.id))
           .returning();
         return NextResponse.json({ config: updated });
@@ -75,7 +77,7 @@ export const PUT = withPermission(
             organizationId,
             scope: 'property',
             propertyId,
-            ...body,
+            ...sanitised,
             createdAt: now,
             updatedAt: now,
           })
