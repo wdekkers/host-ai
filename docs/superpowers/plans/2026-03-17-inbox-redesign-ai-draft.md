@@ -1702,6 +1702,8 @@ export function ConversationThread({
 
 - [ ] **Step 5: Update the existing messages API to return reservation info**
 
+**Note:** The existing `messages/route.ts` already has the `before` cursor parameter and `hasMore` logic implemented. Only the `reservation` join and return value need to be added.
+
 Open `apps/web/src/app/api/inbox/[reservationId]/messages/route.ts` and add `reservation` to the response. Check its current shape and add:
 
 ```typescript
@@ -1846,7 +1848,8 @@ export function AiDraftPanel({
       await navigator.clipboard.writeText(body).catch(() => {});
 
       // Detect learnings async
-      if (extraContext.trim() && propertyId) {
+      // Spec §5.1: fire detect if extraContext OR chips were used
+      if ((extraContext.trim() || activeChips.length > 0) && propertyId) {
         const t = await getToken();
         void fetch(`/api/properties/${propertyId}/memory/detect`, {
           method: 'POST',
@@ -2213,12 +2216,22 @@ export function LearningToast({
         >
           {saving ? 'Saving…' : '✓ Save to Memory'}
         </button>
+        {/* "Edit first" shortcut: open the first property fact for inline editing before saving */}
+        {propertyFacts.length > 0 && editingIdx === null && (
+          <button
+            onClick={() => { setEditingIdx(0); setEditText(propertyFacts[0].text); }}
+            className="text-xs px-3 py-1.5 rounded-md border"
+            style={{ background: '#0d1f38', borderColor: '#1a3a5c', color: '#94a3b8' }}
+          >
+            Edit first
+          </button>
+        )}
         <button
           onClick={onDismiss}
-          className="text-xs px-3 py-1.5 rounded-md border"
-          style={{ background: '#0d1f38', borderColor: '#1a3a5c', color: '#94a3b8' }}
+          className="text-xs px-2 py-1.5 rounded-md border"
+          style={{ background: '#0d1f38', borderColor: '#1a3a5c', color: '#475569' }}
         >
-          Dismiss
+          ✕
         </button>
       </div>
     </div>
