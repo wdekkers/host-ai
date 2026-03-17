@@ -6,12 +6,15 @@ import { UserButton } from '@clerk/nextjs';
 import { navLinks } from '@/lib/nav-links';
 
 export function NavSidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState<boolean | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem('nav-collapsed');
-    if (stored === 'true') setCollapsed(true);
+    setCollapsed(stored === 'true');
   }, []);
+
+  // Don't render until we've read localStorage (avoids hydration mismatch)
+  if (collapsed === null) return null;
 
   function toggle() {
     const next = !collapsed;
