@@ -40,6 +40,53 @@ function validateKnowledgeScope(
   }
 }
 
+function validateKnowledgeContent(
+  data: {
+    entryType?: KnowledgeEntryType;
+    question?: string | null;
+    answer?: string | null;
+    title?: string | null;
+    body?: string | null;
+  },
+  ctx: z.RefinementCtx,
+) {
+  if (data.entryType === 'faq') {
+    if (!data.question?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'question is required for faq entries',
+        path: ['question'],
+      });
+    }
+
+    if (!data.answer?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'answer is required for faq entries',
+        path: ['answer'],
+      });
+    }
+  }
+
+  if (data.entryType === 'guidebook') {
+    if (!data.title?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'title is required for guidebook entries',
+        path: ['title'],
+      });
+    }
+
+    if (!data.body?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'body is required for guidebook entries',
+        path: ['body'],
+      });
+    }
+  }
+}
+
 export const knowledgeEntrySchema = z.object({
   id: z.string().uuid(),
   organizationId: z.string().min(1),
@@ -75,6 +122,7 @@ export const createKnowledgeEntryInputSchema = z.object({
   slug: z.string().min(1).nullable().optional(),
 }).superRefine((data, ctx) => {
   validateKnowledgeScope(data, ctx);
+  validateKnowledgeContent(data, ctx);
 });
 export type CreateKnowledgeEntryInput = z.infer<typeof createKnowledgeEntryInputSchema>;
 
@@ -92,7 +140,16 @@ export const updateKnowledgeEntryInputSchema = z.object({
   sortOrder: z.number().int().optional(),
   slug: z.string().min(1).nullable().optional(),
 }).superRefine((data, ctx) => {
+  if ('propertyId' in data && data.scope === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'scope is required when updating propertyId',
+      path: ['scope'],
+    });
+  }
+
   validateKnowledgeScope(data, ctx);
+  validateKnowledgeContent(data, ctx);
 });
 export type UpdateKnowledgeEntryInput = z.infer<typeof updateKnowledgeEntryInputSchema>;
 
