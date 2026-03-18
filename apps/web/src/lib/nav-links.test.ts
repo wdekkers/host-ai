@@ -10,3 +10,7 @@ void test('includes Contacts in primary navigation', () => {
 void test('includes Property Checklists in primary navigation', () => {
   assert.equal(navLinks.some((link) => link.href === '/property-checklists' && link.label === 'Property Checklists'), true);
 });
+
+void test('includes SEO Drafts in primary navigation', () => {
+  assert.equal(navLinks.some((link) => link.href === '/seo-drafts' && link.label === 'SEO Drafts'), true);
+});

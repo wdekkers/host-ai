@@ -214,6 +214,135 @@ export const taskAuditEvents = waltSchema.table(
   }),
 );
 
+// --- SEO Draft Pipeline ---
+
+export const seoPipelineRuns = waltSchema.table(
+  'seo_pipeline_runs',
+  {
+    id: uuid('id').primaryKey(),
+    organizationId: text('organization_id').notNull(),
+    marketKey: text('market_key').notNull(),
+    siteKey: text('site_key').notNull(),
+    trigger: text('trigger').notNull().default('manual'),
+    status: text('status').notNull(),
+    createdBy: text('created_by').notNull(),
+    startedAt: timestamp('started_at', { withTimezone: true }).notNull(),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    errorSummary: text('error_summary'),
+    metadata: jsonb('metadata').notNull().default({}),
+  },
+  (table) => ({
+    orgIdx: index('seo_pipeline_runs_organization_id_idx').on(table.organizationId),
+    marketSiteIdx: index('seo_pipeline_runs_market_key_site_key_idx').on(
+      table.marketKey,
+      table.siteKey,
+    ),
+  }),
+);
+
+export const seoEventCandidates = waltSchema.table(
+  'seo_event_candidates',
+  {
+    id: uuid('id').primaryKey(),
+    runId: uuid('run_id')
+      .notNull()
+      .references(() => seoPipelineRuns.id),
+    organizationId: text('organization_id').notNull(),
+    marketKey: text('market_key').notNull(),
+    sourceId: text('source_id').notNull(),
+    sourceUrl: text('source_url').notNull(),
+    sourceDomain: text('source_domain').notNull(),
+    title: text('title').notNull(),
+    venueName: text('venue_name'),
+    city: text('city'),
+    startsAt: timestamp('starts_at', { withTimezone: true }),
+    endsAt: timestamp('ends_at', { withTimezone: true }),
+    summary: text('summary'),
+    sourceSnippet: text('source_snippet'),
+    normalizedHash: text('normalized_hash').notNull(),
+    status: text('status').notNull().default('discovered'),
+    raw: jsonb('raw').notNull(),
+    discoveredAt: timestamp('discovered_at', { withTimezone: true }).notNull(),
+  },
+  (table) => ({
+    uniq: uniqueIndex('seo_event_candidates_org_market_hash_idx').on(
+      table.organizationId,
+      table.marketKey,
+      table.normalizedHash,
+    ),
+  }),
+);
+
+export const seoOpportunities = waltSchema.table(
+  'seo_opportunities',
+  {
+    id: uuid('id').primaryKey(),
+    candidateId: uuid('candidate_id')
+      .notNull()
+      .references(() => seoEventCandidates.id),
+    organizationId: text('organization_id').notNull(),
+    marketKey: text('market_key').notNull(),
+    siteKey: text('site_key').notNull(),
+    targetKeyword: text('target_keyword').notNull(),
+    targetSlug: text('target_slug').notNull(),
+    travelerIntent: text('traveler_intent').notNull(),
+    propertyIds: text('property_ids').array().notNull().default([]),
+    score: integer('score').notNull(),
+    reasons: jsonb('reasons').$type<string[]>().notNull(),
+    status: text('status').notNull().default('queued'),
+    evaluatedAt: timestamp('evaluated_at', { withTimezone: true }).notNull(),
+  },
+  (table) => ({
+    candidateIdx: uniqueIndex('seo_opportunities_candidate_id_idx').on(table.candidateId),
+    orgScoreIdx: index('seo_opportunities_organization_id_score_idx').on(
+      table.organizationId,
+      table.score,
+    ),
+  }),
+);
+
+export const seoDrafts = waltSchema.table(
+  'seo_drafts',
+  {
+    id: uuid('id').primaryKey(),
+    opportunityId: uuid('opportunity_id')
+      .notNull()
+      .references(() => seoOpportunities.id),
+    organizationId: text('organization_id').notNull(),
+    marketKey: text('market_key').notNull(),
+    siteKey: text('site_key').notNull(),
+    status: text('status').notNull().default('generated'),
+    titleTag: text('title_tag').notNull(),
+    metaDescription: text('meta_description').notNull(),
+    slug: text('slug').notNull(),
+    h1: text('h1').notNull(),
+    outline: jsonb('outline').$type<string[]>().notNull(),
+    bodyMarkdown: text('body_markdown').notNull(),
+    faqItems: jsonb('faq_items')
+      .$type<Array<{ question: string; answer: string }>>()
+      .notNull(),
+    ctaText: text('cta_text').notNull(),
+    internalLinks: jsonb('internal_links')
+      .$type<Array<{ href: string; anchor: string }>>()
+      .notNull(),
+    sourceUrls: text('source_urls').array().notNull().default([]),
+    reviewNotes: text('review_notes').array().notNull().default([]),
+    generatedAt: timestamp('generated_at', { withTimezone: true }).notNull(),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    reviewedBy: text('reviewed_by'),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
+  },
+  (table) => ({
+    opportunityIdx: uniqueIndex('seo_drafts_opportunity_id_idx').on(table.opportunityId),
+    orgStatusUpdatedIdx: index('seo_drafts_organization_id_status_updated_at_idx').on(
+      table.organizationId,
+      table.status,
+      table.updatedAt,
+    ),
+    siteSlugIdx: uniqueIndex('seo_drafts_site_key_slug_idx').on(table.siteKey, table.slug),
+  }),
+);
+
 // --- Vendor Messaging Consent ---
 
 export const vendorStatusEnum = waltSchema.enum('vendor_status', [
@@ -301,65 +430,3 @@ export const auditEvents = waltSchema.table('audit_events', {
   metadata: jsonb('metadata').notNull().$type<Record<string, unknown>>(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
 });
-
-// --- Inbox Redesign ---
-
-export const propertyGuidebookEntries = waltSchema.table(
-  'property_guidebook_entries',
-  {
-    id: uuid('id').primaryKey(), // supply via uuidv4() at application layer — no defaultRandom()
-    organizationId: text('organization_id').notNull(),
-    propertyId: text('property_id').notNull(),
-    category: text('category').notNull(),
-    title: text('title').notNull(),
-    description: text('description').notNull(),
-    mediaUrl: text('media_url'),
-    aiUseCount: integer('ai_use_count').notNull().default(0),
-    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
-  },
-  (table) => ({
-    orgIdx: index('property_guidebook_entries_organization_id_idx').on(table.organizationId),
-    propIdx: index('property_guidebook_entries_property_id_idx').on(table.propertyId),
-  }),
-);
-
-// NOTE: property_memory intentionally has NO updatedAt — facts are immutable by design.
-// Editing a fact before saving creates a new row; existing rows are never updated.
-export const propertyMemory = waltSchema.table(
-  'property_memory',
-  {
-    id: uuid('id').primaryKey(), // supply via uuidv4() at application layer — no defaultRandom()
-    organizationId: text('organization_id').notNull(),
-    propertyId: text('property_id').notNull(),
-    fact: text('fact').notNull(),
-    source: text('source').notNull(), // 'learned' | 'manual'
-    sourceReservationId: text('source_reservation_id'),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
-  },
-  (table) => ({
-    orgIdx: index('property_memory_organization_id_idx').on(table.organizationId),
-    propIdx: index('property_memory_property_id_idx').on(table.propertyId),
-  }),
-);
-
-export const agentConfigs = waltSchema.table(
-  'agent_configs',
-  {
-    id: uuid('id').primaryKey(), // supply via uuidv4() at application layer
-    organizationId: text('organization_id').notNull(),
-    scope: text('scope').notNull(), // 'global' | 'property'
-    propertyId: text('property_id'), // null for global scope
-    tone: text('tone'),
-    emojiUse: text('emoji_use'),
-    responseLength: text('response_length'),
-    escalationRules: text('escalation_rules'),
-    specialInstructions: text('special_instructions'),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
-  },
-  (table) => ({
-    orgIdx: index('agent_configs_organization_id_idx').on(table.organizationId),
-  }),
-);

@@ -17,6 +17,18 @@ void test('maps route + method to permission', () => {
   assert.equal(getPermissionForApiRoute('/api/command-center/queue', 'GET'), 'dashboard.read');
   assert.equal(getPermissionForApiRoute('/api/command-center/queue/123', 'PATCH'), 'drafts.write');
   assert.equal(
+    getPermissionForApiRoute('/api/command-center/seo-drafts', 'GET'),
+    'dashboard.read',
+  );
+  assert.equal(
+    getPermissionForApiRoute('/api/command-center/seo-drafts/run', 'POST'),
+    'drafts.write',
+  );
+  assert.equal(
+    getPermissionForApiRoute('/api/command-center/seo-drafts/draft-1', 'PATCH'),
+    'drafts.write',
+  );
+  assert.equal(
     getPermissionForApiRoute('/api/command-center/qa/property:abc', 'POST'),
     'drafts.write',
   );
