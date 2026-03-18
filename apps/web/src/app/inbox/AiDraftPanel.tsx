@@ -34,19 +34,18 @@ export function AiDraftPanel({
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [dismissed, setDismissed] = useState(false);
-  const [aiAssistOpen, setAiAssistOpen] = useState(false);
   const [manualReply, setManualReply] = useState('');
   const [pendingFacts, setPendingFacts] = useState<Array<{ text: string; type: string }>>([]);
 
-  // Auto-generate draft when a new unreplied message appears
+  // Reset state whenever the unreplied message changes (including when it becomes null after a reply is sent)
   useEffect(() => {
-    if (!unrepliedMessage) return;
     setDismissed(false);
-    setAiAssistOpen(false);
     setSuggestion(null);
     setActiveChips([]);
     setExtraContext('');
-    void generate(unrepliedMessage.id, [], '');
+    if (unrepliedMessage) {
+      void generate(unrepliedMessage.id, [], '');
+    }
   }, [unrepliedMessage?.id]); // intentionally omit generate — it's defined inline and stable
 
   // The message id to use for AI generation
@@ -110,7 +109,8 @@ export function AiDraftPanel({
       }
 
       setSuggestion(null);
-      setDismissed(true);
+      setActiveChips([]);
+      setExtraContext('');
       setManualReply('');
       onSent();
     } finally {
@@ -136,14 +136,14 @@ export function AiDraftPanel({
         />
       )}
 
-      {/* Draft section — auto-shown for unreplied messages, or manually opened via AI Assist */}
-      {((unrepliedMessage && !dismissed) || aiAssistOpen) && generateMessageId && (
+      {/* Draft section — always shown when a guest message exists */}
+      {!dismissed && generateMessageId && (
         <div className="px-4 py-3 border-b" style={{ borderColor: '#1a3a5c' }}>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
               <span style={{ color: '#60a5fa', fontSize: '12px' }}>✦</span>
               <span className="text-xs font-semibold" style={{ color: '#93c5fd' }}>
-                {unrepliedMessage && !dismissed ? 'AI Draft' : 'AI Assist'}
+                AI Draft
               </span>
               {loading && (
                 <span className="text-xs" style={{ color: '#334155' }}>
@@ -174,7 +174,6 @@ export function AiDraftPanel({
               <button
                 onClick={() => {
                   setDismissed(true);
-                  setAiAssistOpen(false);
                   setSuggestion(null);
                 }}
                 className="text-xs px-2 py-1.5 rounded-md border"
@@ -185,8 +184,8 @@ export function AiDraftPanel({
             </div>
           </div>
 
-          {/* AI Assist: show context input first if no suggestion yet and no unreplied message */}
-          {aiAssistOpen && !unrepliedMessage && !suggestion && !loading && (
+          {/* No unreplied message: show context input to describe what to compose */}
+          {!unrepliedMessage && !suggestion && !loading && (
             <div className="mb-2">
               <input
                 type="text"
@@ -271,11 +270,10 @@ export function AiDraftPanel({
 
       {/* Manual reply */}
       <div className="px-4 py-3 flex gap-2 items-center">
-        {/* AI Assist toggle — shown when draft section is closed and a guest message exists */}
-        {!aiAssistOpen && (dismissed || !unrepliedMessage) && latestGuestMessage && (
+        {/* Reopen AI panel when dismissed */}
+        {dismissed && latestGuestMessage && (
           <button
             onClick={() => {
-              setAiAssistOpen(true);
               setDismissed(false);
               setSuggestion(null);
               setActiveChips([]);
@@ -283,7 +281,7 @@ export function AiDraftPanel({
             }}
             className="text-xs px-2.5 py-2 rounded-lg border flex-shrink-0"
             style={{ background: '#0d1f38', borderColor: '#1a3a5c', color: '#60a5fa' }}
-            title="Get AI help composing a message"
+            title="Reopen AI Draft"
           >
             ✦
           </button>

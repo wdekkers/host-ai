@@ -19,7 +19,7 @@ export async function generateReplySuggestion({
   organizationId,
   checkIn,
   checkOut,
-  messageBody,
+  conversationHistory,
   chips,
   extraContext,
 }: {
@@ -30,7 +30,7 @@ export async function generateReplySuggestion({
   organizationId: string;
   checkIn: Date | string | null;
   checkOut: Date | string | null;
-  messageBody: string;
+  conversationHistory: Array<{ body: string; senderType: string }>;
   chips?: string[];
   extraContext?: string;
 }): Promise<string | null> {
@@ -55,10 +55,12 @@ export async function generateReplySuggestion({
     if (faqLines) faqContext = `\n\nFAQ:\n${faqLines}`;
   }
 
-  // --- Knowledge: Guidebook (keyword match) ---
+  // --- Knowledge: Guidebook (keyword match against latest guest message) ---
+  const latestGuestMessage =
+    [...conversationHistory].reverse().find((m) => m.senderType === 'guest')?.body ?? '';
   let guidebookContext = '';
   if (propertyId) {
-    const words = messageBody
+    const words = latestGuestMessage
       .toLowerCase()
       .split(/\W+/)
       .filter((w) => w.length > 3);
@@ -183,13 +185,15 @@ ${chipLines ? `Style modifiers for this reply:\n${chipLines}` : ''}
 ${extraContext ? `IMPORTANT additional instructions for this reply (follow these precisely):\n${extraContext}\n` : ''}
 Reply in the same language as the guest message. Do not start with "Of course" or "Certainly".${faqContext}${guidebookContext}${memoryContext}`;
 
+  const historyMessages = conversationHistory.map((m) => ({
+    role: (m.senderType === 'guest' ? 'user' : 'assistant') as 'user' | 'assistant',
+    content: m.body,
+  }));
+
   const response = await client.chat.completions.create({
     model: 'gpt-4o-mini',
     max_tokens: 500,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: messageBody },
-    ],
+    messages: [{ role: 'system', content: systemPrompt }, ...historyMessages],
   });
 
   return response.choices[0]?.message?.content ?? null;
