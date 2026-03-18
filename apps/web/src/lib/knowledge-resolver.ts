@@ -35,6 +35,7 @@ export type ResolveKnowledgeForPropertyInput = {
   propertyId: string | null;
   channels?: KnowledgeChannel[];
   status?: KnowledgeStatus;
+  maxEntries?: number;
 };
 
 function matchesChannels(entry: KnowledgeEntry, channels?: KnowledgeChannel[]) {
@@ -103,6 +104,7 @@ export async function resolveKnowledgeForProperty({
   propertyId,
   channels,
   status = 'published',
+  maxEntries = 6,
 }: ResolveKnowledgeForPropertyInput): Promise<KnowledgeEntry[]> {
   const [globalEntries, propertyEntries] = await Promise.all([
     listKnowledgeEntriesForScope({
@@ -124,7 +126,8 @@ export async function resolveKnowledgeForProperty({
       : Promise.resolve([]),
   ]);
 
-  return mergeKnowledgeEntries({ globalEntries, propertyEntries });
+  const merged = mergeKnowledgeEntries({ globalEntries, propertyEntries });
+  return merged.slice(0, Math.max(0, maxEntries));
 }
 
 function formatEntry(entry: KnowledgeEntry) {

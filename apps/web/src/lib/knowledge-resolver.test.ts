@@ -154,6 +154,35 @@ void test('resolveKnowledgeForProperty still returns global entries without a pr
   );
 });
 
+void test('resolveKnowledgeForProperty caps prompt knowledge entries deterministically', async () => {
+  const source = {
+    listKnowledgeEntries: async ({ scope }: { scope: 'global' | 'property' }) => {
+      if (scope === 'global') {
+        return [
+          makeEntry({ id: 'g-a', topicKey: 'a', sortOrder: 0 }),
+          makeEntry({ id: 'g-b', topicKey: 'b', sortOrder: 1 }),
+          makeEntry({ id: 'g-c', topicKey: 'c', sortOrder: 2 }),
+        ];
+      }
+
+      return [];
+    },
+  };
+
+  const result = await resolveKnowledgeForProperty({
+    source,
+    organizationId: 'org-1',
+    propertyId: null,
+    channels: ['ai'],
+    maxEntries: 2,
+  });
+
+  assert.deepEqual(
+    result.map((entry) => entry.topicKey),
+    ['a', 'b'],
+  );
+});
+
 void test('listKnowledgeEntriesForScope rejects property scope without property id', async () => {
   const source = {
     listKnowledgeEntries: async () => [],
