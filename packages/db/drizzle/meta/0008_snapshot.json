@@ -1,104 +1,9 @@
 {
-  "id": "f33540a7-a799-4813-951f-751680ea6905",
+  "id": "c14bc3e4-f9b7-464f-95f7-b0d3ee2220e8",
   "prevId": "2b24017f-41ac-42d1-8a05-5cc4b576434d",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "walt.agent_configs": {
-      "name": "agent_configs",
-      "schema": "walt",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "scope": {
-          "name": "scope",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "property_id": {
-          "name": "property_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "tone": {
-          "name": "tone",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "emoji_use": {
-          "name": "emoji_use",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "response_length": {
-          "name": "response_length",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "escalation_rules": {
-          "name": "escalation_rules",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "special_instructions": {
-          "name": "special_instructions",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "agent_configs_organization_id_idx": {
-          "name": "agent_configs_organization_id_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "walt.audit_events": {
       "name": "audit_events",
       "schema": "walt",
@@ -304,8 +209,12 @@
           "tableFrom": "messages",
           "tableTo": "reservations",
           "schemaTo": "walt",
-          "columnsFrom": ["reservation_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "reservation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -352,8 +261,12 @@
           "tableFrom": "organization_memberships",
           "tableTo": "organizations",
           "schemaTo": "walt",
-          "columnsFrom": ["organization_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -361,7 +274,10 @@
       "compositePrimaryKeys": {
         "organization_memberships_organization_id_user_id_pk": {
           "name": "organization_memberships_organization_id_user_id_pk",
-          "columns": ["organization_id", "user_id"]
+          "columns": [
+            "organization_id",
+            "user_id"
+          ]
         }
       },
       "uniqueConstraints": {},
@@ -491,8 +407,12 @@
           "tableFrom": "property_access",
           "tableTo": "organizations",
           "schemaTo": "walt",
-          "columnsFrom": ["organization_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -500,7 +420,11 @@
       "compositePrimaryKeys": {
         "property_access_organization_id_user_id_property_id_pk": {
           "name": "property_access_organization_id_user_id_property_id_pk",
-          "columns": ["organization_id", "user_id", "property_id"]
+          "columns": [
+            "organization_id",
+            "user_id",
+            "property_id"
+          ]
         }
       },
       "uniqueConstraints": {},
@@ -579,203 +503,6 @@
             }
           ],
           "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "walt.property_guidebook_entries": {
-      "name": "property_guidebook_entries",
-      "schema": "walt",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "property_id": {
-          "name": "property_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "category": {
-          "name": "category",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "media_url": {
-          "name": "media_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "ai_use_count": {
-          "name": "ai_use_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "last_used_at": {
-          "name": "last_used_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "property_guidebook_entries_organization_id_idx": {
-          "name": "property_guidebook_entries_organization_id_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "property_guidebook_entries_property_id_idx": {
-          "name": "property_guidebook_entries_property_id_idx",
-          "columns": [
-            {
-              "expression": "property_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "walt.property_memory": {
-      "name": "property_memory",
-      "schema": "walt",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "property_id": {
-          "name": "property_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "fact": {
-          "name": "fact",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "source": {
-          "name": "source",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "source_reservation_id": {
-          "name": "source_reservation_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "property_memory_organization_id_idx": {
-          "name": "property_memory_organization_id_idx",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "property_memory_property_id_idx": {
-          "name": "property_memory_property_id_idx",
-          "columns": [
-            {
-              "expression": "property_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1122,8 +849,12 @@
           "tableFrom": "sms_consents",
           "tableTo": "vendors",
           "schemaTo": "walt",
-          "columnsFrom": ["vendor_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "vendor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1208,8 +939,12 @@
           "tableFrom": "sms_message_logs",
           "tableTo": "vendors",
           "schemaTo": "walt",
-          "columnsFrom": ["vendor_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "vendor_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1290,8 +1025,12 @@
           "tableFrom": "task_audit_events",
           "tableTo": "tasks",
           "schemaTo": "walt",
-          "columnsFrom": ["task_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "task_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1575,9 +1314,660 @@
         "vendors_phone_e164_unique": {
           "name": "vendors_phone_e164_unique",
           "nullsNotDistinct": false,
-          "columns": ["phone_e164"]
+          "columns": [
+            "phone_e164"
+          ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "walt.seo_pipeline_runs": {
+      "name": "seo_pipeline_runs",
+      "schema": "walt",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "market_key": {
+          "name": "market_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "site_key": {
+          "name": "site_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "trigger": {
+          "name": "trigger",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'manual'"
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error_summary": {
+          "name": "error_summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'"
+        }
+      },
+      "indexes": {
+        "seo_pipeline_runs_organization_id_idx": {
+          "name": "seo_pipeline_runs_organization_id_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "seo_pipeline_runs_market_key_site_key_idx": {
+          "name": "seo_pipeline_runs_market_key_site_key_idx",
+          "columns": [
+            {
+              "expression": "market_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "site_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "walt.seo_event_candidates": {
+      "name": "seo_event_candidates",
+      "schema": "walt",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "run_id": {
+          "name": "run_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "market_key": {
+          "name": "market_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_url": {
+          "name": "source_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_domain": {
+          "name": "source_domain",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "venue_name": {
+          "name": "venue_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "city": {
+          "name": "city",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "starts_at": {
+          "name": "starts_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ends_at": {
+          "name": "ends_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source_snippet": {
+          "name": "source_snippet",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "normalized_hash": {
+          "name": "normalized_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'discovered'"
+        },
+        "raw": {
+          "name": "raw",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "discovered_at": {
+          "name": "discovered_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "seo_event_candidates_org_market_hash_idx": {
+          "name": "seo_event_candidates_org_market_hash_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "market_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "normalized_hash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "seo_event_candidates_run_id_seo_pipeline_runs_id_fk": {
+          "name": "seo_event_candidates_run_id_seo_pipeline_runs_id_fk",
+          "tableFrom": "seo_event_candidates",
+          "tableTo": "seo_pipeline_runs",
+          "schemaTo": "walt",
+          "columnsFrom": [
+            "run_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "walt.seo_opportunities": {
+      "name": "seo_opportunities",
+      "schema": "walt",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "candidate_id": {
+          "name": "candidate_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "market_key": {
+          "name": "market_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "site_key": {
+          "name": "site_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_keyword": {
+          "name": "target_keyword",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_slug": {
+          "name": "target_slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "traveler_intent": {
+          "name": "traveler_intent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "property_ids": {
+          "name": "property_ids",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'"
+        },
+        "score": {
+          "name": "score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reasons": {
+          "name": "reasons",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'queued'"
+        },
+        "evaluated_at": {
+          "name": "evaluated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "seo_opportunities_candidate_id_idx": {
+          "name": "seo_opportunities_candidate_id_idx",
+          "columns": [
+            {
+              "expression": "candidate_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "seo_opportunities_organization_id_score_idx": {
+          "name": "seo_opportunities_organization_id_score_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "score",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "seo_opportunities_candidate_id_seo_event_candidates_id_fk": {
+          "name": "seo_opportunities_candidate_id_seo_event_candidates_id_fk",
+          "tableFrom": "seo_opportunities",
+          "tableTo": "seo_event_candidates",
+          "schemaTo": "walt",
+          "columnsFrom": [
+            "candidate_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "walt.seo_drafts": {
+      "name": "seo_drafts",
+      "schema": "walt",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "opportunity_id": {
+          "name": "opportunity_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "market_key": {
+          "name": "market_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "site_key": {
+          "name": "site_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'generated'"
+        },
+        "title_tag": {
+          "name": "title_tag",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "meta_description": {
+          "name": "meta_description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "h1": {
+          "name": "h1",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "outline": {
+          "name": "outline",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body_markdown": {
+          "name": "body_markdown",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "faq_items": {
+          "name": "faq_items",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cta_text": {
+          "name": "cta_text",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "internal_links": {
+          "name": "internal_links",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_urls": {
+          "name": "source_urls",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'"
+        },
+        "review_notes": {
+          "name": "review_notes",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'"
+        },
+        "generated_at": {
+          "name": "generated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reviewed_at": {
+          "name": "reviewed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reviewed_by": {
+          "name": "reviewed_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "seo_drafts_opportunity_id_idx": {
+          "name": "seo_drafts_opportunity_id_idx",
+          "columns": [
+            {
+              "expression": "opportunity_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "seo_drafts_organization_id_status_updated_at_idx": {
+          "name": "seo_drafts_organization_id_status_updated_at_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "seo_drafts_site_key_slug_idx": {
+          "name": "seo_drafts_site_key_slug_idx",
+          "columns": [
+            {
+              "expression": "site_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "seo_drafts_opportunity_id_seo_opportunities_id_fk": {
+          "name": "seo_drafts_opportunity_id_seo_opportunities_id_fk",
+          "tableFrom": "seo_drafts",
+          "tableTo": "seo_opportunities",
+          "schemaTo": "walt",
+          "columnsFrom": [
+            "opportunity_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1587,32 +1977,57 @@
     "walt.actor_type": {
       "name": "actor_type",
       "schema": "walt",
-      "values": ["system", "admin", "vendor"]
+      "values": [
+        "system",
+        "admin",
+        "vendor"
+      ]
     },
     "walt.consent_method": {
       "name": "consent_method",
       "schema": "walt",
-      "values": ["web_form", "inbound_sms", "admin_import"]
+      "values": [
+        "web_form",
+        "inbound_sms",
+        "admin_import"
+      ]
     },
     "walt.consent_status": {
       "name": "consent_status",
       "schema": "walt",
-      "values": ["opted_in", "opted_out", "pending"]
+      "values": [
+        "opted_in",
+        "opted_out",
+        "pending"
+      ]
     },
     "walt.message_direction": {
       "name": "message_direction",
       "schema": "walt",
-      "values": ["outbound", "inbound"]
+      "values": [
+        "outbound",
+        "inbound"
+      ]
     },
     "walt.message_type": {
       "name": "message_type",
       "schema": "walt",
-      "values": ["operational", "consent_confirmation", "help", "stop_confirmation"]
+      "values": [
+        "operational",
+        "consent_confirmation",
+        "help",
+        "stop_confirmation"
+      ]
     },
     "walt.vendor_status": {
       "name": "vendor_status",
       "schema": "walt",
-      "values": ["invited", "active", "opted_out", "blocked"]
+      "values": [
+        "invited",
+        "active",
+        "opted_out",
+        "blocked"
+      ]
     }
   },
   "schemas": {

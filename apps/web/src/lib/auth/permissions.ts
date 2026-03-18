@@ -48,6 +48,10 @@ export function getPermissionForApiRoute(pathname: string, method: string): Perm
     return method === 'GET' ? 'dashboard.read' : 'ops.write';
   }
 
+  if (pathname.includes('/command-center/seo-drafts')) {
+    return method === 'GET' ? 'dashboard.read' : 'drafts.write';
+  }
+
   if (method === 'GET') {
     return 'dashboard.read';
   }
