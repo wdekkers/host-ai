@@ -1,5 +1,6 @@
 import {
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -128,6 +129,10 @@ export const agentConfigs = waltSchema.table(
   },
   (table) => ({
     orgIdx: index('agent_configs_organization_id_idx').on(table.organizationId),
+    scopePropertyIdCheck: check(
+      'agent_configs_scope_property_id_check',
+      sql`(scope = 'global' AND property_id IS NULL) OR (scope = 'property' AND property_id IS NOT NULL)`,
+    ),
     globalUniqueIdx: uniqueIndex('agent_configs_global_unique_idx')
       .on(table.organizationId)
       .where(sql`${table.scope} = 'global'`),
@@ -202,6 +207,10 @@ export const knowledgeEntries = waltSchema.table(
       table.organizationId,
       table.scope,
       table.topicKey,
+    ),
+    scopePropertyIdCheck: check(
+      'knowledge_entries_scope_property_id_check',
+      sql`(scope = 'global' AND property_id IS NULL) OR (scope = 'property' AND property_id IS NOT NULL)`,
     ),
     globalUniqueIdx: uniqueIndex('knowledge_entries_global_unique_idx')
       .on(table.organizationId, table.topicKey)
