@@ -57,6 +57,10 @@ export async function listKnowledgeEntriesForScope({
   channels,
   status = 'published',
 }: ListKnowledgeEntriesForScopeInput): Promise<KnowledgeEntry[]> {
+  if (scope === 'property' && !propertyId) {
+    throw new Error('propertyId is required when listing property knowledge entries');
+  }
+
   const entries = await source.listKnowledgeEntries({
     organizationId,
     scope,
@@ -68,7 +72,7 @@ export async function listKnowledgeEntriesForScope({
   return normalizeEntries(
     entries.filter((entry) => {
       if (entry.scope !== scope) return false;
-      if (scope === 'property' && propertyId && entry.propertyId !== propertyId) return false;
+      if (scope === 'property' && entry.propertyId !== propertyId) return false;
       if (scope === 'global' && entry.propertyId !== null) return false;
       if (entry.status !== status) return false;
       return matchesChannels(entry, channels);

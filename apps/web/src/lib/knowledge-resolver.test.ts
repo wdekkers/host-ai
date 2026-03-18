@@ -124,6 +124,52 @@ void test('resolveKnowledgeForProperty includes global entries for a property re
   );
 });
 
+void test('resolveKnowledgeForProperty still returns global entries without a property id', async () => {
+  const source = {
+    listKnowledgeEntries: async ({ scope }: { scope: 'global' | 'property' }) => {
+      if (scope === 'global') {
+        return [
+          makeEntry({
+            id: 'g-checkin',
+            topicKey: 'checkin',
+            answer: 'The door code arrives at noon.',
+          }),
+        ];
+      }
+
+      return [];
+    },
+  };
+
+  const result = await resolveKnowledgeForProperty({
+    source,
+    organizationId: 'org-1',
+    propertyId: null,
+    channels: ['ai'],
+  });
+
+  assert.equal(
+    result.some((entry) => entry.topicKey === 'checkin'),
+    true,
+  );
+});
+
+void test('listKnowledgeEntriesForScope rejects property scope without property id', async () => {
+  const source = {
+    listKnowledgeEntries: async () => [],
+  };
+
+  await assert.rejects(
+    () =>
+      listKnowledgeEntriesForScope({
+        source,
+        organizationId: 'org-1',
+        scope: 'property',
+      }),
+    /propertyId is required/,
+  );
+});
+
 void test('formatKnowledgeForPrompt renders readable knowledge text', () => {
   const prompt = formatKnowledgeForPrompt([
     makeEntry({

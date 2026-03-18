@@ -80,14 +80,12 @@ export async function generateReplySuggestion({
     },
   };
 
-  const aiKnowledge = propertyId
-    ? await resolveKnowledgeForProperty({
-        source: knowledgeSource,
-        organizationId,
-        propertyId,
-        channels: ['ai'],
-      })
-    : [];
+  const aiKnowledge = await resolveKnowledgeForProperty({
+    source: knowledgeSource,
+    organizationId,
+    propertyId,
+    channels: ['ai'],
+  });
   const knowledgeContext = formatKnowledgeForPrompt(aiKnowledge);
 
   // --- Knowledge: Learned Memory ---
