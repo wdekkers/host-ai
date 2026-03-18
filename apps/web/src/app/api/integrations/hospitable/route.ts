@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
+import { eq } from 'drizzle-orm';
 
 import { handleApiError, log } from '@/lib/secure-logger';
 import { ingestHospitableMessageInSingleton } from '@/lib/command-center-store';
@@ -88,6 +89,32 @@ export async function POST(request: Request) {
         correlationId,
         reservationId: normalized.id,
       });
+
+      // Merge any inquiry stub that was created before the reservation was confirmed.
+      // When an inquiry message arrives before reservation.created fires, we create a stub
+      // reservation keyed by conversation_id. Once the real reservation arrives, migrate
+      // the stub's messages to the real reservation ID and remove the stub.
+      if (normalized.conversationId) {
+        const [stub] = await db
+          .select({ id: reservations.id })
+          .from(reservations)
+          .where(eq(reservations.conversationId, normalized.conversationId))
+          .limit(1);
+
+        if (stub && stub.id !== normalized.id) {
+          await db
+            .update(messages)
+            .set({ reservationId: normalized.id })
+            .where(eq(messages.reservationId, stub.id));
+          await db.delete(reservations).where(eq(reservations.id, stub.id));
+          log('info', 'webhook_inquiry_stub_merged', {
+            correlationId,
+            stubId: stub.id,
+            reservationId: normalized.id,
+          });
+        }
+      }
+
       return NextResponse.json({ ok: true }, { status: 200 });
     }
 
@@ -106,12 +133,74 @@ export async function POST(request: Request) {
 
     // --- message.created ---
     if (action === 'message.created') {
-      const reservationId =
+      const rawReservationId =
         typeof data.reservation_id === 'string' && data.reservation_id.trim()
           ? data.reservation_id.trim()
-          : typeof data.conversation_id === 'string' && data.conversation_id.trim()
-            ? data.conversation_id.trim()
+          : null;
+      const conversationId =
+        typeof data.conversation_id === 'string' && data.conversation_id.trim()
+          ? data.conversation_id.trim()
+          : null;
+
+      let reservationId: string | null = rawReservationId;
+
+      // Inquiry messages have no reservation_id yet — resolve via conversation_id
+      if (!reservationId && conversationId) {
+        const [existing] = await db
+          .select({ id: reservations.id })
+          .from(reservations)
+          .where(eq(reservations.conversationId, conversationId))
+          .limit(1);
+
+        if (existing) {
+          reservationId = existing.id;
+        } else {
+          // Create a stub reservation so messages can be stored (FK requires a reservation row).
+          // When reservation.created fires later (on booking), the stub is merged into the real one.
+          const stubId = uuidv4();
+          const sender =
+            data.sender && typeof data.sender === 'object'
+              ? (data.sender as Record<string, unknown>)
+              : {};
+          const property =
+            data.property && typeof data.property === 'object'
+              ? (data.property as Record<string, unknown>)
+              : {};
+          const senderType = typeof data.sender_type === 'string' ? data.sender_type : 'guest';
+          const isGuest = senderType === 'guest';
+
+          const firstName = isGuest
+            ? typeof sender.first_name === 'string'
+              ? sender.first_name.trim() || null
+              : null
             : null;
+          const fullName = typeof sender.full_name === 'string' ? sender.full_name.trim() : '';
+          const lastName =
+            isGuest && firstName && fullName.startsWith(firstName)
+              ? fullName.slice(firstName.length).trim() || null
+              : null;
+
+          await db.insert(reservations).values({
+            id: stubId,
+            conversationId,
+            platform: typeof data.platform === 'string' ? data.platform : null,
+            status: 'inquiry',
+            guestFirstName: firstName,
+            guestLastName: lastName,
+            propertyId: typeof property.id === 'string' ? property.id : null,
+            propertyName: typeof property.name === 'string' ? property.name : null,
+            raw: data,
+            syncedAt: now,
+          });
+
+          reservationId = stubId;
+          log('info', 'webhook_inquiry_stub_created', {
+            correlationId,
+            conversationId,
+            stubId,
+          });
+        }
+      }
 
       if (!reservationId) {
         log('warn', 'webhook_no_reservation_id', { correlationId, eventId });
