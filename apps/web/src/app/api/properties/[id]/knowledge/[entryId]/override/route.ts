@@ -1,7 +1,6 @@
 import { withPermission } from '@/lib/auth/authorize';
 
-import { handleOverridePropertyKnowledgeEntry } from '../../../../../knowledge/route';
-export { handleOverridePropertyKnowledgeEntry } from '../../../../../knowledge/route';
+import { handleOverridePropertyKnowledgeEntry } from '../../../../../knowledge/handler';
 
 type Params = { params: Promise<{ id: string; entryId: string }> };
 
