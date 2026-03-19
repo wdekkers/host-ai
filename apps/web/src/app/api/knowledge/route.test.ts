@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { handleGetAgentConfig, handlePutAgentConfig } from '../agent-config/route';
-import { handleGetPropertyAgentConfig } from '../properties/[id]/agent-config/route';
+import { handleGetAgentConfig, handlePutAgentConfig } from '../agent-config/handler';
+import { handleGetPropertyAgentConfig } from '../properties/[id]/agent-config/handler';
 import {
   handleCreateKnowledgeEntry,
   handleListKnowledgeEntries,
   handlePatchKnowledgeEntry,
-} from './route';
+} from './handler';
 
 type TestAuthContext = {
   orgId: string;
@@ -142,7 +142,7 @@ void test('global agent config PUT forwards explicit nulls so fields can be clea
     }),
     authContext,
     {
-      upsertConfig: async (args) => {
+      upsertConfig: async (args: { orgId: string; values: { tone?: string | null; emojiUse?: string | null; responseLength?: string | null; escalationRules?: string | null; specialInstructions?: string | null } }) => {
         receivedValues = args;
         return {
           id: 'cfg-1',
@@ -188,7 +188,7 @@ void test('global knowledge list filters by org, scope, channel, and status', as
     new Request('http://localhost/api/knowledge?scope=global&channel=ai&status=published'),
     authContext,
     {
-      queryKnowledgeEntries: async (args) => {
+      queryKnowledgeEntries: async (args: { orgId: string; scope: string; propertyId?: string | null; entryType?: string; channel?: string; status?: string; topicKey?: string }) => {
         receivedArgs = args;
         return [
           {
@@ -255,7 +255,7 @@ void test('global knowledge create persists a global draft entry', async () => {
     }),
     authContext,
     {
-      createKnowledgeEntry: async (values) => {
+      createKnowledgeEntry: async (values: { organizationId: string; scope: string; propertyId: string | null; entryType: string; topicKey: string; title: string | null; question: string | null; answer: string | null; body: string | null; channels: string[]; status: string; sortOrder: number; slug: string | null }) => {
         receivedInsert = values;
         return {
           id: 'k-created',
@@ -299,7 +299,7 @@ void test('global knowledge patch only updates global rows', async () => {
     { params: Promise.resolve({ id: 'k-1' }) },
     authContext,
     {
-      patchKnowledgeEntry: async (args) => {
+      patchKnowledgeEntry: async (args: { orgId: string; knowledgeId: string; scope: string; propertyId?: string | null; values: Record<string, unknown> }) => {
         receivedPatch = {
           orgId: args.orgId,
           knowledgeId: args.knowledgeId,

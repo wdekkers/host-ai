@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { handlePutPropertyAgentConfig } from '../agent-config/route';
+import { handlePutPropertyAgentConfig } from '../agent-config/handler';
 import {
   handleCreatePropertyKnowledgeEntry,
   handleListPropertyKnowledgeEntries,
-} from './route';
-import { handlePatchPropertyKnowledgeEntry } from './[entryId]/route';
-import { handleOverridePropertyKnowledgeEntry } from './[entryId]/override/route';
+  handleOverridePropertyKnowledgeEntry,
+  handlePatchPropertyKnowledgeEntry,
+} from '../../../knowledge/handler';
 
 type TestAuthContext = {
   orgId: string;
@@ -93,7 +93,7 @@ void test('property agent config PUT forwards explicit nulls so overrides can be
     { params: Promise.resolve({ id: 'prop-1' }) },
     authContext,
     {
-      upsertConfig: async (args) => {
+      upsertConfig: async (args: { orgId: string; propertyId: string; values: { tone?: string | null; emojiUse?: string | null; responseLength?: string | null; escalationRules?: string | null; specialInstructions?: string | null } }) => {
         receivedValues = args;
         return {
           id: 'cfg-property',
@@ -343,7 +343,7 @@ void test('property knowledge override updates an existing property entry for th
           updatedAt: new Date('2026-03-18T12:00:00.000Z'),
         },
       ],
-      patchKnowledgeEntry: async (args) => {
+      patchKnowledgeEntry: async (args: KnowledgePatchArgs) => {
         receivedPatch = {
           knowledgeId: args.knowledgeId,
           scope: args.scope,
