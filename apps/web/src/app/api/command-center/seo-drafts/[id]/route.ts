@@ -83,6 +83,8 @@ async function defaultUpdateDraft(args: {
       reviewedBy: seoDrafts.reviewedBy,
     });
 
+  if (!updated) throw new Error('Draft not found or update failed');
+
   return {
     id: updated.id,
     status: updated.status,

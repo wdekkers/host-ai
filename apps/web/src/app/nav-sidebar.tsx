@@ -41,7 +41,7 @@ export function NavSidebar() {
         </button>
       </div>
       <nav className="flex-1 px-2 py-4 space-y-1 overflow-hidden">
-        {navLinks.map(({ href, label, icon }) => (
+        {navLinks.map(({ href, label }) => (
           <Link
             key={href}
             href={href}
@@ -50,7 +50,6 @@ export function NavSidebar() {
             }`}
             title={collapsed ? label : undefined}
           >
-            {icon && <span className="text-base flex-shrink-0">{icon}</span>}
             {!collapsed && label}
           </Link>
         ))}
