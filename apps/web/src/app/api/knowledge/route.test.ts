@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { knowledgeEntries } from '@walt/db';
 
 import { handleGetAgentConfig, handlePutAgentConfig } from '../agent-config/route';
 import { handleGetPropertyAgentConfig } from '../properties/[id]/agent-config/route';
@@ -16,13 +15,30 @@ type TestAuthContext = {
   role: 'owner';
 };
 
+type KnowledgeEntryRow = {
+  id: string;
+  organizationId: string;
+  scope: string;
+  propertyId: string | null;
+  entryType: string;
+  topicKey: string;
+  title: string | null;
+  question: string | null;
+  answer: string | null;
+  body: string | null;
+  channels: string[];
+  status: string;
+  sortOrder: number;
+  slug: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 const authContext: TestAuthContext = {
   orgId: 'org-1',
   userId: 'user-1',
   role: 'owner',
 };
-
-type KnowledgeEntryRow = typeof knowledgeEntries.$inferSelect;
 
 void test('global agent config GET returns current row', async () => {
   const response = await handleGetAgentConfig(new Request('http://localhost/api/agent-config'), authContext, {

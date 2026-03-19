@@ -310,7 +310,8 @@ export async function handlePatchKnowledgeEntry(
 ) {
   try {
     const { id: knowledgeId } = await params;
-    const { topicKey: _topicKey, ...parsed } = normalizePatchBody(await request.json(), 'global', null);
+    const parsed = normalizePatchBody(await request.json(), 'global', null);
+    delete parsed.topicKey;
     const item = await patchKnowledgeEntryRecord(
       authContext.orgId,
       knowledgeId,
@@ -429,11 +430,8 @@ export async function handlePatchPropertyKnowledgeEntry(
 ) {
   try {
     const { id: propertyId, entryId } = await params;
-    const { topicKey: _topicKey, ...parsed } = normalizePatchBody(
-      await request.json(),
-      'property',
-      propertyId,
-    );
+    const parsed = normalizePatchBody(await request.json(), 'property', propertyId);
+    delete parsed.topicKey;
     const item = await patchKnowledgeEntryRecord(
       authContext.orgId,
       entryId,
