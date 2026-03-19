@@ -41,7 +41,7 @@ export default async function PropertyKnowledgePage({
       </div>
 
       <PropertySettingsTabs propertyId={property.id} current="knowledge" />
-      <KnowledgeManager scope="property" propertyId={property.id} />
+      <KnowledgeManager scope="property" propertyId={property.id} propertyName={property.name} />
     </div>
   );
 }

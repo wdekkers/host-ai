@@ -9,6 +9,7 @@ type VisibleEntryType = 'faq' | 'guidebook';
 type KnowledgeManagerProps = {
   scope: ManagedKnowledgeScope;
   propertyId?: string;
+  propertyName?: string;
 };
 
 type KnowledgeFormState = {
@@ -106,17 +107,19 @@ function buildInheritedListUrl(entryType: VisibleEntryType) {
   return `/api/knowledge?scope=global&entryType=${entryType}`;
 }
 
-export function KnowledgeManager({ scope, propertyId }: KnowledgeManagerProps) {
+export function KnowledgeManager({ scope, propertyId, propertyName }: KnowledgeManagerProps) {
   const [activeType, setActiveType] = useState<VisibleEntryType>('faq');
   const [items, setItems] = useState<KnowledgeEntry[]>([]);
   const [inheritedItems, setInheritedItems] = useState<KnowledgeEntry[]>([]);
   const [form, setForm] = useState<KnowledgeFormState>(() => emptyForm('faq'));
+  const [faqNotes, setFaqNotes] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [isGeneratingFaq, setIsGeneratingFaq] = useState(false);
   const activeTypeRef = useRef<VisibleEntryType>(activeType);
 
   useEffect(() => {
@@ -317,6 +320,55 @@ export function KnowledgeManager({ scope, propertyId }: KnowledgeManagerProps) {
     };
   }
 
+  async function generateFaqDraft() {
+    if (!faqNotes.trim()) {
+      setSubmitError('Add rough FAQ notes first.');
+      setSuccess(null);
+      return;
+    }
+
+    setIsGeneratingFaq(true);
+    setSubmitError(null);
+    setSuccess(null);
+
+    try {
+      const response = await fetch('/api/knowledge/faq-draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          notes: faqNotes,
+          propertyName,
+        }),
+      });
+
+      const payload = (await response.json()) as {
+        draft?: { question: string; answer: string; topicKey: string };
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? 'Unable to generate FAQ draft.');
+      }
+
+      if (!payload.draft) {
+        throw new Error('AI did not return a FAQ draft.');
+      }
+
+      setForm((current) => ({
+        ...current,
+        question: payload.draft?.question ?? current.question,
+        answer: payload.draft?.answer ?? current.answer,
+        topicKey: payload.draft?.topicKey ?? current.topicKey,
+        slug: current.slug || payload.draft?.topicKey || current.slug,
+      }));
+      setSuccess('FAQ draft generated. Review it before saving.');
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Unable to generate FAQ draft.');
+    } finally {
+      setIsGeneratingFaq(false);
+    }
+  }
+
   function saveEntry() {
     startTransition(async () => {
       try {
@@ -421,6 +473,35 @@ export function KnowledgeManager({ scope, propertyId }: KnowledgeManagerProps) {
         <div className="grid gap-4 md:grid-cols-2">
           {activeType === 'faq' ? (
             <>
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 md:col-span-2">
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-blue-800">
+                      Quick FAQ Draft
+                    </h3>
+                    <p className="mt-1 text-xs text-blue-700">
+                      Dictate rough notes and AI will turn them into a clean FAQ draft you can
+                      edit before saving.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void generateFaqDraft()}
+                    disabled={isGeneratingFaq}
+                    className="rounded-md bg-blue-700 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-800 disabled:opacity-50"
+                  >
+                    {isGeneratingFaq ? 'Generating…' : 'Generate FAQ'}
+                  </button>
+                </div>
+
+                <textarea
+                  className={`${inputClass} min-h-28 border-blue-200 bg-white`}
+                  value={faqNotes}
+                  onChange={(event) => setFaqNotes(event.target.value)}
+                  placeholder="Guests keep asking about parking. They should use garage spot 2. Overflow parking is okay after 6pm. No street parking on Fridays because of cleaning."
+                />
+              </div>
+
               <label className="block">
                 <span className="text-sm font-medium text-gray-700">Question</span>
                 <input
