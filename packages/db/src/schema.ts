@@ -69,6 +69,7 @@ export const properties = waltSchema.table('properties', {
   status: text('status'),
   raw: jsonb('raw').notNull(),
   syncedAt: timestamp('synced_at', { withTimezone: true }).notNull(),
+  hasPool: boolean('has_pool').notNull().default(false),
 });
 
 export const reservations = waltSchema.table('reservations', {
@@ -185,6 +186,7 @@ export const messages = waltSchema.table(
     suggestion: text('suggestion'),
     suggestionGeneratedAt: timestamp('suggestion_generated_at', { withTimezone: true }),
     raw: jsonb('raw').notNull(),
+    suggestionScannedAt: timestamp('suggestion_scanned_at', { withTimezone: true }),
   },
   (table) => ({
     uniq: uniqueIndex('messages_reservation_created_at_idx').on(
@@ -537,3 +539,54 @@ export const auditEvents = waltSchema.table('audit_events', {
   metadata: jsonb('metadata').notNull().$type<Record<string, unknown>>(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
 });
+
+// --- Daily Operations Dashboard ---
+
+export const taskSuggestions = waltSchema.table(
+  'task_suggestions',
+  {
+    id: uuid('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    organizationId: text('organization_id').notNull(),
+    propertyId: text('property_id').notNull(),
+    propertyName: text('property_name').notNull(),
+    reservationId: text('reservation_id').notNull(),
+    messageId: uuid('message_id'),
+    title: text('title').notNull(),
+    description: text('description'),
+    suggestedDueDate: timestamp('suggested_due_date', { withTimezone: true }),
+    source: text('source').notNull(), // 'message' | 'reservation'
+    status: text('status').notNull().default('pending'), // 'pending' | 'accepted' | 'dismissed'
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().$defaultFn(() => new Date()),
+  },
+  (table) => ({
+    orgStatusIdx: index('task_suggestions_org_status_idx').on(
+      table.organizationId,
+      table.status,
+    ),
+    uniqueConstraint: uniqueIndex('task_suggestions_org_reservation_title_idx').on(
+      table.organizationId,
+      table.reservationId,
+      table.title,
+    ),
+  }),
+);
+
+export const taskReminders = waltSchema.table(
+  'task_reminders',
+  {
+    id: uuid('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    taskId: text('task_id').notNull(),
+    organizationId: text('organization_id').notNull(),
+    taskTitle: text('task_title').notNull(),
+    propertyName: text('property_name').notNull(),
+    channels: text('channels').array().notNull(),
+    scheduledFor: timestamp('scheduled_for', { withTimezone: true }).notNull(),
+    sentAt: timestamp('sent_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().$defaultFn(() => new Date()),
+  },
+  (table) => ({
+    pendingIdx: index('task_reminders_pending_idx')
+      .on(table.scheduledFor)
+      .where(sql`${table.sentAt} IS NULL`),
+  }),
+);

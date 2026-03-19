@@ -548,7 +548,7 @@ export function KnowledgeManager({ scope, propertyId, propertyName }: KnowledgeM
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-700">
-              {scope === 'global' ? 'Global Knowledge' : 'Property Knowledge'}
+              {scope === 'global' ? 'Global Knowledge' : propertyName ? `${propertyName} — Knowledge` : 'Property Knowledge'}
             </h2>
             <p className="mt-1 text-xs text-gray-500">
               {scope === 'global'

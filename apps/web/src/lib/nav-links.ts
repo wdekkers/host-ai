@@ -5,6 +5,7 @@ type NavLink = {
 };
 
 export const navLinks: readonly NavLink[] = [
+  { href: '/today', label: 'Today' },
   { href: '/inbox', label: 'Inbox' },
   { href: '/contacts', label: 'Contacts' },
   { href: '/tasks', label: 'Tasks' },

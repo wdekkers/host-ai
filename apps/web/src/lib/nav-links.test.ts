@@ -3,6 +3,11 @@ import test from 'node:test';
 
 import { navLinks } from './nav-links';
 
+void test('Today is the first nav item', () => {
+  assert.equal(navLinks[0]?.href, '/today');
+  assert.equal(navLinks[0]?.label, 'Today');
+});
+
 void test('includes Contacts in primary navigation', () => {
   assert.equal(navLinks.some((link) => link.href === '/contacts' && link.label === 'Contacts'), true);
 });
