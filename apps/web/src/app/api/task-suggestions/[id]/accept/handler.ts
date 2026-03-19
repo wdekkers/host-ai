@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { taskSuggestions, taskReminders } from '@walt/db';
 import { acceptSuggestionInputSchema } from '@walt/contracts';
@@ -7,7 +7,7 @@ import type { AcceptSuggestionInput, AuthContext } from '@walt/contracts';
 type Deps = {
   getSuggestion?: (id: string, orgId: string) => Promise<Record<string, unknown> | null>;
   createTask?: (args: Record<string, unknown>) => Promise<{ id: string }>;
-  markAccepted?: (id: string) => Promise<void>;
+  markAccepted?: (id: string, orgId: string) => Promise<void>;
   createReminder?: (args: Record<string, unknown>) => Promise<{ id: string }>;
 };
 
@@ -16,9 +16,9 @@ async function defaultGetSuggestion(id: string, orgId: string) {
   const [row] = await db
     .select()
     .from(taskSuggestions)
-    .where(eq(taskSuggestions.id, id))
+    .where(and(eq(taskSuggestions.id, id), eq(taskSuggestions.organizationId, orgId)))
     .limit(1);
-  if (!row || row.organizationId !== orgId) return null;
+  if (!row) return null;
   return row as Record<string, unknown>;
 }
 
@@ -37,12 +37,12 @@ async function defaultCreateTask(args: Record<string, unknown>) {
   return res.json() as Promise<{ id: string }>;
 }
 
-async function defaultMarkAccepted(id: string) {
+async function defaultMarkAccepted(id: string, orgId: string) {
   const { db } = await import('@/lib/db');
   await db
     .update(taskSuggestions)
     .set({ status: 'accepted' })
-    .where(eq(taskSuggestions.id, id));
+    .where(and(eq(taskSuggestions.id, id), eq(taskSuggestions.organizationId, orgId)));
 }
 
 async function defaultCreateReminder(args: Record<string, unknown>) {
@@ -103,7 +103,7 @@ export async function handleAcceptSuggestion(
     return NextResponse.json({ error: 'Failed to create task' }, { status: 502 });
   }
 
-  await markAccepted(id);
+  await markAccepted(id, auth.orgId);
 
   if (body.reminderChannels?.length && body.reminderTime) {
     try {

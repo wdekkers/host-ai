@@ -32,7 +32,7 @@ void test('accept: creates task and marks suggestion accepted', async () => {
       createTask: async () => { taskCreated = true; return { id: 'task-1' }; },
       markAccepted: async () => { suggestionUpdated = true; },
       createReminder: async () => { throw new Error('should not be called'); },
-    },
+    } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
   );
 
   assert.equal(response.status, 200);
@@ -58,7 +58,7 @@ void test('accept: task creation failure → 502, suggestion not marked accepted
       createTask: async () => { throw new Error('gateway down'); },
       markAccepted: async () => { suggestionUpdated = true; },
       createReminder: async () => ({ id: 'rem-1' }),
-    },
+    } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
   );
 
   assert.equal(response.status, 502);
@@ -81,7 +81,7 @@ void test('accept: task succeeds but reminder fails → 200 with reminderWarning
       createTask: async () => ({ id: 'task-1' }),
       markAccepted: async () => { suggestionUpdated = true; },
       createReminder: async () => { throw new Error('db error'); },
-    },
+    } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
   );
 
   assert.equal(response.status, 200);
