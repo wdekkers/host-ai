@@ -1,7 +1,13 @@
 import OpenAI from 'openai';
-import { and, eq, ilike, or, sql } from 'drizzle-orm';
-import { propertyFaqs, propertyGuidebookEntries, propertyMemory, agentConfigs } from '@walt/db';
+import { and, eq, isNull } from 'drizzle-orm';
+import type { KnowledgeEntry } from '@walt/contracts';
+import { agentConfigs, knowledgeEntries, propertyMemory } from '@walt/db';
 import { db } from '@/lib/db';
+import {
+  formatKnowledgeForPrompt,
+  resolveKnowledgeForProperty,
+  type KnowledgeEntrySource,
+} from './knowledge-resolver';
 
 const CHIP_INSTRUCTIONS: Record<string, string> = {
   shorter: 'Keep the reply to 1-2 sentences maximum.',
@@ -41,71 +47,46 @@ export async function generateReplySuggestion({
   const formatDate = (d: Date | string | null) =>
     d ? new Date(d).toLocaleDateString() : 'unknown';
 
-  // --- Knowledge: FAQ ---
-  let faqContext = '';
-  if (propertyId) {
-    const faqs = await db
-      .select({ category: propertyFaqs.category, answer: propertyFaqs.answer })
-      .from(propertyFaqs)
-      .where(eq(propertyFaqs.propertyId, propertyId));
-    const faqLines = faqs
-      .filter((f) => f.answer)
-      .map((f) => `Q: ${f.category}\nA: ${f.answer}`)
-      .join('\n\n');
-    if (faqLines) faqContext = `\n\nFAQ:\n${faqLines}`;
-  }
+  const toKnowledgeEntry = (row: typeof knowledgeEntries.$inferSelect): KnowledgeEntry => ({
+    ...row,
+    scope: row.scope as KnowledgeEntry['scope'],
+    entryType: row.entryType as KnowledgeEntry['entryType'],
+    status: row.status as KnowledgeEntry['status'],
+    channels: row.channels as KnowledgeEntry['channels'],
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  });
 
-  // --- Knowledge: Guidebook (keyword match against latest guest message) ---
-  const latestGuestMessage =
-    [...conversationHistory].reverse().find((m) => m.senderType === 'guest')?.body ?? '';
-  let guidebookContext = '';
-  if (propertyId) {
-    const words = latestGuestMessage
-      .toLowerCase()
-      .split(/\W+/)
-      .filter((w) => w.length > 3);
-    if (words.length > 0) {
-      const conditions = words.map((w) =>
-        or(
-          ilike(propertyGuidebookEntries.title, `%${w}%`),
-          ilike(propertyGuidebookEntries.description, `%${w}%`),
-        ),
-      );
-      const entries = await db
-        .select({
-          title: propertyGuidebookEntries.title,
-          description: propertyGuidebookEntries.description,
-          mediaUrl: propertyGuidebookEntries.mediaUrl,
-          id: propertyGuidebookEntries.id,
-        })
-        .from(propertyGuidebookEntries)
-        .where(and(eq(propertyGuidebookEntries.propertyId, propertyId), or(...conditions)))
-        .limit(3);
+  const knowledgeSource: KnowledgeEntrySource = {
+    listKnowledgeEntries: async ({ organizationId: sourceOrganizationId, scope, propertyId }) => {
+      const conditions = [
+        eq(knowledgeEntries.organizationId, sourceOrganizationId),
+        eq(knowledgeEntries.scope, scope),
+      ];
 
-      if (entries.length > 0) {
-        const lines = entries
-          .map(
-            (e) =>
-              `[${e.title}]: ${e.description}${e.mediaUrl ? ` (Video/link: ${e.mediaUrl})` : ''}`,
-          )
-          .join('\n\n');
-        guidebookContext = `\n\nGuidebook entries for this property:\n${lines}`;
-
-        // Increment ai_use_count for matched entries
-        await Promise.all(
-          entries.map((e) =>
-            db
-              .update(propertyGuidebookEntries)
-              .set({
-                aiUseCount: sql`${propertyGuidebookEntries.aiUseCount} + 1`,
-                lastUsedAt: new Date(),
-              })
-              .where(eq(propertyGuidebookEntries.id, e.id)),
-          ),
-        );
+      if (scope === 'property' && propertyId) {
+        conditions.push(eq(knowledgeEntries.propertyId, propertyId));
       }
-    }
-  }
+
+      if (scope === 'global') {
+        conditions.push(isNull(knowledgeEntries.propertyId));
+      }
+
+      const rows = await db
+        .select()
+        .from(knowledgeEntries)
+        .where(and(...conditions));
+      return rows.map(toKnowledgeEntry);
+    },
+  };
+
+  const aiKnowledge = await resolveKnowledgeForProperty({
+    source: knowledgeSource,
+    organizationId,
+    propertyId,
+    channels: ['ai'],
+  });
+  const knowledgeContext = formatKnowledgeForPrompt(aiKnowledge);
 
   // --- Knowledge: Learned Memory ---
   let memoryContext = '';
@@ -183,7 +164,7 @@ Length: ${responseLength}
 ${specialInstructions ? `Special instructions: ${specialInstructions}` : ''}
 ${chipLines ? `Style modifiers for this reply:\n${chipLines}` : ''}
 ${extraContext ? `IMPORTANT additional instructions for this reply (follow these precisely):\n${extraContext}\n` : ''}
-Reply in the same language as the guest message. Do not start with "Of course" or "Certainly".${faqContext}${guidebookContext}${memoryContext}`;
+Reply in the same language as the guest message. Do not start with "Of course" or "Certainly".${knowledgeContext ? `\n\n${knowledgeContext}` : ''}${memoryContext}`;
 
   const historyMessages = conversationHistory.map((m) => ({
     role: (m.senderType === 'guest' ? 'user' : 'assistant') as 'user' | 'assistant',
