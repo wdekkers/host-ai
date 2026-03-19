@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { handleListSeoDrafts } from './route';
-import { POST as runSeoDraftsRoute, handleRunSeoDrafts } from './run/route';
-import { PATCH as patchSeoDraftRoute, handlePatchSeoDraft } from './[id]/route';
+import { handleListSeoDrafts } from './list-handler';
+import { handleRunSeoDrafts } from './run/run-handler';
+import { handlePatchSeoDraft } from './[id]/patch-handler';
+import { POST as runSeoDraftsRoute } from './run/route';
+import { PATCH as patchSeoDraftRoute } from './[id]/route';
 
 type TestAuthContext = {
   orgId: string;
