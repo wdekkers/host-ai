@@ -64,6 +64,20 @@
       "when": 1773793845000,
       "tag": "0008_silver_drift",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1773880245000,
+      "tag": "0009_shared_knowledge_entries",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1773880245001,
+      "tag": "0010_scope_property_id_checks",
+      "breakpoints": true
     }
   ]
 }
