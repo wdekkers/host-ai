@@ -22,21 +22,22 @@ async function withEnvVar(
   value: string | undefined,
   run: () => Promise<void>,
 ) {
-  const original = process.env[key];
+  const env = process.env as Record<string, string | undefined>;
+  const original = env[key];
 
   if (value === undefined) {
-    delete process.env[key];
+    delete env[key];
   } else {
-    process.env[key] = value;
+    env[key] = value;
   }
 
   try {
     await run();
   } finally {
     if (original === undefined) {
-      delete process.env[key];
+      delete env[key];
     } else {
-      process.env[key] = original;
+      env[key] = original;
     }
   }
 }

@@ -214,6 +214,70 @@ export const taskAuditEvents = waltSchema.table(
   }),
 );
 
+// --- Agent Config ---
+
+export const agentConfigs = waltSchema.table(
+  'agent_configs',
+  {
+    id: uuid('id').primaryKey(),
+    organizationId: text('organization_id').notNull(),
+    scope: text('scope').notNull(), // 'global' | 'property'
+    propertyId: text('property_id'),
+    tone: text('tone'),
+    emojiUse: text('emoji_use'),
+    responseLength: text('response_length'),
+    escalationRules: text('escalation_rules'),
+    specialInstructions: text('special_instructions'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
+  },
+  (table) => ({
+    orgScopeIdx: index('agent_configs_organization_id_scope_idx').on(
+      table.organizationId,
+      table.scope,
+    ),
+  }),
+);
+
+// --- Property Memory ---
+
+export const propertyMemory = waltSchema.table(
+  'property_memory',
+  {
+    id: uuid('id').primaryKey(),
+    organizationId: text('organization_id').notNull(),
+    propertyId: text('property_id').notNull(),
+    fact: text('fact').notNull(),
+    source: text('source').notNull().default('manual'),
+    sourceReservationId: text('source_reservation_id'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+  },
+  (table) => ({
+    orgPropertyIdx: index('property_memory_organization_id_property_id_idx').on(
+      table.organizationId,
+      table.propertyId,
+    ),
+  }),
+);
+
+// --- Property Guidebook Entries ---
+
+export const propertyGuidebookEntries = waltSchema.table(
+  'property_guidebook_entries',
+  {
+    id: uuid('id').primaryKey(),
+    propertyId: text('property_id').notNull(),
+    title: text('title').notNull(),
+    description: text('description'),
+    mediaUrl: text('media_url'),
+    aiUseCount: integer('ai_use_count').notNull().default(0),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+  },
+  (table) => ({
+    propertyIdx: index('property_guidebook_entries_property_id_idx').on(table.propertyId),
+  }),
+);
+
 // --- SEO Draft Pipeline ---
 
 export const seoPipelineRuns = waltSchema.table(
