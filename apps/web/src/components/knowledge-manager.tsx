@@ -113,6 +113,7 @@ export function KnowledgeManager({ scope, propertyId, propertyName }: KnowledgeM
   const [inheritedItems, setInheritedItems] = useState<KnowledgeEntry[]>([]);
   const [form, setForm] = useState<KnowledgeFormState>(() => emptyForm('faq'));
   const [faqNotes, setFaqNotes] = useState('');
+  const [guidebookNotes, setGuidebookNotes] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -120,6 +121,7 @@ export function KnowledgeManager({ scope, propertyId, propertyName }: KnowledgeM
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isGeneratingFaq, setIsGeneratingFaq] = useState(false);
+  const [isGeneratingGuidebook, setIsGeneratingGuidebook] = useState(false);
   const activeTypeRef = useRef<VisibleEntryType>(activeType);
 
   useEffect(() => {
@@ -369,6 +371,57 @@ export function KnowledgeManager({ scope, propertyId, propertyName }: KnowledgeM
     }
   }
 
+  async function generateGuidebookDraft() {
+    if (!guidebookNotes.trim()) {
+      setSubmitError('Add rough guidebook notes first.');
+      setSuccess(null);
+      return;
+    }
+
+    setIsGeneratingGuidebook(true);
+    setSubmitError(null);
+    setSuccess(null);
+
+    try {
+      const response = await fetch('/api/knowledge/guidebook-draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          notes: guidebookNotes,
+          propertyName,
+        }),
+      });
+
+      const payload = (await response.json()) as {
+        draft?: { title: string; body: string; topicKey: string };
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? 'Unable to generate guidebook draft.');
+      }
+
+      if (!payload.draft) {
+        throw new Error('AI did not return a guidebook draft.');
+      }
+
+      setForm((current) => ({
+        ...current,
+        title: payload.draft?.title ?? current.title,
+        body: payload.draft?.body ?? current.body,
+        topicKey: payload.draft?.topicKey ?? current.topicKey,
+        slug: current.slug || payload.draft?.topicKey || current.slug,
+      }));
+      setSuccess('Guidebook draft generated. Review it before saving.');
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : 'Unable to generate guidebook draft.',
+      );
+    } finally {
+      setIsGeneratingGuidebook(false);
+    }
+  }
+
   function saveEntry() {
     startTransition(async () => {
       try {
@@ -523,6 +576,35 @@ export function KnowledgeManager({ scope, propertyId, propertyName }: KnowledgeM
             </>
           ) : (
             <>
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 md:col-span-2">
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-blue-800">
+                      Quick Guidebook Draft
+                    </h3>
+                    <p className="mt-1 text-xs text-blue-700">
+                      Dictate rough guest instructions and AI will turn them into a clean
+                      guidebook section you can edit before saving.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void generateGuidebookDraft()}
+                    disabled={isGeneratingGuidebook}
+                    className="rounded-md bg-blue-700 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-800 disabled:opacity-50"
+                  >
+                    {isGeneratingGuidebook ? 'Generating…' : 'Generate Guidebook'}
+                  </button>
+                </div>
+
+                <textarea
+                  className={`${inputClass} min-h-28 border-blue-200 bg-white`}
+                  value={guidebookNotes}
+                  onChange={(event) => setGuidebookNotes(event.target.value)}
+                  placeholder="Pool heating must be requested 24 hours ahead. It costs 45 dollars per night. Guests should message us before arrival."
+                />
+              </div>
+
               <label className="block">
                 <span className="text-sm font-medium text-gray-700">Title</span>
                 <input
