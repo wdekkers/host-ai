@@ -8,6 +8,7 @@ type GuidebookDraft = {
   title: string;
   body: string;
   topicKey: string;
+  status?: string;
 };
 
 type GuidebookDraftDependencies = {
@@ -20,6 +21,10 @@ function normalizeTopicKey(value: string) {
     .trim()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+function normalizeDraftStatus(value: string | undefined) {
+  return value === 'published' ? 'published' : 'draft';
 }
 
 async function generateGuidebookDraftWithOpenAi({
@@ -46,12 +51,13 @@ async function generateGuidebookDraftWithOpenAi({
         content: `You convert rough short-term rental host notes into one clean guidebook entry.
 
 Return JSON only with this exact shape:
-{ "title": string, "body": string, "topicKey": string }
+{ "title": string, "body": string, "topicKey": string, "status": "draft" | "published" }
 
 Rules:
 - Write a short clear title for the guidebook section.
 - Write a concise, polished body with the essential guest instructions.
 - topicKey should be short, lowercase, and stable for this topic.
+- Use "published" only when the notes are specific and ready for guests. Use "draft" when the notes are tentative, incomplete, or need review.
 - Do not include markdown, commentary, or extra fields.`,
       },
       {
@@ -75,6 +81,7 @@ Rules:
     title: parsed.title.trim(),
     body: parsed.body.trim(),
     topicKey: normalizeTopicKey(parsed.topicKey?.trim() || parsed.title),
+    status: normalizeDraftStatus(parsed.status),
   };
 }
 
@@ -101,6 +108,7 @@ export async function handleGenerateGuidebookDraft(
           title: draft.title.trim(),
           body: draft.body.trim(),
           topicKey: normalizeTopicKey(draft.topicKey || draft.title),
+          status: normalizeDraftStatus(draft.status),
         },
       });
     } catch (error) {

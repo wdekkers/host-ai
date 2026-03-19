@@ -8,6 +8,7 @@ type FaqDraft = {
   question: string;
   answer: string;
   topicKey: string;
+  status?: string;
 };
 
 type FaqDraftDependencies = {
@@ -20,6 +21,10 @@ function normalizeTopicKey(value: string) {
     .trim()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+function normalizeDraftStatus(value: string | undefined) {
+  return value === 'published' ? 'published' : 'draft';
 }
 
 async function generateFaqDraftWithOpenAi({
@@ -46,12 +51,13 @@ async function generateFaqDraftWithOpenAi({
         content: `You convert rough short-term rental host notes into one clean FAQ entry.
 
 Return JSON only with this exact shape:
-{ "question": string, "answer": string, "topicKey": string }
+{ "question": string, "answer": string, "topicKey": string, "status": "draft" | "published" }
 
 Rules:
 - Write a single clear guest-facing FAQ question.
 - Write a concise but complete answer in plain language.
 - topicKey should be short, lowercase, and stable for this topic.
+- Use "published" only when the notes are specific and ready for guests. Use "draft" when the notes are tentative, incomplete, or need review.
 - Do not include markdown, commentary, or extra fields.`,
       },
       {
@@ -75,6 +81,7 @@ Rules:
     question: parsed.question.trim(),
     answer: parsed.answer.trim(),
     topicKey: normalizeTopicKey(parsed.topicKey?.trim() || parsed.question),
+    status: normalizeDraftStatus(parsed.status),
   };
 }
 
@@ -101,6 +108,7 @@ export async function handleGenerateFaqDraft(
           question: draft.question.trim(),
           answer: draft.answer.trim(),
           topicKey: normalizeTopicKey(draft.topicKey || draft.question),
+          status: normalizeDraftStatus(draft.status),
         },
       });
     } catch (error) {

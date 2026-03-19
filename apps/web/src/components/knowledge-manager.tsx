@@ -45,6 +45,11 @@ const defaultChannelsByType: Record<VisibleEntryType, KnowledgeChannel[]> = {
   guidebook: ['ai', 'guidebook'],
 };
 
+const channelDefaultLabels: Record<VisibleEntryType, string> = {
+  faq: 'Default channels: AI + Website',
+  guidebook: 'Default channels: AI + Guidebook',
+};
+
 function emptyForm(entryType: VisibleEntryType): KnowledgeFormState {
   return {
     topicKey: '',
@@ -277,6 +282,15 @@ export function KnowledgeManager({ scope, propertyId, propertyName }: KnowledgeM
     setSuccess(null);
   }
 
+  function resetChannels(entryType: VisibleEntryType = activeType) {
+    setForm((current) => ({
+      ...current,
+      channels: [...defaultChannelsByType[entryType]],
+    }));
+    setSubmitError(null);
+    setSuccess(null);
+  }
+
   function resetForm(entryType: VisibleEntryType = activeType) {
     setEditingId(null);
     setForm(emptyForm(entryType));
@@ -344,7 +358,7 @@ export function KnowledgeManager({ scope, propertyId, propertyName }: KnowledgeM
       });
 
       const payload = (await response.json()) as {
-        draft?: { question: string; answer: string; topicKey: string };
+        draft?: { question: string; answer: string; topicKey: string; status: KnowledgeStatus };
         error?: string;
       };
 
@@ -361,6 +375,7 @@ export function KnowledgeManager({ scope, propertyId, propertyName }: KnowledgeM
         question: payload.draft?.question ?? current.question,
         answer: payload.draft?.answer ?? current.answer,
         topicKey: payload.draft?.topicKey ?? current.topicKey,
+        status: payload.draft?.status ?? current.status,
         slug: current.slug || payload.draft?.topicKey || current.slug,
       }));
       setSuccess('FAQ draft generated. Review it before saving.');
@@ -393,7 +408,7 @@ export function KnowledgeManager({ scope, propertyId, propertyName }: KnowledgeM
       });
 
       const payload = (await response.json()) as {
-        draft?: { title: string; body: string; topicKey: string };
+        draft?: { title: string; body: string; topicKey: string; status: KnowledgeStatus };
         error?: string;
       };
 
@@ -410,6 +425,7 @@ export function KnowledgeManager({ scope, propertyId, propertyName }: KnowledgeM
         title: payload.draft?.title ?? current.title,
         body: payload.draft?.body ?? current.body,
         topicKey: payload.draft?.topicKey ?? current.topicKey,
+        status: payload.draft?.status ?? current.status,
         slug: current.slug || payload.draft?.topicKey || current.slug,
       }));
       setSuccess('Guidebook draft generated. Review it before saving.');
@@ -485,6 +501,42 @@ export function KnowledgeManager({ scope, propertyId, propertyName }: KnowledgeM
       } catch (error) {
         setSubmitError(
           error instanceof Error ? error.message : 'Unable to create property override.',
+        );
+      }
+    });
+  }
+
+  function updateEntryStatus(entry: KnowledgeEntry, nextStatus: KnowledgeStatus) {
+    startTransition(async () => {
+      try {
+        const url =
+          scope === 'global'
+            ? `/api/knowledge/${entry.id}`
+            : `/api/properties/${propertyId}/knowledge/${entry.id}`;
+
+        const response = await fetch(url, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: nextStatus }),
+        });
+
+        const payload = (await response.json()) as { item?: KnowledgeEntry; error?: string };
+        if (!response.ok) {
+          throw new Error(payload.error ?? 'Unable to update knowledge status.');
+        }
+
+        await reloadEntries(activeType);
+        setSuccess(
+          nextStatus === 'archived'
+            ? 'Knowledge entry archived.'
+            : nextStatus === 'published'
+              ? 'Knowledge entry published.'
+              : 'Knowledge entry moved to draft.',
+        );
+        setSubmitError(null);
+      } catch (error) {
+        setSubmitError(
+          error instanceof Error ? error.message : 'Unable to update knowledge status.',
         );
       }
     });
@@ -676,7 +728,19 @@ export function KnowledgeManager({ scope, propertyId, propertyName }: KnowledgeM
           </label>
 
           <div className="md:col-span-2">
-            <span className="text-sm font-medium text-gray-700">Channels</span>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <span className="text-sm font-medium text-gray-700">Channels</span>
+                <p className="mt-1 text-xs text-gray-500">{channelDefaultLabels[activeType]}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => resetChannels(activeType)}
+                className="text-sm font-medium text-gray-600 underline underline-offset-2 hover:text-gray-900"
+              >
+                Reset defaults
+              </button>
+            </div>
             <div className="mt-2 flex flex-wrap gap-2">
               {(Object.keys(channelLabels) as KnowledgeChannel[]).map((channel) => {
                 const checked = form.channels.includes(channel);
@@ -790,13 +854,32 @@ export function KnowledgeManager({ scope, propertyId, propertyName }: KnowledgeM
                     </p>
 
                     <div className="mt-4 flex justify-end">
-                      <button
-                        type="button"
-                        onClick={() => editEntry(entry)}
-                        className="text-sm font-medium text-gray-700 underline underline-offset-2 hover:text-gray-900"
-                      >
-                        Edit
-                      </button>
+                      <div className="flex flex-wrap gap-4">
+                        <button
+                          type="button"
+                          onClick={() => editEntry(entry)}
+                          className="text-sm font-medium text-gray-700 underline underline-offset-2 hover:text-gray-900"
+                        >
+                          Edit
+                        </button>
+                        {entry.status !== 'archived' ? (
+                          <button
+                            type="button"
+                            onClick={() => updateEntryStatus(entry, 'archived')}
+                            className="text-sm font-medium text-gray-600 underline underline-offset-2 hover:text-gray-900"
+                          >
+                            Archive
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => updateEntryStatus(entry, 'draft')}
+                            className="text-sm font-medium text-gray-600 underline underline-offset-2 hover:text-gray-900"
+                          >
+                            Restore draft
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

@@ -37,6 +37,7 @@ void test('guidebook draft handler returns a normalized AI draft', async () => {
           title: 'Pool Heating',
           body: 'Pool heating must be requested at least 24 hours before arrival and costs $45 per night. Guests should message us before arrival to arrange it.',
           topicKey: 'Pool Heating',
+          status: 'published',
         };
       },
     },
@@ -44,13 +45,40 @@ void test('guidebook draft handler returns a normalized AI draft', async () => {
 
   assert.equal(response.status, 200);
   const body = (await response.json()) as {
-    draft: { title: string; body: string; topicKey: string };
+    draft: { title: string; body: string; topicKey: string; status: string };
   };
   assert.deepEqual(body.draft, {
     title: 'Pool Heating',
     body: 'Pool heating must be requested at least 24 hours before arrival and costs $45 per night. Guests should message us before arrival to arrange it.',
     topicKey: 'pool-heating',
+    status: 'published',
   });
+});
+
+void test('guidebook draft handler defaults invalid AI status suggestions to draft', async () => {
+  const response = await handleGenerateGuidebookDraft(
+    new Request('http://localhost/api/knowledge/guidebook-draft', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        notes: 'Maybe add a section about the backup heater instructions later.',
+      }),
+    }),
+    {
+      generateDraft: async () => ({
+        title: 'Backup Heater',
+        body: 'A backup heater is available if temperatures drop suddenly.',
+        topicKey: 'backup-heater',
+        status: 'pending-review',
+      }),
+    },
+  );
+
+  assert.equal(response.status, 200);
+  const body = (await response.json()) as {
+    draft: { title: string; body: string; topicKey: string; status: string };
+  };
+  assert.equal(body.draft.status, 'draft');
 });
 
 void test('guidebook draft handler returns 503 when OPENAI_API_KEY is missing', async () => {
