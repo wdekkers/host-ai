@@ -85,6 +85,18 @@ export default async function PropertiesPage() {
                   >
                     Tasks
                   </Link>
+                  <Link
+                    href={`/properties/${p.id}/agent`}
+                    className="text-gray-600 hover:text-gray-900 underline underline-offset-2"
+                  >
+                    Agent
+                  </Link>
+                  <Link
+                    href={`/properties/${p.id}/knowledge`}
+                    className="text-gray-600 hover:text-gray-900 underline underline-offset-2"
+                  >
+                    Knowledge
+                  </Link>
                 </div>
               </div>
             );

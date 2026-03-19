@@ -11,11 +11,11 @@ type Params = { params: Promise<{ id: string }> };
 
 type AgentConfigRow = typeof agentConfigs.$inferSelect;
 type AgentConfigInput = {
-  tone?: string;
-  emojiUse?: string;
-  responseLength?: string;
-  escalationRules?: string;
-  specialInstructions?: string;
+  tone?: string | null;
+  emojiUse?: string | null;
+  responseLength?: string | null;
+  escalationRules?: string | null;
+  specialInstructions?: string | null;
 };
 
 type AgentConfigDependencies = {

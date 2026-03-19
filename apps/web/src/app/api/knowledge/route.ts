@@ -67,6 +67,7 @@ type KnowledgeRouteDependencies = {
     orgId: string;
     knowledgeId: string;
     scope: KnowledgeScope;
+    propertyId?: string | null;
     values: KnowledgePatchValues;
   }) => Promise<KnowledgeEntryRow | null>;
 };
@@ -179,15 +180,17 @@ async function patchKnowledgeEntryRecord(
   orgId: string,
   knowledgeId: string,
   scope: KnowledgeScope,
+  propertyId: string | null,
   values: KnowledgePatchValues,
   deps: KnowledgeRouteDependencies = {},
 ): Promise<KnowledgeEntryRow | null> {
   const patchKnowledgeEntry =
     deps.patchKnowledgeEntry ??
-    (async (args: {
+      (async (args: {
       orgId: string;
       knowledgeId: string;
       scope: KnowledgeScope;
+      propertyId?: string | null;
       values: KnowledgePatchValues;
     }) => {
       const now = new Date();
@@ -198,6 +201,8 @@ async function patchKnowledgeEntryRecord(
       ];
       if (args.scope === 'global') {
         filters.push(isNull(knowledgeEntries.propertyId));
+      } else if (args.propertyId) {
+        filters.push(eq(knowledgeEntries.propertyId, args.propertyId));
       }
       const [updated] = await db
         .update(knowledgeEntries)
@@ -207,7 +212,7 @@ async function patchKnowledgeEntryRecord(
       return updated ?? null;
     });
 
-  return patchKnowledgeEntry({ orgId, knowledgeId, scope, values });
+  return patchKnowledgeEntry({ orgId, knowledgeId, scope, propertyId, values });
 }
 
 function normalizeGlobalCreateBody(body: unknown) {
@@ -305,8 +310,15 @@ export async function handlePatchKnowledgeEntry(
 ) {
   try {
     const { id: knowledgeId } = await params;
-    const parsed = normalizePatchBody(await request.json(), 'global', null);
-    const item = await patchKnowledgeEntryRecord(authContext.orgId, knowledgeId, 'global', parsed, deps);
+    const { topicKey: _topicKey, ...parsed } = normalizePatchBody(await request.json(), 'global', null);
+    const item = await patchKnowledgeEntryRecord(
+      authContext.orgId,
+      knowledgeId,
+      'global',
+      null,
+      parsed,
+      deps,
+    );
 
     if (!item) {
       return NextResponse.json({ error: 'Knowledge entry not found' }, { status: 404 });
@@ -409,6 +421,38 @@ export async function handleCreatePropertyKnowledgeEntry(
   }
 }
 
+export async function handlePatchPropertyKnowledgeEntry(
+  request: Request,
+  { params }: Params & { params: Promise<{ id: string; entryId: string }> },
+  authContext: Pick<{ orgId: string }, 'orgId'>,
+  deps: KnowledgeRouteDependencies = {},
+) {
+  try {
+    const { id: propertyId, entryId } = await params;
+    const { topicKey: _topicKey, ...parsed } = normalizePatchBody(
+      await request.json(),
+      'property',
+      propertyId,
+    );
+    const item = await patchKnowledgeEntryRecord(
+      authContext.orgId,
+      entryId,
+      'property',
+      propertyId,
+      parsed,
+      deps,
+    );
+
+    if (!item) {
+      return NextResponse.json({ error: 'Property knowledge entry not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ item });
+  } catch (error) {
+    return handleApiError({ error, route: '/api/properties/[id]/knowledge/[entryId] PATCH' });
+  }
+}
+
 export async function handleOverridePropertyKnowledgeEntry(
   _request: Request,
   { params }: Params & { params: Promise<{ id: string; entryId: string }> },
@@ -447,6 +491,7 @@ export async function handleOverridePropertyKnowledgeEntry(
         authContext.orgId,
         existingOverride.id,
         'property',
+        propertyId,
         {
           entryType: source.entryType as KnowledgeEntryType,
           title: source.title ?? undefined,

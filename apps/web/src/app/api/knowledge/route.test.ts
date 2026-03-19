@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { knowledgeEntries } from '@walt/db';
 
-import { handleGetAgentConfig } from '../agent-config/route';
+import { handleGetAgentConfig, handlePutAgentConfig } from '../agent-config/route';
 import { handleGetPropertyAgentConfig } from '../properties/[id]/agent-config/route';
 import {
   handleCreateKnowledgeEntry,
@@ -96,6 +96,66 @@ void test('property agent config GET returns null when absent', async () => {
   assert.equal(response.status, 200);
   const body = (await response.json()) as { config: null };
   assert.equal(body.config, null);
+});
+
+void test('global agent config PUT forwards explicit nulls so fields can be cleared', async () => {
+  let receivedValues:
+    | {
+        orgId: string;
+        values: {
+          tone?: string | null;
+          emojiUse?: string | null;
+          responseLength?: string | null;
+          escalationRules?: string | null;
+          specialInstructions?: string | null;
+        };
+      }
+    | undefined;
+
+  const response = await handlePutAgentConfig(
+    new Request('http://localhost/api/agent-config', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        tone: null,
+        emojiUse: null,
+        responseLength: 'balanced',
+        escalationRules: null,
+        specialInstructions: 'Stay concise.',
+      }),
+    }),
+    authContext,
+    {
+      upsertConfig: async (args) => {
+        receivedValues = args;
+        return {
+          id: 'cfg-1',
+          organizationId: 'org-1',
+          scope: 'global',
+          propertyId: null,
+          tone: args.values.tone ?? null,
+          emojiUse: args.values.emojiUse ?? null,
+          responseLength: args.values.responseLength ?? null,
+          escalationRules: args.values.escalationRules ?? null,
+          specialInstructions: args.values.specialInstructions ?? null,
+          createdAt: new Date('2026-03-18T12:00:00.000Z'),
+          updatedAt: new Date('2026-03-18T12:05:00.000Z'),
+        };
+      },
+    },
+  );
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(receivedValues, {
+    orgId: 'org-1',
+    values: {
+      tone: null,
+      emojiUse: null,
+      responseLength: 'balanced',
+      escalationRules: null,
+      specialInstructions: 'Stay concise.',
+    },
+  });
 });
 
 void test('global knowledge list filters by org, scope, channel, and status', async () => {
@@ -206,6 +266,7 @@ void test('global knowledge patch only updates global rows', async () => {
         orgId: string;
         knowledgeId: string;
         scope: string;
+        propertyId: string | null;
         values: Record<string, unknown>;
       }
     | undefined;
@@ -227,6 +288,7 @@ void test('global knowledge patch only updates global rows', async () => {
           orgId: args.orgId,
           knowledgeId: args.knowledgeId,
           scope: args.scope,
+          propertyId: args.propertyId ?? null,
           values: args.values,
         };
         return {
@@ -255,6 +317,7 @@ void test('global knowledge patch only updates global rows', async () => {
   assert.equal(receivedPatch?.orgId, 'org-1');
   assert.equal(receivedPatch?.knowledgeId, 'k-1');
   assert.equal(receivedPatch?.scope, 'global');
+  assert.equal(receivedPatch?.propertyId, null);
   assert.deepEqual(receivedPatch?.values, {
     scope: 'global',
     propertyId: null,

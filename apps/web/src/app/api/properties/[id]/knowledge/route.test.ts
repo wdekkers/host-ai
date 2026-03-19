@@ -2,7 +2,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { knowledgeEntries } from '@walt/db';
 
-import { handleCreatePropertyKnowledgeEntry, handleListPropertyKnowledgeEntries } from './route';
+import { handlePutPropertyAgentConfig } from '../agent-config/route';
+import {
+  handleCreatePropertyKnowledgeEntry,
+  handleListPropertyKnowledgeEntries,
+} from './route';
+import { handlePatchPropertyKnowledgeEntry } from './[entryId]/route';
 import { handleOverridePropertyKnowledgeEntry } from './[entryId]/override/route';
 
 type TestAuthContext = {
@@ -33,6 +38,77 @@ type KnowledgeCreateValues = {
   sortOrder: number;
   slug: string | null;
 };
+
+type KnowledgePatchArgs = {
+  orgId: string;
+  knowledgeId: string;
+  scope: string;
+  propertyId?: string | null;
+  values: Record<string, unknown>;
+};
+
+void test('property agent config PUT forwards explicit nulls so overrides can be cleared', async () => {
+  let receivedValues:
+    | {
+        orgId: string;
+        propertyId: string;
+        values: {
+          tone?: string | null;
+          emojiUse?: string | null;
+          responseLength?: string | null;
+          escalationRules?: string | null;
+          specialInstructions?: string | null;
+        };
+      }
+    | undefined;
+
+  const response = await handlePutPropertyAgentConfig(
+    new Request('http://localhost/api/properties/prop-1/agent-config', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        tone: null,
+        emojiUse: null,
+        responseLength: null,
+        escalationRules: null,
+        specialInstructions: null,
+      }),
+    }),
+    { params: Promise.resolve({ id: 'prop-1' }) },
+    authContext,
+    {
+      upsertConfig: async (args) => {
+        receivedValues = args;
+        return {
+          id: 'cfg-property',
+          organizationId: 'org-1',
+          scope: 'property',
+          propertyId: 'prop-1',
+          tone: args.values.tone ?? null,
+          emojiUse: args.values.emojiUse ?? null,
+          responseLength: args.values.responseLength ?? null,
+          escalationRules: args.values.escalationRules ?? null,
+          specialInstructions: args.values.specialInstructions ?? null,
+          createdAt: new Date('2026-03-18T12:00:00.000Z'),
+          updatedAt: new Date('2026-03-18T12:05:00.000Z'),
+        };
+      },
+    },
+  );
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(receivedValues, {
+    orgId: 'org-1',
+    propertyId: 'prop-1',
+    values: {
+      tone: null,
+      emojiUse: null,
+      responseLength: null,
+      escalationRules: null,
+      specialInstructions: null,
+    },
+  });
+});
 
 void test('property knowledge list includes inherited global rows and property overrides them by topic', async () => {
   let receivedScopes: string[] = [];
@@ -201,6 +277,7 @@ void test('property knowledge override updates an existing property entry for th
     | {
         knowledgeId: string;
         scope: string;
+        propertyId: string | null;
         values: Record<string, unknown>;
       }
     | undefined;
@@ -254,6 +331,7 @@ void test('property knowledge override updates an existing property entry for th
         receivedPatch = {
           knowledgeId: args.knowledgeId,
           scope: args.scope,
+          propertyId: args.propertyId ?? null,
           values: args.values,
         };
         return {
@@ -284,6 +362,7 @@ void test('property knowledge override updates an existing property entry for th
   assert.equal(response.status, 200);
   assert.equal(receivedPatch?.knowledgeId, 'k-existing');
   assert.equal(receivedPatch?.scope, 'property');
+  assert.equal(receivedPatch?.propertyId, 'prop-1');
   assert.deepEqual(receivedPatch?.values, {
     entryType: 'faq',
     title: undefined,
@@ -343,4 +422,91 @@ void test('property knowledge create persists a property-scoped draft entry', as
   assert.equal(receivedInsert?.entryType, 'faq');
   assert.equal(receivedInsert?.topicKey, 'wifi');
   assert.equal(receivedInsert?.status, 'draft');
+});
+
+void test('property knowledge patch only updates rows for that property scope', async () => {
+  let receivedPatch:
+    | {
+        orgId: string;
+        knowledgeId: string;
+        scope: string;
+        propertyId: string | null;
+        values: Record<string, unknown>;
+      }
+    | undefined;
+
+  const response = await handlePatchPropertyKnowledgeEntry(
+    new Request('http://localhost/api/properties/prop-1/knowledge/k-property', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        answer: 'Use garage spot 2 and the overflow driveway.',
+        channels: ['ai', 'website', 'guidebook'],
+        status: 'published',
+      }),
+    }),
+    { params: Promise.resolve({ id: 'prop-1', entryId: 'k-property' }) },
+    authContext,
+    {
+      patchKnowledgeEntry: async (args: KnowledgePatchArgs) => {
+        receivedPatch = {
+          orgId: args.orgId,
+          knowledgeId: args.knowledgeId,
+          scope: args.scope,
+          propertyId: args.propertyId ?? null,
+          values: args.values,
+        };
+        return {
+          id: 'k-property',
+          organizationId: 'org-1',
+          scope: 'property',
+          propertyId: 'prop-1',
+          entryType: 'faq',
+          topicKey: 'parking',
+          title: null,
+          question: 'Where do I park?',
+          answer: 'Use garage spot 2 and the overflow driveway.',
+          body: null,
+          channels: ['ai', 'website', 'guidebook'],
+          status: 'published',
+          sortOrder: 1,
+          slug: null,
+          createdAt: new Date('2026-03-18T12:00:00.000Z'),
+          updatedAt: new Date('2026-03-18T13:30:00.000Z'),
+        };
+      },
+    },
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(receivedPatch?.orgId, 'org-1');
+  assert.equal(receivedPatch?.knowledgeId, 'k-property');
+  assert.equal(receivedPatch?.scope, 'property');
+  assert.equal(receivedPatch?.propertyId, 'prop-1');
+  assert.deepEqual(receivedPatch?.values, {
+    scope: 'property',
+    propertyId: 'prop-1',
+    answer: 'Use garage spot 2 and the overflow driveway.',
+    channels: ['ai', 'website', 'guidebook'],
+    status: 'published',
+  });
+});
+
+void test('property knowledge patch returns 404 when the entry is not scoped to the requested property', async () => {
+  const response = await handlePatchPropertyKnowledgeEntry(
+    new Request('http://localhost/api/properties/prop-1/knowledge/k-property', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        answer: 'Use garage spot 2.',
+      }),
+    }),
+    { params: Promise.resolve({ id: 'prop-1', entryId: 'k-property' }) },
+    authContext,
+    {
+      patchKnowledgeEntry: async () => null,
+    },
+  );
+
+  assert.equal(response.status, 404);
 });
