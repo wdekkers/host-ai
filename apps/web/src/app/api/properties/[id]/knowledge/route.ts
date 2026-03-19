@@ -3,11 +3,7 @@ import { withPermission } from '@/lib/auth/authorize';
 import {
   handleCreatePropertyKnowledgeEntry,
   handleListPropertyKnowledgeEntries,
-} from '../../../knowledge/route';
-export {
-  handleCreatePropertyKnowledgeEntry,
-  handleListPropertyKnowledgeEntries,
-} from '../../../knowledge/route';
+} from '../../../knowledge/handler';
 
 type Params = { params: Promise<{ id: string }> };
 

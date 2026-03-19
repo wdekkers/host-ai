@@ -1,8 +1,6 @@
 import { withPermission } from '@/lib/auth/authorize';
 
-import {
-  handlePatchKnowledgeEntry,
-} from '../route';
+import { handlePatchKnowledgeEntry } from '../handler';
 
 type Params = { params: Promise<{ id: string }> };
 

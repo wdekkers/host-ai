@@ -1,7 +1,6 @@
 import { withPermission } from '@/lib/auth/authorize';
 
-import { handlePatchPropertyKnowledgeEntry } from '../../../../knowledge/route';
-export { handlePatchPropertyKnowledgeEntry } from '../../../../knowledge/route';
+import { handlePatchPropertyKnowledgeEntry } from '../../../../knowledge/handler';
 
 type Params = { params: Promise<{ id: string; entryId: string }> };
 
