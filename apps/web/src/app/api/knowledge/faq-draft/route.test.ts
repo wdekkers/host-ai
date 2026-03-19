@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { handleGenerateFaqDraft } from './route';
+import { handleGenerateFaqDraft } from './handler';
 
 void test('faq draft handler returns 400 when notes are blank', async () => {
   const response = await handleGenerateFaqDraft(
@@ -29,7 +29,7 @@ void test('faq draft handler returns a normalized AI draft', async () => {
       }),
     }),
     {
-      generateDraft: async ({ notes, propertyName }) => {
+      generateDraft: async ({ notes, propertyName }: { notes: string; propertyName?: string }) => {
         assert.equal(propertyName, 'Palm House');
         assert.equal(notes.includes('parking'), true);
 
