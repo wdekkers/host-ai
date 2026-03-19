@@ -186,7 +186,7 @@ For each message:
 
 ### Trigger 2: Daily 7am cron (Vercel Cron Job)
 
-Runs at 07:00 UTC. Phase 1 does not adjust for org timezone — this is a known limitation.
+Runs at 13:00 UTC (= 7:00 AM CST / 8:00 AM CDT). Organization is CST-based.
 
 Queries reservations where `arrival_date::date = today OR arrival_date::date = tomorrow`.
 
