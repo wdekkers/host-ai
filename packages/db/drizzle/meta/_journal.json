@@ -69,14 +69,21 @@
       "idx": 9,
       "version": "7",
       "when": 1773880245000,
-      "tag": "0009_shared_knowledge_entries",
+      "tag": "0009_agent_config_tables",
       "breakpoints": true
     },
     {
       "idx": 10,
       "version": "7",
       "when": 1773880245001,
-      "tag": "0010_scope_property_id_checks",
+      "tag": "0010_shared_knowledge_entries",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1773880245002,
+      "tag": "0011_scope_property_id_checks",
       "breakpoints": true
     }
   ]
