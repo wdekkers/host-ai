@@ -239,13 +239,13 @@ export default async function SeoDraftsPage() {
       ) : (
         <div className="space-y-6">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-            {([
+            {[
               ['needs_review', 'Needs Review'],
               ['needs_attention', 'Needs Attention'],
               ['approved', 'Approved'],
               ['rejected', 'Rejected'],
               ['generated', 'Generated'],
-            ] as [string, string][]).map(([status, label]) => (
+            ].map(([status, label]) => (
               <div key={status} className="rounded-lg border border-gray-200 bg-white p-4">
                 <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">
                   {label}

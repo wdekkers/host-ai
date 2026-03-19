@@ -5,4 +5,3 @@ export * from './command-center.js';
 export * from './auth.js';
 export * from './tasks.js';
 export * from './seo.js';
-export * from './knowledge.js';

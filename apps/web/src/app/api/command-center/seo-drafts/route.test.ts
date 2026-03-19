@@ -1,11 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { handleListSeoDrafts } from './list-handler';
-import { handleRunSeoDrafts } from './run/run-handler';
-import { handlePatchSeoDraft } from './[id]/patch-handler';
-import { POST as runSeoDraftsRoute } from './run/route';
-import { PATCH as patchSeoDraftRoute } from './[id]/route';
+import { handleListSeoDrafts } from './route';
+import { POST as runSeoDraftsRoute, handleRunSeoDrafts } from './run/route';
+import { PATCH as patchSeoDraftRoute, handlePatchSeoDraft } from './[id]/route';
 
 type TestAuthContext = {
   orgId: string;
@@ -24,22 +22,21 @@ async function withEnvVar(
   value: string | undefined,
   run: () => Promise<void>,
 ) {
-  const env = process.env as Record<string, string | undefined>;
-  const original = env[key];
+  const original = process.env[key];
 
   if (value === undefined) {
-    delete env[key];
+    delete process.env[key];
   } else {
-    env[key] = value;
+    process.env[key] = value;
   }
 
   try {
     await run();
   } finally {
     if (original === undefined) {
-      delete env[key];
+      delete process.env[key];
     } else {
-      env[key] = original;
+      process.env[key] = original;
     }
   }
 }
