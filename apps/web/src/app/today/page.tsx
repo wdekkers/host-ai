@@ -3,6 +3,7 @@ import { reservations, propertyAccess, properties } from '@walt/db';
 import { db } from '@/lib/db';
 import { getAuthContext } from '@/lib/auth/get-auth-context';
 import { SuggestionsStack } from './SuggestionsStack';
+import { getPoolTemperatures } from './get-pool-temperatures';
 
 async function getTurnovers(orgId: string) {
   const today = new Date().toISOString().slice(0, 10);
@@ -76,9 +77,10 @@ export default async function TodayPage() {
   const auth = await getAuthContext();
   if (!auth) return null;
 
-  const [turnovers, tasks] = await Promise.all([
+  const [turnovers, tasks, poolTemps] = await Promise.all([
     getTurnovers(auth.orgId),
     getTasksFromGateway(auth.orgId),
+    getPoolTemperatures(auth.orgId),
   ]);
 
   const now = new Date();
@@ -105,6 +107,42 @@ export default async function TodayPage() {
           <div className="text-xs text-blue-600">Tasks Due</div>
         </a>
       </div>
+
+      {poolTemps.length > 0 && (
+        <section id="pool-temperatures">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">
+            Pool Temperatures
+          </h2>
+          <div className="flex gap-3 overflow-x-auto pb-1">
+            {poolTemps.map((pool) => (
+              <div
+                key={pool.propertyId}
+                className="rounded-lg border border-gray-200 bg-white p-4 min-w-[160px] shrink-0"
+              >
+                <div className="text-sm font-medium text-gray-900 truncate">{pool.propertyName}</div>
+                <div className="text-2xl font-bold text-blue-700 mt-1">
+                  {pool.temperatureF !== null ? `${pool.temperatureF}°F` : '—'}
+                </div>
+                {pool.asOf && (
+                  <div className="text-xs text-gray-400 mt-1">
+                    as of{' '}
+                    {pool.asOf.toLocaleTimeString('en-US', {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      timeZone: 'America/Chicago',
+                    })}
+                  </div>
+                )}
+                {!pool.pumpRunning && (
+                  <span className="mt-2 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+                    Pump off
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section id="turnovers">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">

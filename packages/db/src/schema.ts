@@ -70,6 +70,7 @@ export const properties = waltSchema.table('properties', {
   raw: jsonb('raw').notNull(),
   syncedAt: timestamp('synced_at', { withTimezone: true }).notNull(),
   hasPool: boolean('has_pool').notNull().default(false),
+  iaqualinkDeviceSerial: text('iaqualink_device_serial'),
 });
 
 export const reservations = waltSchema.table('reservations', {
@@ -588,5 +589,22 @@ export const taskReminders = waltSchema.table(
     pendingIdx: index('task_reminders_pending_idx')
       .on(table.scheduledFor)
       .where(sql`${table.sentAt} IS NULL`),
+  }),
+);
+
+export const poolTemperatureReadings = waltSchema.table(
+  'pool_temperature_readings',
+  {
+    id: uuid('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+    propertyId: text('property_id').notNull(),
+    deviceSerial: text('device_serial').notNull(),
+    temperatureF: integer('temperature_f'),
+    polledAt: timestamp('polled_at', { withTimezone: true }).notNull(),
+  },
+  (table) => ({
+    propertyPolledAtIdx: index('pool_temperature_readings_property_polled_at_idx').on(
+      table.propertyId,
+      table.polledAt.desc(),
+    ),
   }),
 );
