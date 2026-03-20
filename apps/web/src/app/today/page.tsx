@@ -109,7 +109,7 @@ export default async function TodayPage() {
       </div>
 
       {poolTemps.length > 0 && (
-        <section>
+        <section id="pool-temperatures">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">
             Pool Temperatures
           </h2>
@@ -126,7 +126,7 @@ export default async function TodayPage() {
                 {pool.asOf && (
                   <div className="text-xs text-gray-400 mt-1">
                     as of{' '}
-                    {new Date(pool.asOf).toLocaleTimeString('en-US', {
+                    {pool.asOf.toLocaleTimeString('en-US', {
                       hour: 'numeric',
                       minute: '2-digit',
                       timeZone: 'America/Chicago',
