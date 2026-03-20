@@ -105,8 +105,13 @@ export async function readTemperature(
 
   const body = (await res.json()) as Record<string, unknown>;
 
-  // NOTE: Confirm the exact path by logging `body` on the first live call.
-  // Known paths from reverse engineering:
+  // NOTE: The shadow endpoint at prod.zodiac-io.com/devices/v2/{serial}/shadow
+  // uses a separate authorization mechanism (Lambda authorizer) from IAM.
+  // Verified that Cognito Identity credentials (Cognito_mobileAuth_Role) cannot
+  // access it — returns 401 UnauthorizedException. The device hardware may also
+  // need to be actively connected to the iAqualink 2.0 cloud to report shadow data.
+  //
+  // Known payload paths from reverse engineering:
   //   body.reported.state.pool_temp  (most common)
   //   body.reported.pool_temp        (older firmware)
   const reported = (body.reported ?? body) as Record<string, unknown>;
