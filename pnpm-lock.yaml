@@ -135,12 +135,18 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4.2.1
         version: 4.2.1
+      '@types/aws4':
+        specifier: ^1.11.6
+        version: 1.11.6
       '@walt/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
       '@walt/db':
         specifier: workspace:*
         version: link:../../packages/db
+      aws4:
+        specifier: ^1.13.2
+        version: 1.13.2
       openai:
         specifier: ^6.27.0
         version: 6.27.0(zod@3.25.76)
@@ -1158,6 +1164,9 @@ packages:
   '@tailwindcss/postcss@4.2.1':
     resolution: {integrity: sha512-OEwGIBnXnj7zJeonOh6ZG9woofIjGrd2BORfvE5p9USYKDCZoQmfqLcfNiRWoJlRWLdNPn2IgVZuWAOM4iTYMw==}
 
+  '@types/aws4@1.11.6':
+    resolution: {integrity: sha512-5CnVUkHNyLGpD9AnOcK66YyP0qvIh6nhJJoeK8zSl5YKikUcUbdB7SlHevUYVqicgeh6j5AJa1qa/h08dSZHoA==}
+
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
@@ -1296,6 +1305,9 @@ packages:
 
   avvio@9.2.0:
     resolution: {integrity: sha512-2t/sy01ArdHHE0vRH5Hsay+RtCZt3dLPji7W7/MMOCEgze5b7SNDC4j5H6FnVgPkI1MTNFGzHdHrVXDDl7QSSQ==}
+
+  aws4@1.13.2:
+    resolution: {integrity: sha512-lHe62zvbTB5eEABUVi/AwVh0ZKY9rMMDhmm+eeyuuUQbQ3+J+fONVQOZyj+DdrvD4BY33uYniyRJ4UJIaSKAfw==}
 
   axios@1.13.6:
     resolution: {integrity: sha512-ChTCHMouEe2kn713WHbQGcuYrr6fXTBiu460OTwWrWob16g1bXn4vtz07Ope7ewMozJAnEquLk5lWQWtBig9DQ==}
@@ -3316,6 +3328,10 @@ snapshots:
       postcss: 8.5.8
       tailwindcss: 4.2.1
 
+  '@types/aws4@1.11.6':
+    dependencies:
+      '@types/node': 22.19.13
+
   '@types/estree@1.0.8': {}
 
   '@types/json-schema@7.0.15': {}
@@ -3483,6 +3499,8 @@ snapshots:
     dependencies:
       '@fastify/error': 4.2.0
       fastq: 1.20.1
+
+  aws4@1.13.2: {}
 
   axios@1.13.6:
     dependencies:

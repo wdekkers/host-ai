@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readTemperature, clearTokenCache, type FetchFn } from './iaqualink.js';
+import { readTemperature, clearSessionCache, type FetchFn } from './iaqualink.js';
+
+const MOCK_CREDS = {
+  AccessKeyId: 'AKIATEST',
+  SecretKey: 'secret',
+  SessionToken: 'session-token',
+};
 
 // Helper: creates a mock fetch that returns responses in sequence
 function mockFetch(responses: Array<{ status: number; body: unknown }>): FetchFn {
@@ -16,11 +22,11 @@ function mockFetch(responses: Array<{ status: number; body: unknown }>): FetchFn
   };
 }
 
-test.beforeEach(() => clearTokenCache());
+test.beforeEach(() => clearSessionCache());
 
 void test('returns temperature when pump is running', async () => {
   const fetchFn = mockFetch([
-    { status: 200, body: { authentication_token: 'tok-1' } },
+    { status: 200, body: { credentials: MOCK_CREDS } },
     { status: 200, body: { reported: { state: { pool_temp: 84 } } } },
   ]);
   const result = await readTemperature('device-123', { fetchFn });
@@ -31,7 +37,7 @@ void test('returns temperature when pump is running', async () => {
 
 void test('returns null temperature when pump is off (pool_temp absent)', async () => {
   const fetchFn = mockFetch([
-    { status: 200, body: { authentication_token: 'tok-1' } },
+    { status: 200, body: { credentials: MOCK_CREDS } },
     { status: 200, body: { reported: { state: {} } } },
   ]);
   const result = await readTemperature('device-123', { fetchFn });
@@ -41,9 +47,9 @@ void test('returns null temperature when pump is off (pool_temp absent)', async 
 void test('re-authenticates on 401 and retries shadow request', async () => {
   let authCalls = 0;
   const responses: Array<{ status: number; body: unknown }> = [
-    { status: 200, body: { authentication_token: 'tok-1' } },
+    { status: 200, body: { credentials: MOCK_CREDS } },
     { status: 401, body: {} },
-    { status: 200, body: { authentication_token: 'tok-2' } },
+    { status: 200, body: { credentials: MOCK_CREDS } },
     { status: 200, body: { reported: { state: { pool_temp: 78 } } } },
   ];
   let i = 0;
@@ -58,12 +64,12 @@ void test('re-authenticates on 401 and retries shadow request', async () => {
   assert.equal(result.temperatureF, 78);
 });
 
-void test('caches token — authenticates only once across multiple reads', async () => {
+void test('caches session — authenticates only once across multiple reads', async () => {
   let authCalls = 0;
   const fetchFn: FetchFn = async (url: string): Promise<Response> => {
     if (url.includes('/login')) {
       authCalls++;
-      return { ok: true, status: 200, json: async () => ({ authentication_token: 'cached-tok' }) } as Response;
+      return { ok: true, status: 200, json: async () => ({ credentials: MOCK_CREDS }) } as Response;
     }
     return { ok: true, status: 200, json: async () => ({ reported: { state: { pool_temp: 80 } } }) } as Response;
   };

@@ -1,3 +1,5 @@
+import aws4 from 'aws4';
+
 const ZODIAC_BASE = 'https://prod.zodiac-io.com';
 // Public API key shared by all iAqualink integrations — not a secret, hardcoded intentionally.
 const IAQUALINK_API_KEY = 'EOOEMOW4YR6QNB07';
@@ -5,7 +7,17 @@ const IAQUALINK_API_KEY = 'EOOEMOW4YR6QNB07';
 /** A minimal fetch-compatible signature that accepts string URLs. */
 export type FetchFn = (url: string, init?: RequestInit) => Promise<Response>;
 
-let cachedToken: string | null = null;
+type AwsCredentials = {
+  accessKeyId: string;
+  secretAccessKey: string;
+  sessionToken: string;
+};
+
+type AuthSession = {
+  credentials: AwsCredentials;
+};
+
+let cachedSession: AuthSession | null = null;
 
 export interface PoolReading {
   deviceSerial: string;
@@ -13,7 +25,7 @@ export interface PoolReading {
   polledAt: Date;
 }
 
-async function authenticate(fetchFn: FetchFn): Promise<string> {
+async function authenticate(fetchFn: FetchFn): Promise<AuthSession> {
   const res = await fetchFn(`${ZODIAC_BASE}/users/v1/login`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -25,17 +37,41 @@ async function authenticate(fetchFn: FetchFn): Promise<string> {
   });
   if (!res.ok) throw new Error(`iAqualink auth failed: ${res.status}`);
   const data = (await res.json()) as Record<string, unknown>;
-  // The devices/v2 shadow endpoint requires the Cognito IdToken (userPoolOAuth.IdToken).
-  // Older API versions used authentication_token (Ruby session) or a top-level id_token.
-  const token =
-    ((data.userPoolOAuth as Record<string, unknown> | undefined)?.IdToken as string | undefined) ??
-    (data.id_token as string | undefined) ??
-    (data.authentication_token as string | undefined);
-  if (!token) {
-    throw new Error(`iAqualink auth: no token found. Response fields: ${Object.keys(data).join(', ')}`);
+  const creds = data.credentials as Record<string, string> | undefined;
+  if (!creds?.AccessKeyId || !creds?.SecretKey || !creds?.SessionToken) {
+    throw new Error(`iAqualink auth: no AWS credentials in response. Fields: ${Object.keys(data).join(', ')}`);
   }
-  cachedToken = token;
-  return token;
+  const session: AuthSession = {
+    credentials: {
+      accessKeyId: creds.AccessKeyId,
+      secretAccessKey: creds.SecretKey,
+      sessionToken: creds.SessionToken,
+    },
+  };
+  cachedSession = session;
+  return session;
+}
+
+function signedShadowRequest(deviceSerial: string, creds: AwsCredentials): RequestInit & { url: string } {
+  const host = 'prod.zodiac-io.com';
+  const path = `/devices/v2/${deviceSerial}/shadow`;
+  const signed = aws4.sign(
+    {
+      host,
+      path,
+      service: 'execute-api',
+      region: 'us-east-1',
+    },
+    {
+      accessKeyId: creds.accessKeyId,
+      secretAccessKey: creds.secretAccessKey,
+      sessionToken: creds.sessionToken,
+    },
+  );
+  return {
+    url: `https://${host}${path}`,
+    headers: signed.headers as Record<string, string>,
+  };
 }
 
 export async function readTemperature(
@@ -43,18 +79,18 @@ export async function readTemperature(
   deps: { fetchFn?: FetchFn } = {},
 ): Promise<PoolReading> {
   const fetchFn = deps.fetchFn ?? (fetch as FetchFn);
-  const token = cachedToken ?? (await authenticate(fetchFn));
+  const session = cachedSession ?? (await authenticate(fetchFn));
 
-  const doRequest = (authToken: string) =>
-    fetchFn(`${ZODIAC_BASE}/devices/v2/${deviceSerial}/shadow`, {
-      headers: { authorization: `Bearer ${authToken}` },
-    });
+  const doRequest = (s: AuthSession) => {
+    const { url, ...init } = signedShadowRequest(deviceSerial, s.credentials);
+    return fetchFn(url, init);
+  };
 
-  let res = await doRequest(token);
-  if (res.status === 401) {
-    cachedToken = null;
-    const newToken = await authenticate(fetchFn);
-    res = await doRequest(newToken);
+  let res = await doRequest(session);
+  if (res.status === 401 || res.status === 403) {
+    cachedSession = null;
+    const newSession = await authenticate(fetchFn);
+    res = await doRequest(newSession);
   }
   if (!res.ok) throw new Error(`iAqualink shadow fetch failed: ${res.status}`);
 
@@ -72,7 +108,7 @@ export async function readTemperature(
   return { deviceSerial, temperatureF, polledAt: new Date() };
 }
 
-/** Clears the in-process token cache. Exposed for testing. */
-export function clearTokenCache(): void {
-  cachedToken = null;
+/** Clears the in-process session cache. Exposed for testing. */
+export function clearSessionCache(): void {
+  cachedSession = null;
 }
