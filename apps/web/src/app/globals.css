@@ -71,7 +71,7 @@
     --chart-5: oklch(0.269 0 0);
     --radius: 0.625rem;
     --sidebar: oklch(1 0 0);                /* white */
-    --sidebar-foreground: oklch(0.141 0.005 285.823);  /* keep existing */
+    --sidebar-foreground: oklch(0.141 0.005 285.823);  /* slate-900 near-black */
     --sidebar-primary: oklch(0.549 0.165 237.5);       /* sky-600 */
     --sidebar-primary-foreground: oklch(1 0 0);        /* white */
     --sidebar-accent: oklch(0.97 0.013 236.62);        /* sky-50 */
