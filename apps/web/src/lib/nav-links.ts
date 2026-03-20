@@ -1,19 +1,59 @@
-type NavLink = {
-  href: string;
+import type { LucideIcon } from 'lucide-react';
+import {
+  Home,
+  Inbox,
+  CheckSquare,
+  CalendarDays,
+  Building2,
+  ClipboardList,
+  BookUser,
+  Search,
+  HelpCircle,
+  Settings,
+  Wrench,
+} from 'lucide-react';
+
+export type NavItem = {
   label: string;
-  icon?: string;
+  href: string;
+  icon: LucideIcon;
 };
 
-export const navLinks: readonly NavLink[] = [
-  { href: '/today', label: 'Today' },
-  { href: '/inbox', label: 'Inbox' },
-  { href: '/contacts', label: 'Contacts' },
-  { href: '/tasks', label: 'Tasks' },
-  { href: '/settings/agent', label: 'Agent Settings' },
-  { href: '/property-checklists', label: 'Property Checklists' },
-  { href: '/reservations', label: 'Reservations' },
-  { href: '/properties', label: 'Properties' },
-  { href: '/seo-drafts', label: 'SEO Drafts' },
-  { href: '/questions', label: 'Questions' },
-  { href: '/admin/vendors', label: 'Vendors' },
+export type NavGroup = {
+  label: string;
+  items: NavItem[];
+};
+
+export const navGroups: NavGroup[] = [
+  {
+    label: 'Overview',
+    items: [
+      { label: 'Today', href: '/today', icon: Home },
+      { label: 'Inbox', href: '/inbox', icon: Inbox },
+      { label: 'Tasks', href: '/tasks', icon: CheckSquare },
+    ],
+  },
+  {
+    label: 'Operations',
+    items: [
+      { label: 'Reservations', href: '/reservations', icon: CalendarDays },
+      { label: 'Properties', href: '/properties', icon: Building2 },
+      { label: 'Checklists', href: '/property-checklists', icon: ClipboardList },
+      { label: 'Contacts', href: '/contacts', icon: BookUser },
+    ],
+  },
+  {
+    label: 'Content',
+    items: [
+      { label: 'SEO Drafts', href: '/seo-drafts', icon: Search },
+      { label: 'Questions', href: '/questions', icon: HelpCircle },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { label: 'Settings', href: '/settings', icon: Settings },
+      { label: 'Admin', href: '/admin/vendors', icon: Wrench },
+    ],
+  },
 ];
