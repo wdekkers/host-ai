@@ -68,9 +68,15 @@ function signedShadowRequest(deviceSerial: string, creds: AwsCredentials): Reque
       sessionToken: creds.sessionToken,
     },
   );
+  // Remove 'Host' — fetch sets it from the URL; Node.js fetch (undici) treats it
+  // as a restricted header and may silently drop an explicit value, which would not
+  // affect the signature (the server derives Host from the URL the same way).
+  const allHeaders = signed.headers as Record<string, string>;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { Host: _host, ...headers } = allHeaders;
   return {
     url: `https://${host}${path}`,
-    headers: signed.headers as Record<string, string>,
+    headers,
   };
 }
 
@@ -92,7 +98,10 @@ export async function readTemperature(
     const newSession = await authenticate(fetchFn);
     res = await doRequest(newSession);
   }
-  if (!res.ok) throw new Error(`iAqualink shadow fetch failed: ${res.status}`);
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => '');
+    throw new Error(`iAqualink shadow fetch failed: ${res.status} ${errBody}`);
+  }
 
   const body = (await res.json()) as Record<string, unknown>;
 
