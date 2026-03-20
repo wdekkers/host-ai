@@ -6,7 +6,7 @@ import { SuggestionsStack } from './SuggestionsStack';
 import { getPoolTemperatures } from './get-pool-temperatures';
 
 async function getTurnovers(orgId: string) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
   return db
     .select({
       id: reservations.id,
