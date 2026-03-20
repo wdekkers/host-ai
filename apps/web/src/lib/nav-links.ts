@@ -52,7 +52,7 @@ export const navGroups: NavGroup[] = [
   {
     label: 'System',
     items: [
-      { label: 'Settings', href: '/settings', icon: Settings },
+      { label: 'Settings', href: '/settings/agent', icon: Settings },
       { label: 'Admin', href: '/admin/vendors', icon: Wrench },
     ],
   },
