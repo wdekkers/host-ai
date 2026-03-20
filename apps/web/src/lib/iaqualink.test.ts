@@ -5,6 +5,7 @@ import { readTemperature, clearTokenCache, type FetchFn } from './iaqualink.js';
 // Helper: creates a mock fetch that returns responses in sequence
 function mockFetch(responses: Array<{ status: number; body: unknown }>): FetchFn {
   let i = 0;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   return async (_url: string, _init?: RequestInit): Promise<Response> => {
     const r = responses[i++] ?? { status: 200, body: {} };
     return {
@@ -46,6 +47,7 @@ void test('re-authenticates on 401 and retries shadow request', async () => {
     { status: 200, body: { reported: { state: { pool_temp: 78 } } } },
   ];
   let i = 0;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const fetchFn: FetchFn = async (url: string, _init?: RequestInit): Promise<Response> => {
     if (url.includes('/login')) authCalls++;
     const r = responses[i++] ?? { status: 200, body: {} };
