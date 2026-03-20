@@ -36,7 +36,8 @@ export default clerkMiddleware(async (auth, request) => {
 
   if (
     isPublicRoute(request) ||
-    (pathname === '/api/integrations/hospitable' && request.method === 'POST')
+    (pathname === '/api/integrations/hospitable' && request.method === 'POST') ||
+    (pathname === '/api/webhooks/twilio' && request.method === 'POST')
   ) {
     return NextResponse.next();
   }
