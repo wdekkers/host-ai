@@ -1,7 +1,7 @@
 ALTER TABLE "walt"."properties" ADD COLUMN IF NOT EXISTS "iaqualink_device_serial" text;
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "walt"."pool_temperature_readings" (
-  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+  "id" uuid PRIMARY KEY NOT NULL,
   "property_id" text NOT NULL,
   "device_serial" text NOT NULL,
   "temperature_f" integer,
