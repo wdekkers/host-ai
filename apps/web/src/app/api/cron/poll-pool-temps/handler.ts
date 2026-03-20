@@ -59,6 +59,7 @@ export async function handlePollPoolTemps(request: Request, deps: Deps = {}) {
 
   const poolProperties = await getPoolProperties();
   let polled = 0;
+  const errors: string[] = [];
 
   for (const prop of poolProperties) {
     try {
@@ -75,9 +76,11 @@ export async function handlePollPoolTemps(request: Request, deps: Deps = {}) {
       );
       polled++;
     } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
       console.error(`[poll-pool-temps] Error for ${prop.name} (${prop.iaqualinkDeviceSerial}):`, err);
+      errors.push(`${prop.name}: ${msg}`);
     }
   }
 
-  return NextResponse.json({ ok: true, polled });
+  return NextResponse.json({ ok: true, polled, errors });
 }
