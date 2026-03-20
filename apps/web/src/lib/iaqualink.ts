@@ -25,11 +25,12 @@ async function authenticate(fetchFn: FetchFn): Promise<string> {
   });
   if (!res.ok) throw new Error(`iAqualink auth failed: ${res.status}`);
   const data = (await res.json()) as Record<string, unknown>;
-  // The API returns the token under different field names depending on firmware version.
+  // The devices/v2 shadow endpoint requires the Cognito IdToken (userPoolOAuth.IdToken).
+  // Older API versions used authentication_token (Ruby session) or a top-level id_token.
   const token =
-    (data.authentication_token as string | undefined) ??
+    ((data.userPoolOAuth as Record<string, unknown> | undefined)?.IdToken as string | undefined) ??
     (data.id_token as string | undefined) ??
-    ((data.userPoolOAuth as Record<string, unknown> | undefined)?.id_token as string | undefined);
+    (data.authentication_token as string | undefined);
   if (!token) {
     throw new Error(`iAqualink auth: no token found. Response fields: ${Object.keys(data).join(', ')}`);
   }
