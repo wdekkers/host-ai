@@ -595,7 +595,7 @@ export const taskReminders = waltSchema.table(
 export const poolTemperatureReadings = waltSchema.table(
   'pool_temperature_readings',
   {
-    id: uuid('id').primaryKey().defaultRandom(),
+    id: uuid('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
     propertyId: text('property_id').notNull(),
     deviceSerial: text('device_serial').notNull(),
     temperatureF: integer('temperature_f'),
@@ -604,7 +604,7 @@ export const poolTemperatureReadings = waltSchema.table(
   (table) => ({
     propertyPolledAtIdx: index('pool_temperature_readings_property_polled_at_idx').on(
       table.propertyId,
-      table.polledAt,
+      table.polledAt.desc(),
     ),
   }),
 );
