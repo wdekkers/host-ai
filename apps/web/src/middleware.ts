@@ -5,7 +5,7 @@ import { getPermissionForApiRoute, hasPermission } from '@/lib/auth/permissions'
 import { roleSchema } from '@walt/contracts';
 import type { Role } from '@walt/contracts';
 
-const isPublicRoute = createRouteMatcher(['/sign-in(.*)']);
+const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/api/cron/(.*)']);
 
 // Cache role lookups for 5 minutes to avoid Clerk Management API rate limits.
 const roleCache = new Map<string, { role: Role; expiresAt: number }>();
