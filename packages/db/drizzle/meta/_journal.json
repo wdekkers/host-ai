@@ -127,6 +127,13 @@
       "when": 1774569600000,
       "tag": "0017_faq_review_status",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1774656000000,
+      "tag": "0018_ops_chat",
+      "breakpoints": true
     }
   ]
 }

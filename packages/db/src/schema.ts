@@ -662,3 +662,39 @@ export const poolTemperatureReadings = waltSchema.table(
     ),
   }),
 );
+
+// --- Ops Chat ---
+
+export const opsThreadTypeEnum = waltSchema.enum('ops_thread_type', ['direct', 'group']);
+
+export const opsThreads = waltSchema.table('ops_threads', {
+  id: uuid('id').primaryKey(),
+  organizationId: text('organization_id').notNull(),
+  name: text('name'), // null for direct threads, required for group
+  type: opsThreadTypeEnum('type').notNull().default('direct'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().default(sql`now()`),
+});
+
+export const opsThreadParticipants = waltSchema.table('ops_thread_participants', {
+  id: uuid('id').primaryKey(),
+  threadId: uuid('thread_id').notNull(),
+  displayName: text('display_name').notNull(),
+  phoneE164: text('phone_e164').notNull(),
+  joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().default(sql`now()`),
+}, (table) => [
+  index('ops_thread_participants_thread_id_idx').on(table.threadId),
+]);
+
+export const opsMessages = waltSchema.table('ops_messages', {
+  id: uuid('id').primaryKey(),
+  threadId: uuid('thread_id').notNull(),
+  senderName: text('sender_name'), // null for outbound (system/host)
+  senderPhone: text('sender_phone'), // null for outbound
+  direction: messageDirectionEnum('direction').notNull(),
+  body: text('body').notNull(),
+  twilioMessageSid: text('twilio_message_sid'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
+}, (table) => [
+  index('ops_messages_thread_id_idx').on(table.threadId),
+]);

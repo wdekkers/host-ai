@@ -3,7 +3,7 @@ import {
   Home,
   Inbox,
   CheckSquare,
-  HardHat,
+  MessagesSquare,
   Calendar,
   CalendarDays,
   Building2,
@@ -37,7 +37,7 @@ export const navGroups: NavGroup[] = [
       { label: 'Today', href: '/today', icon: Home },
       { label: 'Inbox', href: '/inbox', icon: Inbox, roles: ['owner', 'manager', 'agent'] },
       { label: 'Tasks', href: '/tasks', icon: CheckSquare, roles: ['owner', 'manager', 'agent'] },
-      { label: 'Vendors', href: '/vendors', icon: HardHat, roles: ['owner', 'manager'] },
+      { label: 'Ops Chat', href: '/ops-chat', icon: MessagesSquare, roles: ['owner', 'manager', 'agent'] },
     ],
   },
   {
