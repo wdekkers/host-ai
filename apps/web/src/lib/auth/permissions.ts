@@ -13,6 +13,8 @@ const rolePermissionMap: Record<Role, ReadonlySet<Permission>> = {
     'tasks.update',
     'tasks.delete',
     'reservations.read',
+    'guests.read',
+    'guests.update',
     'properties.read',
     'properties.update',
     'checklists.read',
@@ -40,6 +42,8 @@ const rolePermissionMap: Record<Role, ReadonlySet<Permission>> = {
     'tasks.update',
     'tasks.delete',
     'reservations.read',
+    'guests.read',
+    'guests.update',
     'checklists.read',
     'checklists.create',
     'checklists.update',
@@ -95,6 +99,12 @@ export function getPermissionForApiRoute(pathname: string, method: string): Perm
     if (method === 'PATCH' || method === 'PUT') return 'tasks.update';
     if (method === 'DELETE') return 'tasks.delete';
     return 'tasks.read';
+  }
+
+  // Guests
+  if (pathname.startsWith('/api/guests')) {
+    if (method === 'GET') return 'guests.read';
+    return 'guests.update';
   }
 
   // Properties
