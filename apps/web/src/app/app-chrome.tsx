@@ -4,6 +4,7 @@ import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import type { ComponentType, ReactNode } from 'react';
 
+import type { Role } from '@walt/contracts';
 import { AppSidebar } from './nav-sidebar';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 
@@ -18,6 +19,7 @@ type UserButtonComponentProps = Record<string, never>;
 type AppChromeProps = {
   children: ReactNode;
   isAuthenticated: boolean;
+  role?: Role;
   LinkComponent?: ComponentType<NavLinkComponentProps>;
   UserButtonComponent?: ComponentType<UserButtonComponentProps>;
 };
@@ -25,6 +27,7 @@ type AppChromeProps = {
 export function AppChrome({
   children,
   isAuthenticated,
+  role = 'owner',
   LinkComponent = Link,
   UserButtonComponent = UserButton,
 }: AppChromeProps) {
@@ -37,6 +40,7 @@ export function AppChrome({
       <AppSidebar
         linkComponent={LinkComponent}
         userButton={<UserButtonComponent />}
+        role={role}
       />
       <SidebarInset>
         <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-white px-4">

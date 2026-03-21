@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { type ComponentType, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 
-import { navGroups } from '@/lib/nav-links';
+import { getNavGroupsForRole } from '@/lib/nav-links';
+import type { Role } from '@walt/contracts';
 import {
   Sidebar,
   SidebarContent,
@@ -29,6 +30,7 @@ type NavLinkComponentProps = {
 type AppSidebarProps = {
   linkComponent?: ComponentType<NavLinkComponentProps>;
   userButton?: ReactNode;
+  role?: Role;
 };
 
 function CollapseToggle() {
@@ -38,8 +40,10 @@ function CollapseToggle() {
 export function AppSidebar({
   linkComponent: NavLink = Link,
   userButton,
+  role = 'owner',
 }: AppSidebarProps) {
   const pathname = usePathname();
+  const visibleGroups = getNavGroupsForRole(role);
 
   return (
     <Sidebar collapsible="icon">
@@ -53,7 +57,7 @@ export function AppSidebar({
       </SidebarHeader>
 
       <SidebarContent>
-        {navGroups.map((group) => (
+        {visibleGroups.map((group) => (
           <SidebarGroup key={group.label}>
             <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
             <SidebarMenu>
