@@ -41,7 +41,8 @@ function daysBetween(a: Date, b: Date) {
   return Math.round((b.getTime() - a.getTime()) / (86400000));
 }
 
-const COLORS = ['#0284c7', '#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2', '#4f46e5', '#be185d'];
+const COLOR_DEFAULT = '#0284c7'; // sky-600
+const COLOR_PENDING = '#d97706'; // amber-600 — inquiry / pending / booking request
 const DIAG = 18;
 const ROW_H = 55;
 const COL_W = 70;
@@ -96,15 +97,11 @@ export function CalendarView({ showRates = false }: { showRates?: boolean }) {
     return map;
   }, [reservations]);
 
-  const reservationColor = useMemo(() => {
-    const map = new Map<string, string>();
-    let idx = 0;
-    for (const r of reservations) {
-      map.set(r.id, COLORS[idx % COLORS.length]!);
-      idx++;
-    }
-    return map;
-  }, [reservations]);
+  const getReservationColor = useCallback((r: Reservation) => {
+    const status = (r.status ?? '').toLowerCase();
+    if (status === 'inquiry' || status === 'pending') return COLOR_PENDING;
+    return COLOR_DEFAULT;
+  }, []);
 
   const selectedProperty = selectedReservation
     ? properties.find((p) => p.id === selectedReservation.propertyId)
@@ -212,7 +209,7 @@ export function CalendarView({ showRates = false }: { showRates?: boolean }) {
 
                       const left = PROP_W + startDay * COL_W;
                       const width = (endDay - startDay) * COL_W;
-                      const color = reservationColor.get(r.id) ?? COLORS[0];
+                      const color = getReservationColor(r);
                       const guestName = [r.guestFirstName, r.guestLastName].filter(Boolean).join(' ');
 
                       // Clip-path: diagonal at start (/) and end (/)
