@@ -5,11 +5,12 @@ export function PropertySettingsTabs({
   current,
 }: {
   propertyId: string;
-  current: 'agent' | 'knowledge';
+  current: 'agent' | 'knowledge' | 'appliances';
 }) {
   const tabs = [
     { href: `/properties/${propertyId}/agent`, label: 'Agent' },
     { href: `/properties/${propertyId}/knowledge`, label: 'Knowledge' },
+    { href: `/properties/${propertyId}/appliances`, label: 'Appliances' },
   ] as const;
 
   return (
