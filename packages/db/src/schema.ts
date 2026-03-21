@@ -69,6 +69,7 @@ export const properties = waltSchema.table('properties', {
   status: text('status'),
   raw: jsonb('raw').notNull(),
   syncedAt: timestamp('synced_at', { withTimezone: true }).notNull(),
+  isActive: boolean('is_active').notNull().default(true),
   hasPool: boolean('has_pool').notNull().default(false),
   iaqualinkDeviceSerial: text('iaqualink_device_serial'),
 });
