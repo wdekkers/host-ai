@@ -16,6 +16,9 @@ export const permissionValues = [
   'tasks.delete',
   // Reservations
   'reservations.read',
+  // Guests
+  'guests.read',
+  'guests.update',
   // Properties
   'properties.read',
   'properties.update',

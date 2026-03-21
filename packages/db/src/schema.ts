@@ -96,6 +96,25 @@ export const reservations = waltSchema.table('reservations', {
   syncedAt: timestamp('synced_at', { withTimezone: true }).notNull(),
 });
 
+export const hostAgainEnum = waltSchema.enum('host_again', ['yes', 'no', 'undecided']);
+
+export const guests = waltSchema.table('guests', {
+  id: text('id').primaryKey(), // internal UUID
+  organizationId: text('organization_id').notNull(),
+  platformGuestId: text('platform_guest_id'), // Hospitable / Airbnb guest ID
+  firstName: text('first_name'),
+  lastName: text('last_name'),
+  email: text('email'),
+  phone: text('phone'),
+  hostAgain: hostAgainEnum('host_again').notNull().default('undecided'),
+  rating: integer('rating'), // 1–5 stars, null = not rated
+  notes: text('notes'), // internal notes, never shown to guest
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().default(sql`now()`),
+}, (table) => [
+  uniqueIndex('guests_org_platform_guest_idx').on(table.organizationId, table.platformGuestId),
+]);
+
 export const reviews = waltSchema.table('reviews', {
   id: text('id').primaryKey(), // Hospitable review UUID
   reservationId: text('reservation_id'),
