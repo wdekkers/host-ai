@@ -122,6 +122,13 @@ export function getPermissionForApiRoute(pathname: string, method: string): Perm
     return 'checklists.read';
   }
 
+  // Vendor hub
+  if (pathname.startsWith('/api/vendor-hub')) {
+    if (method === 'GET') return 'contacts.read';
+    if (method === 'POST') return 'contacts.create';
+    return 'contacts.read';
+  }
+
   // Contacts
   if (pathname.startsWith('/api/contacts') || pathname.startsWith('/api/messaging/contacts')) {
     if (method === 'GET') return 'contacts.read';
