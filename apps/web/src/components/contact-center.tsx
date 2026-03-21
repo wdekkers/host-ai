@@ -77,7 +77,7 @@ export function ContactCenter() {
   };
 
   const loadContacts = async () => {
-    const res = await fetch('/api/messaging/contacts', { headers: await authHeader() });
+    const res = await fetch('/api/contacts', { headers: await authHeader() });
     if (!res.ok) {
       setError('Unable to load contacts.');
       return;
@@ -95,7 +95,7 @@ export function ContactCenter() {
 
   const loadMessages = async (contactId: string) => {
     if (!contactId) return;
-    const res = await fetch(`/api/messaging/messages?contactId=${encodeURIComponent(contactId)}`, {
+    const res = await fetch(`/api/contacts/messages?contactId=${encodeURIComponent(contactId)}`, {
       headers: await authHeader(),
     });
     if (!res.ok) {
@@ -113,7 +113,7 @@ export function ContactCenter() {
       return;
     }
     setAdding(true);
-    const res = await fetch('/api/messaging/contacts', {
+    const res = await fetch('/api/contacts', {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...await authHeader() },
       body: JSON.stringify({
@@ -138,7 +138,7 @@ export function ContactCenter() {
   };
 
   const setPreferredContact = async (id: string) => {
-    const res = await fetch(`/api/messaging/contacts/${encodeURIComponent(id)}`, {
+    const res = await fetch(`/api/contacts/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json', ...await authHeader() },
       body: JSON.stringify({ preferred: true }),
@@ -158,7 +158,7 @@ export function ContactCenter() {
       return;
     }
     setSending(true);
-    const res = await fetch('/api/messaging/messages', {
+    const res = await fetch('/api/contacts/messages', {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...await authHeader() },
       body: JSON.stringify({

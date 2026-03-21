@@ -55,6 +55,19 @@ export function ConversationThread({
   const [loadingOlder, setLoadingOlder] = useState(false);
   const topSentinelRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const shouldScrollToBottom = useRef(false);
+
+  // Scroll to bottom after React renders new messages
+  useEffect(() => {
+    if (!loading && shouldScrollToBottom.current) {
+      shouldScrollToBottom.current = false;
+      const container = messagesContainerRef.current;
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+  }, [loading, messages]);
 
   const fetchMessages = useCallback(
     async (before?: string) => {
@@ -78,13 +91,11 @@ export function ConversationThread({
     setLoading(true);
     setMessages([]);
     void fetchMessages().then((data) => {
+      shouldScrollToBottom.current = true;
       setMessages(data.messages);
       setReservation(data.reservation);
       setHasMore(data.hasMore);
       setLoading(false);
-      requestAnimationFrame(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'instant' });
-      });
     });
   }, [reservationId, fetchMessages]);
 
@@ -149,7 +160,7 @@ export function ConversationThread({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
         {loading ? (
           <p className="text-xs text-center text-slate-400">Loading…</p>
         ) : (
@@ -217,11 +228,9 @@ export function ConversationThread({
           latestGuestMessage={latestGuestMessage}
           onSent={() => {
             void fetchMessages().then((data) => {
+              shouldScrollToBottom.current = true;
               setMessages(data.messages);
               setHasMore(data.hasMore);
-              requestAnimationFrame(() => {
-                bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-              });
             });
           }}
         />
