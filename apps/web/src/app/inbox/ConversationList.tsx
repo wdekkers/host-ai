@@ -3,6 +3,8 @@
 import { useAuth } from '@clerk/nextjs';
 import { useEffect, useState, useCallback } from 'react';
 import type { InboxThread } from './InboxClient';
+import { Badge } from '@/components/ui/badge';
+import { STATUS_BADGE_CONFIG } from './status-config';
 
 type Filter = 'all' | 'unreplied' | 'ai_ready';
 
@@ -108,7 +110,9 @@ export function ConversationList({
         ) : threads.length === 0 ? (
           <div className="p-4 text-xs text-center text-slate-400">No conversations</div>
         ) : (
-          threads.map((t) => (
+          threads.map((t) => {
+            const statusBadge = t.status ? STATUS_BADGE_CONFIG[t.status] : undefined;
+            return (
             <button
               key={t.reservationId}
               onClick={() => onSelect(t.reservationId)}
@@ -129,6 +133,11 @@ export function ConversationList({
                   >
                     {t.guestName}
                   </span>
+                  {statusBadge && (
+                    <Badge className={`text-[9px] h-4 ${statusBadge.className}`}>
+                      {statusBadge.label}
+                    </Badge>
+                  )}
                   {t.unreplied && (
                     <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-sky-600" />
                   )}
@@ -137,7 +146,7 @@ export function ConversationList({
                   {formatRelativeTime(t.lastMessageAt)}
                 </span>
               </div>
-              <p className="text-xs truncate mb-1.5 text-slate-500">{t.lastBody}</p>
+              <p className={`text-xs truncate mb-1.5 text-slate-500 ${t.lastSenderType === 'system' ? 'italic' : ''}`}>{t.lastBody}</p>
               <div className="flex justify-between items-center">
                 <span className="text-xs text-slate-400">{t.propertyName ?? '—'}</span>
                 {t.aiReady ? (
@@ -151,7 +160,8 @@ export function ConversationList({
                 ) : null}
               </div>
             </button>
-          ))
+            );
+          })
         )}
       </div>
     </div>
