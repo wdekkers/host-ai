@@ -33,6 +33,10 @@ const rolePermissionMap: Record<Role, ReadonlySet<Permission>> = {
     'inventory.create',
     'inventory.update',
     'inventory.delete',
+    'appliances.read',
+    'appliances.create',
+    'appliances.update',
+    'appliances.delete',
     'settings.read',
     'settings.update',
     'integrations.read',
@@ -59,6 +63,7 @@ const rolePermissionMap: Record<Role, ReadonlySet<Permission>> = {
     'inventory.create',
     'inventory.update',
     'inventory.delete',
+    'appliances.read',
   ]),
   cleaner: new Set([
     'today.read',
@@ -66,6 +71,7 @@ const rolePermissionMap: Record<Role, ReadonlySet<Permission>> = {
     'checklists.update',
     'inventory.read',
     'inventory.update',
+    'appliances.read',
   ]),
   viewer: new Set([
     'today.read',
@@ -120,6 +126,15 @@ export function getPermissionForApiRoute(pathname: string, method: string): Perm
   if (pathname.startsWith('/api/guests')) {
     if (method === 'GET') return 'guests.read';
     return 'guests.update';
+  }
+
+  // Appliances
+  if (pathname.startsWith('/api/appliances')) {
+    if (method === 'GET') return 'appliances.read';
+    if (method === 'POST') return 'appliances.create';
+    if (method === 'PATCH' || method === 'PUT') return 'appliances.update';
+    if (method === 'DELETE') return 'appliances.delete';
+    return 'appliances.read';
   }
 
   // Properties
