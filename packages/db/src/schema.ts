@@ -723,3 +723,25 @@ export const inventoryItems = waltSchema.table('inventory_items', {
 }, (table) => [
   index('inventory_items_room_id_idx').on(table.roomId),
 ]);
+
+// --- Property Appliances ---
+
+export const propertyAppliances = waltSchema.table('property_appliances', {
+  id: uuid('id').primaryKey(),
+  organizationId: text('organization_id').notNull(),
+  propertyId: text('property_id').notNull(),
+  name: text('name').notNull(),
+  brand: text('brand'),
+  modelNumber: text('model_number'),
+  serialNumber: text('serial_number'),
+  location: text('location'),
+  purchaseDate: timestamp('purchase_date', { withTimezone: true }),
+  warrantyExpiration: timestamp('warranty_expiration', { withTimezone: true }),
+  photoUrl: text('photo_url'),
+  notes: text('notes'),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().default(sql`now()`),
+}, (table) => [
+  index('property_appliances_property_id_active_idx').on(table.propertyId, table.isActive),
+]);

@@ -32,6 +32,11 @@ export const permissionValues = [
   'inventory.create',
   'inventory.update',
   'inventory.delete',
+  // Appliances
+  'appliances.read',
+  'appliances.create',
+  'appliances.update',
+  'appliances.delete',
   // Contacts
   'contacts.read',
   'contacts.create',
