@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createHttpClient } from '../http.js';
+import { RingNetworkError } from '../errors.js';
 
 describe('createHttpClient', () => {
   it('injects Authorization and hardware_id headers', async () => {
@@ -51,6 +52,6 @@ describe('createHttpClient', () => {
       getTokens: async () => ({ accessToken: 'tok', hardwareId: 'hw' }),
       onTokenRefresh: vi.fn(),
     });
-    await expect(http.get('/path')).rejects.toThrow('RingNetworkError');
+    await expect(http.get('/path')).rejects.toThrow(RingNetworkError);
   });
 });
