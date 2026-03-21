@@ -5,26 +5,57 @@ import type { Permission, Role } from '@walt/contracts';
 const rolePermissionMap: Record<Role, ReadonlySet<Permission>> = {
   owner: new Set(permissionValues),
   manager: new Set([
-    'dashboard.read',
-    'drafts.write',
-    'decision.compute',
-    'incidents.write',
-    'ops.write',
-    'automation.execute',
-    'integration.read.provider',
+    'today.read',
+    'inbox.read',
+    'inbox.create',
+    'tasks.read',
+    'tasks.create',
+    'tasks.update',
+    'tasks.delete',
+    'reservations.read',
+    'properties.read',
+    'properties.update',
+    'checklists.read',
+    'checklists.create',
+    'checklists.update',
+    'checklists.delete',
+    'contacts.read',
+    'contacts.create',
+    'contacts.update',
+    'seo.read',
+    'seo.create',
+    'seo.update',
+    'questions.read',
+    'questions.update',
+    'settings.read',
+    'settings.update',
+    'integrations.read',
   ]),
   agent: new Set([
-    'dashboard.read',
-    'drafts.write',
-    'decision.compute',
-    'incidents.write',
-    'ops.write',
+    'today.read',
+    'inbox.read',
+    'inbox.create',
+    'tasks.read',
+    'tasks.create',
+    'tasks.update',
+    'tasks.delete',
+    'reservations.read',
+    'checklists.read',
+    'checklists.create',
+    'checklists.update',
+    'checklists.delete',
+    'contacts.read',
+    'contacts.create',
+    'contacts.update',
   ]),
   cleaner: new Set([
-    'dashboard.read',
-    'ops.write',
+    'today.read',
+    'checklists.read',
+    'checklists.update',
   ]),
-  viewer: new Set(['dashboard.read']),
+  viewer: new Set([
+    'today.read',
+  ]),
 };
 
 export function hasPermission(role: Role, permission: Permission): boolean {
@@ -32,87 +63,109 @@ export function hasPermission(role: Role, permission: Permission): boolean {
 }
 
 export function getPermissionForApiRoute(pathname: string, method: string): Permission | null {
+  // Public / webhook routes — no permission required
   if (pathname === '/api/integrations/hospitable' && method === 'POST') {
     return null;
   }
 
-  if (pathname.startsWith('/api/integrations/hospitable/messages')) {
-    return 'integration.read.provider';
+  // Integrations
+  if (pathname.startsWith('/api/integrations/')) {
+    return 'integrations.read';
   }
 
-  if (pathname.startsWith('/api/integrations/twilio/threads')) {
-    return method === 'GET' ? 'integration.read.provider' : 'ops.write';
-  }
-
-  if (pathname.startsWith('/api/integrations/status')) {
-    return 'integration.read.provider';
-  }
-
-  if (!pathname.startsWith('/api/command-center')) {
-    return method === 'GET' ? 'dashboard.read' : 'ops.write';
-  }
-
-  if (pathname.includes('/command-center/seo-drafts')) {
-    return method === 'GET' ? 'dashboard.read' : 'drafts.write';
-  }
-
-  if (method === 'GET') {
-    return 'dashboard.read';
-  }
-
-  if (pathname.includes('/command-center/risk') || pathname.includes('/command-center/strategy')) {
-    return 'decision.compute';
-  }
-
-  if (
-    pathname.includes('/command-center/experience-risk') ||
-    pathname.includes('/command-center/risk-intelligence')
-  ) {
-    return 'decision.compute';
-  }
-
-  if (pathname.includes('/command-center/incidents/response-plan')) {
-    return 'decision.compute';
-  }
-
-  if (pathname.includes('/command-center/incidents')) {
-    return 'incidents.write';
-  }
-
-  if (pathname.includes('/command-center/autopilot')) {
-    return 'automation.execute';
-  }
-
-  if (pathname.includes('/command-center/rollout')) {
-    return 'platform.configure';
-  }
-
-  if (pathname.includes('/command-center/onboarding')) {
-    return 'platform.configure';
-  }
-
-  if (pathname.includes('/command-center/operating-profile')) {
-    return 'platform.configure';
-  }
-
-  if (pathname.includes('/command-center/property-brain')) {
-    return 'platform.configure';
-  }
-
-  if (pathname.includes('/command-center/drafts') || pathname.includes('/command-center/queue')) {
-    return 'drafts.write';
-  }
-
-  if (
-    pathname.includes('/command-center/qa') ||
-    pathname.includes('/command-center/qa-suggestions')
-  ) {
-    return 'drafts.write';
-  }
-
+  // Admin
   if (pathname.startsWith('/api/admin/')) {
-    return 'platform.configure';
+    if (method === 'GET') return 'admin.read';
+    if (method === 'POST') return 'admin.create';
+    if (method === 'PATCH' || method === 'PUT') return 'admin.update';
+    if (method === 'DELETE') return 'admin.delete';
+    return 'admin.read';
   }
 
-  return 'ops.write';
+  // Inbox
+  if (pathname.startsWith('/api/inbox')) {
+    if (method === 'POST') return 'inbox.create';
+    return 'inbox.read';
+  }
+
+  // Tasks
+  if (pathname.startsWith('/api/tasks') || pathname.startsWith('/api/task-suggestions') || pathname.startsWith('/api/task-categories')) {
+    if (method === 'GET') return 'tasks.read';
+    if (method === 'POST') return 'tasks.create';
+    if (method === 'PATCH' || method === 'PUT') return 'tasks.update';
+    if (method === 'DELETE') return 'tasks.delete';
+    return 'tasks.read';
+  }
+
+  // Properties
+  if (pathname.startsWith('/api/properties')) {
+    if (method === 'GET') return 'properties.read';
+    return 'properties.update';
+  }
+
+  // Checklists
+  if (pathname.startsWith('/api/property-checklists')) {
+    if (method === 'GET') return 'checklists.read';
+    if (method === 'POST') return 'checklists.create';
+    if (method === 'PATCH' || method === 'PUT') return 'checklists.update';
+    if (method === 'DELETE') return 'checklists.delete';
+    return 'checklists.read';
+  }
+
+  // Contacts
+  if (pathname.startsWith('/api/contacts') || pathname.startsWith('/api/messaging/contacts')) {
+    if (method === 'GET') return 'contacts.read';
+    if (method === 'POST') return 'contacts.create';
+    if (method === 'PATCH' || method === 'PUT') return 'contacts.update';
+    return 'contacts.read';
+  }
+
+  // Messages (vendor messages under contacts)
+  if (pathname.startsWith('/api/messaging/messages')) {
+    if (method === 'POST') return 'contacts.create';
+    return 'contacts.read';
+  }
+
+  // SEO drafts
+  if (pathname.startsWith('/api/command-center/seo-drafts')) {
+    if (method === 'GET') return 'seo.read';
+    if (method === 'POST') return 'seo.create';
+    return 'seo.update';
+  }
+
+  // Questions / Q&A
+  if (pathname.startsWith('/api/command-center/qa') || pathname.startsWith('/api/command-center/qa-suggestions') || pathname.startsWith('/api/admin/analyze-questions') || pathname.startsWith('/api/admin/property-faqs')) {
+    if (method === 'GET') return 'questions.read';
+    return 'questions.update';
+  }
+
+  // Knowledge
+  if (pathname.startsWith('/api/knowledge')) {
+    if (method === 'GET') return 'properties.read';
+    return 'properties.update';
+  }
+
+  // Agent config / settings
+  if (pathname.startsWith('/api/agent-config') || pathname.startsWith('/api/command-center/operating-profile') || pathname.startsWith('/api/command-center/onboarding') || pathname.startsWith('/api/command-center/rollout') || pathname.startsWith('/api/command-center/property-brain')) {
+    if (method === 'GET') return 'settings.read';
+    return 'settings.update';
+  }
+
+  // Cron routes are public (handled by middleware)
+  if (pathname.startsWith('/api/cron/')) {
+    return null;
+  }
+
+  // Command center read endpoints (dashboard, priorities, metrics, etc.)
+  if (pathname.startsWith('/api/command-center')) {
+    return 'today.read';
+  }
+
+  // Today page data
+  if (pathname.startsWith('/api/reservations') || pathname.startsWith('/api/command-center/priorities')) {
+    return 'reservations.read';
+  }
+
+  // Fallback: read for GET, write for everything else
+  return method === 'GET' ? 'today.read' : 'tasks.update';
 }

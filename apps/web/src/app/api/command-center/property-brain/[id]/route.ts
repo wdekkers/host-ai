@@ -107,7 +107,7 @@ const updatePropertyBrainSchema = z.object({
 });
 
 export const GET = withPermission(
-  'dashboard.read',
+  'settings.read',
   async (_request: Request, { params }: Params) => {
     const { id } = await params;
     return NextResponse.json({
@@ -118,7 +118,7 @@ export const GET = withPermission(
 );
 
 export const PATCH = withPermission(
-  'platform.configure',
+  'settings.update',
   async (request: Request, { params }: Params, authContext) => {
     const { id } = await params;
     try {

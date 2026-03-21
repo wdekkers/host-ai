@@ -32,12 +32,12 @@ const createIntentDraftSchema = z.object({
   guestName: z.string().min(1),
 });
 
-export const GET = withPermission('dashboard.read', async () => {
+export const GET = withPermission('inbox.read', async () => {
   return NextResponse.json({ intents: getIntentTaxonomyInSingleton() });
 });
 
 export const POST = withPermission(
-  'drafts.write',
+  'inbox.create',
   async (request: Request, _context, authContext) => {
     try {
       const rawBody = (await request.json()) as { actorId?: unknown };

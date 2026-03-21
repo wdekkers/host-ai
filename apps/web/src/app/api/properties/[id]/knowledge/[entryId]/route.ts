@@ -5,7 +5,7 @@ import { handlePatchPropertyKnowledgeEntry } from '../../../../knowledge/handler
 type Params = { params: Promise<{ id: string; entryId: string }> };
 
 export const PATCH = withPermission(
-  'ops.write',
+  'properties.update',
   async (request: Request, context, authContext) =>
     handlePatchPropertyKnowledgeEntry(request, context as Params, authContext),
 );

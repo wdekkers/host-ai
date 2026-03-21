@@ -5,7 +5,7 @@ import { handleOverridePropertyKnowledgeEntry } from '../../../../../knowledge/h
 type Params = { params: Promise<{ id: string; entryId: string }> };
 
 export const POST = withPermission(
-  'ops.write',
+  'properties.update',
   async (request: Request, context, authContext) =>
     handleOverridePropertyKnowledgeEntry(request, context as Params, authContext),
 );

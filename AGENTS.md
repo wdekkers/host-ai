@@ -64,26 +64,41 @@ PRs should include:
 
 ## Role-Aware Development
 
-Every feature must consider the role system. Roles (in order of privilege):
+Every feature must consider the role system. Permissions use CRUD operations (`read`, `create`, `update`, `delete`) per resource.
+
+### Roles (in order of privilege)
 
 | Role      | Access                                                            |
 |-----------|-------------------------------------------------------------------|
-| `owner`   | Full access to all features, admin, and platform configuration    |
-| `manager` | Full access except admin and platform configuration               |
-| `agent`   | Inbox, tasks, today, reservations, checklists, contacts           |
-| `cleaner` | Checklists and today page (turnovers only)                        |
-| `viewer`  | Read-only dashboard access                                        |
+| `owner`   | Full CRUD on all resources                                        |
+| `manager` | Full CRUD except admin                                            |
+| `agent`   | Inbox, tasks, reservations, checklists, contacts (full CRUD)      |
+| `cleaner` | Checklists (read + update only), today (read only)                |
+| `viewer`  | Today (read only)                                                 |
+
+### Permission format
+
+Permissions follow the pattern `resource.action`:
+- `inbox.read`, `inbox.create`
+- `tasks.read`, `tasks.create`, `tasks.update`, `tasks.delete`
+- `checklists.read`, `checklists.create`, `checklists.update`, `checklists.delete`
+- etc.
+
+A cleaner can `checklists.read` and `checklists.update` (execute items) but cannot `checklists.create` or `checklists.delete`.
 
 ### When adding a new page or feature:
 
-1. **Sidebar visibility**: add `roles` to the nav item in `apps/web/src/lib/nav-links.ts`
-2. **API route permissions**: ensure the route returns the correct permission via `getPermissionForApiRoute` in `apps/web/src/lib/auth/permissions.ts`
-3. **Document access**: note which roles can use the feature in PR description
+1. **Define permissions**: add `resource.action` entries to `permissionValues` in `packages/contracts/src/auth.ts`
+2. **Map roles**: add the new permissions to the appropriate roles in `apps/web/src/lib/auth/permissions.ts`
+3. **Route mapping**: add the API path → permission mapping in `getPermissionForApiRoute`
+4. **Sidebar visibility**: add `roles` to the nav item in `apps/web/src/lib/nav-links.ts`
+5. **Document access**: note which roles can use the feature in PR description
 
 ### When modifying an existing page:
 
 - Do not widen access without explicit approval
 - If a new API call is added, verify it is covered by the middleware permission check
+- Map HTTP methods to CRUD: GET → read, POST → create, PATCH/PUT → update, DELETE → delete
 
 Role definitions live in `packages/contracts/src/auth.ts`. Permission mappings live in `apps/web/src/lib/auth/permissions.ts`.
 

@@ -5,7 +5,7 @@ import { withPermission } from '@/lib/auth/authorize';
 import { listPropertyQaSuggestionsInSingleton } from '@/lib/command-center-store';
 import { handleApiError } from '@/lib/secure-logger';
 
-export const GET = withPermission('dashboard.read', async (request: Request) => {
+export const GET = withPermission('questions.read', async (request: Request) => {
   try {
     const url = new URL(request.url);
     const propertyId = url.searchParams.get('propertyId') ?? '';

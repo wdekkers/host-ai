@@ -9,7 +9,7 @@ import { messages, reservations } from '@walt/db';
 type Params = { params: Promise<{ reservationId: string }> };
 
 export const GET = withPermission(
-  'dashboard.read',
+  'inbox.read',
   async (request: Request, { params }: Params) => {
     try {
       const { reservationId } = await params;

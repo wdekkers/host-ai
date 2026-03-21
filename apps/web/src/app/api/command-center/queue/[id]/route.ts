@@ -14,7 +14,7 @@ import {
 type Params = { params: Promise<{ id: string }> };
 
 export const PATCH = withPermission(
-  'drafts.write',
+  'inbox.create',
   async (request: Request, { params }: Params, authContext) => {
     const { id } = await params;
 

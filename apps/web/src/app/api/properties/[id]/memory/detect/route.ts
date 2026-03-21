@@ -8,7 +8,7 @@ type Fact = { text: string; type: 'property_fact' | 'situational' };
 
 type Params = { params: Promise<{ id: string }> };
 
-export const POST = withPermission('dashboard.read', async (request: Request, _context: Params) => {
+export const POST = withPermission('properties.read', async (request: Request, _context: Params) => {
   void _context;
   try {
     const body = (await request.json()) as {

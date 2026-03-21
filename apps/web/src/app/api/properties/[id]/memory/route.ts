@@ -10,7 +10,7 @@ import { propertyMemory } from '@walt/db';
 type Params = { params: Promise<{ id: string }> };
 
 export const GET = withPermission(
-  'dashboard.read',
+  'properties.read',
   async (_req: Request, { params }: Params, authContext) => {
     try {
       const { id: propertyId } = await params;
@@ -35,7 +35,7 @@ export const GET = withPermission(
 );
 
 export const POST = withPermission(
-  'ops.write',
+  'properties.update',
   async (request: Request, { params }: Params, authContext) => {
     try {
       const { id: propertyId } = await params;
