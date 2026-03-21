@@ -54,21 +54,21 @@ export class RingClient {
 
   private getHttp(): HttpClient {
     if (!this.tokens) throw new Error('Call auth() before using the client');
-    const self = this;
 
     return createHttpClient({
       getTokens: async () => ({
-        accessToken: self.tokens!.access_token,
-        hardwareId: self.tokens!.hardware_id,
+        accessToken: this.tokens!.access_token,
+        hardwareId: this.tokens!.hardware_id,
       }),
       onTokenRefresh: async () => {
-        const current = self.tokens!;
+        const current = this.tokens;
+        if (!current) throw new Error('Token lost before refresh could complete');
         const newTokens = await refreshToken({
           refreshTokenValue: current.refresh_token,
           hardwareId: current.hardware_id,
         });
-        self.tokens = newTokens;
-        self.options.onTokenUpdate?.(newTokens);
+        this.tokens = newTokens;
+        this.options.onTokenUpdate?.(newTokens);
       },
     });
   }
@@ -120,8 +120,13 @@ export class RingClient {
     for (const cb of this.eventCallbacks) cb(event);
   }
 
+  private emitError(error: Error): void {
+    for (const cb of this.errorCallbacks) cb(error);
+  }
+
   async startListening(): Promise<void> {
     if (!this.tokens) throw new Error('Call auth() before startListening()');
+    if (this.pollingActive) throw new Error('Already listening — call disconnect() first');
 
     const locations = await this.getLocations();
     const devices = locations.flatMap(l => l.devices);
@@ -143,6 +148,9 @@ export class RingClient {
     });
 
     await this.fcmListener.start();
+    if (this.fcmListener.getStatus() === 'degraded') {
+      this.emitError(new Error('FCM registration failed — operating in polling-only mode'));
+    }
     this.poller.start();
     this.pollingActive = true;
   }
