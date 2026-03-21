@@ -184,6 +184,7 @@ export function AppliancesClient({ propertyId }: AppliancesClientProps) {
   };
 
   const handleDelete = async (id: string) => {
+    if (!window.confirm('Delete this appliance permanently? This cannot be undone.')) return;
     const token = await getToken();
     await fetch(`/api/appliances/${id}`, {
       method: 'DELETE',
@@ -440,7 +441,7 @@ export function AppliancesClient({ propertyId }: AppliancesClientProps) {
 
                       {/* Notes */}
                       {appliance.notes && (
-                        <div className="mt-3 text-sm text-gray-700 bg-gray-50 rounded-md px-3 py-2 border-l-3 border-sky-600">
+                        <div className="mt-3 text-sm text-gray-700 bg-gray-50 rounded-md px-3 py-2 border-l-2 border-sky-600">
                           {appliance.notes}
                         </div>
                       )}

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, asc } from 'drizzle-orm';
 
 import type { AuthContext } from '@walt/contracts';
 import { db } from '@/lib/db';
@@ -51,7 +51,8 @@ export async function handleList(request: Request, authContext: AuthContext) {
   const appliances = await db
     .select()
     .from(propertyAppliances)
-    .where(and(...conditions));
+    .where(and(...conditions))
+    .orderBy(asc(propertyAppliances.name));
 
   return NextResponse.json({ appliances });
 }
