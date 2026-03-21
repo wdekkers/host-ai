@@ -29,6 +29,10 @@ const rolePermissionMap: Record<Role, ReadonlySet<Permission>> = {
     'seo.update',
     'questions.read',
     'questions.update',
+    'inventory.read',
+    'inventory.create',
+    'inventory.update',
+    'inventory.delete',
     'settings.read',
     'settings.update',
     'integrations.read',
@@ -51,11 +55,17 @@ const rolePermissionMap: Record<Role, ReadonlySet<Permission>> = {
     'contacts.read',
     'contacts.create',
     'contacts.update',
+    'inventory.read',
+    'inventory.create',
+    'inventory.update',
+    'inventory.delete',
   ]),
   cleaner: new Set([
     'today.read',
     'checklists.read',
     'checklists.update',
+    'inventory.read',
+    'inventory.update',
   ]),
   viewer: new Set([
     'today.read',
@@ -116,6 +126,15 @@ export function getPermissionForApiRoute(pathname: string, method: string): Perm
   if (pathname.startsWith('/api/properties')) {
     if (method === 'GET') return 'properties.read';
     return 'properties.update';
+  }
+
+  // Inventory
+  if (pathname.startsWith('/api/inventory')) {
+    if (method === 'GET') return 'inventory.read';
+    if (method === 'POST') return 'inventory.create';
+    if (method === 'PATCH' || method === 'PUT') return 'inventory.update';
+    if (method === 'DELETE') return 'inventory.delete';
+    return 'inventory.read';
   }
 
   // Checklists (new + legacy)

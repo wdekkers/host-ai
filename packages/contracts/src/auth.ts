@@ -27,6 +27,11 @@ export const permissionValues = [
   'checklists.create',
   'checklists.update',
   'checklists.delete',
+  // Inventory
+  'inventory.read',
+  'inventory.create',
+  'inventory.update',
+  'inventory.delete',
   // Contacts
   'contacts.read',
   'contacts.create',
