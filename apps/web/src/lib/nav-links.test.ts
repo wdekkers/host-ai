@@ -23,7 +23,7 @@ void test('Operations group contains Properties', () => {
 void test('System group contains Settings and Admin', () => {
   const sys = navGroups.find((g) => g.label === 'System');
   assert.ok(sys, 'System group exists');
-  assert.ok(sys.items.some((i) => i.href === '/settings'));
+  assert.ok(sys.items.some((i) => i.href === '/settings/agent'));
   assert.ok(sys.items.some((i) => i.href === '/admin/vendors'));
 });
 
