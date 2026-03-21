@@ -205,18 +205,19 @@ export function CalendarView({ showRates = false }: { showRates?: boolean }) {
 
                       // Calculate position relative to month start
                       const startDay = Math.max(0, daysBetween(monthStart, arrival));
-                      const endDay = Math.min(daysInMonth, daysBetween(monthStart, departure));
+                      // +1 so the bar extends INTO the checkout day (diagonal ends there)
+                      const endDay = Math.min(daysInMonth, daysBetween(monthStart, departure) + 1);
 
                       if (endDay <= 0 || startDay >= daysInMonth) return null;
 
                       const left = PROP_W + startDay * COL_W;
                       const width = (endDay - startDay) * COL_W;
                       const color = reservationColor.get(r.id) ?? COLORS[0];
-                      const guestName = [r.guestFirstName, r.guestLastName?.charAt(0)].filter(Boolean).join(' ');
+                      const guestName = [r.guestFirstName, r.guestLastName].filter(Boolean).join(' ');
 
                       // Clip-path: diagonal at start (/) and end (/)
                       const startsInView = startDay === daysBetween(monthStart, arrival);
-                      const endsInView = endDay === daysBetween(monthStart, departure);
+                      const endsInView = endDay === daysBetween(monthStart, departure) + 1;
                       const leftDiag = startsInView ? DIAG : 0;
                       const rightDiag = endsInView ? DIAG : 0;
 
