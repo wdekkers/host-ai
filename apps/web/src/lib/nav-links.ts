@@ -4,6 +4,7 @@ import {
   Inbox,
   CheckSquare,
   HardHat,
+  Calendar,
   CalendarDays,
   Building2,
   ClipboardList,
@@ -42,6 +43,7 @@ export const navGroups: NavGroup[] = [
   {
     label: 'Operations',
     items: [
+      { label: 'Calendar', href: '/calendar', icon: Calendar, roles: ['owner', 'manager', 'agent'] },
       { label: 'Reservations', href: '/reservations', icon: CalendarDays, roles: ['owner', 'manager', 'agent'] },
       { label: 'Properties', href: '/properties', icon: Building2, roles: ['owner', 'manager'] },
       { label: 'Checklists', href: '/property-checklists', icon: ClipboardList, roles: ['owner', 'manager', 'agent', 'cleaner'] },

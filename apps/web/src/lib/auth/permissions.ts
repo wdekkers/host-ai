@@ -101,6 +101,11 @@ export function getPermissionForApiRoute(pathname: string, method: string): Perm
     return 'tasks.read';
   }
 
+  // Calendar
+  if (pathname.startsWith('/api/calendar')) {
+    return 'reservations.read';
+  }
+
   // Guests
   if (pathname.startsWith('/api/guests')) {
     if (method === 'GET') return 'guests.read';
