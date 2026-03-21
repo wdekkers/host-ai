@@ -36,15 +36,13 @@ function toDateStr(d: Date) {
   return d.toISOString().slice(0, 10);
 }
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  });
+  return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-// Color palette for reservation bars (cycle through for different bookings)
-const COLORS = ['#0284c7', '#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2'];
+const COLORS = ['#0284c7', '#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2', '#4f46e5', '#be185d'];
+const DIAG = 14; // diagonal cut width in px
+const ROW_H = 44; // row height
+const COL_W = 56; // column width
 
 export function CalendarView() {
   const { getToken } = useAuth();
@@ -94,7 +92,6 @@ export function CalendarView() {
     return map;
   }, [reservations]);
 
-  // Assign a color per reservation for visual distinction
   const reservationColor = useMemo(() => {
     const map = new Map<string, string>();
     let idx = 0;
@@ -137,10 +134,13 @@ export function CalendarView() {
       ) : (
         <Card>
           <CardContent className="p-0 overflow-x-auto">
-            <table className="w-full border-collapse" style={{ minWidth: `${160 + daysInMonth * 44}px` }}>
+            <table className="border-collapse" style={{ minWidth: `${200 + daysInMonth * COL_W}px` }}>
               <thead>
                 <tr>
-                  <th className="sticky left-0 z-20 bg-white border-b border-r border-slate-200 px-3 py-2 text-left text-xs font-medium text-slate-500" style={{ width: 180, minWidth: 180 }}>
+                  <th
+                    className="sticky left-0 z-20 bg-white border-b border-r border-slate-200 px-4 py-2 text-left text-xs font-medium text-slate-500"
+                    style={{ width: 200, minWidth: 200 }}
+                  >
                     Property
                   </th>
                   {dayHeaders.map((d) => {
@@ -149,13 +149,13 @@ export function CalendarView() {
                     return (
                       <th
                         key={d.getDate()}
-                        className={`border-b border-slate-200 px-0 py-2 text-center text-xs font-normal ${
+                        className={`border-b border-r border-slate-100 px-0 py-2 text-center text-xs font-normal ${
                           isToday ? 'bg-sky-50 text-sky-700 font-bold' : isWeekend ? 'bg-slate-50 text-slate-400' : 'text-slate-500'
                         }`}
-                        style={{ width: 44, minWidth: 44 }}
+                        style={{ width: COL_W, minWidth: COL_W }}
                       >
-                        <div>{d.getDate()}</div>
-                        <div className="text-[9px]">{d.toLocaleDateString('en-US', { weekday: 'narrow' })}</div>
+                        <div className="text-[11px]">{d.getDate()}</div>
+                        <div className="text-[9px] uppercase">{d.toLocaleDateString('en-US', { weekday: 'narrow' })}</div>
                       </th>
                     );
                   })}
@@ -166,7 +166,10 @@ export function CalendarView() {
                   const propReservations = reservationsByProperty.get(prop.id) ?? [];
                   return (
                     <tr key={prop.id}>
-                      <td className="sticky left-0 z-20 bg-white border-b border-r border-slate-200 px-3 text-xs font-medium text-slate-900 truncate" style={{ width: 180, minWidth: 180, height: 40 }}>
+                      <td
+                        className="sticky left-0 z-20 bg-white border-b border-r border-slate-200 px-4 text-xs font-medium text-slate-900 truncate"
+                        style={{ height: ROW_H, width: 200, minWidth: 200 }}
+                      >
                         {prop.name}
                       </td>
                       {dayHeaders.map((d) => {
@@ -174,98 +177,83 @@ export function CalendarView() {
                         const isToday = dateStr === toDateStr(new Date());
                         const isWeekend = d.getDay() === 0 || d.getDay() === 6;
 
-                        // Find reservation occupying this day (arrival <= date < departure)
+                        // Reservation occupying this day (arrival <= date < departure)
                         const occupying = propReservations.find((r) => {
                           if (!r.arrivalDate || !r.departureDate) return false;
                           return dateStr >= toDateStr(new Date(r.arrivalDate)) && dateStr < toDateStr(new Date(r.departureDate));
                         });
 
-                        // Find reservation departing on this day
+                        // Reservation departing this day
                         const departing = propReservations.find(
                           (r) => r.departureDate && toDateStr(new Date(r.departureDate)) === dateStr,
                         );
 
-                        // Find reservation arriving on this day
-                        const arriving = propReservations.find(
-                          (r) => r.arrivalDate && toDateStr(new Date(r.arrivalDate)) === dateStr,
-                        );
+                        const isArrival = occupying?.arrivalDate && toDateStr(new Date(occupying.arrivalDate)) === dateStr;
+                        const isDepartTomorrow = occupying?.departureDate && (() => {
+                          const nextDay = new Date(d);
+                          nextDay.setDate(nextDay.getDate() + 1);
+                          return toDateStr(new Date(occupying.departureDate!)) === toDateStr(nextDay);
+                        })();
 
-                        const isArrivalDay = occupying && occupying.arrivalDate && toDateStr(new Date(occupying.arrivalDate)) === dateStr;
+                        const color = occupying ? reservationColor.get(occupying.id) : undefined;
+                        const departColor = departing ? reservationColor.get(departing.id) : undefined;
                         const guestName = occupying
                           ? [occupying.guestFirstName, occupying.guestLastName?.charAt(0)].filter(Boolean).join(' ')
                           : '';
-                        const color = occupying ? reservationColor.get(occupying.id) ?? COLORS[0] : COLORS[0];
-                        const departColor = departing ? reservationColor.get(departing.id) ?? COLORS[0] : COLORS[0];
 
-                        // Turnover: departure and arrival on same day
-                        const isTurnover = departing && arriving && departing.id !== arriving?.id;
+                        // Determine clip paths for bar shape
+                        let clipPath: string | undefined;
+                        if (isArrival && isDepartTomorrow) {
+                          // Single-day booking: diagonal both sides
+                          clipPath = `polygon(${DIAG}px 0, calc(100% - ${DIAG}px) 0, 100% 100%, 0 100%)`;
+                        } else if (isArrival) {
+                          // Arrival: diagonal left edge
+                          clipPath = `polygon(${DIAG}px 0, 100% 0, 100% 100%, 0 100%)`;
+                        } else if (isDepartTomorrow) {
+                          // Last night: diagonal right edge
+                          clipPath = `polygon(0 0, calc(100% - ${DIAG}px) 0, 100% 100%, 0 100%)`;
+                        }
 
                         return (
                           <td
                             key={d.getDate()}
-                            className={`border-b border-slate-100 p-0 relative overflow-hidden ${
+                            className={`border-b border-r border-slate-100 p-0 relative overflow-hidden ${
                               isToday ? 'bg-sky-50' : isWeekend ? 'bg-slate-50/50' : ''
                             }`}
-                            style={{ height: 40, width: 44, minWidth: 44 }}
+                            style={{ height: ROW_H, width: COL_W, minWidth: COL_W }}
                           >
-                            {/* Turnover day: diagonal split — departing top-left, arriving bottom-right */}
-                            {isTurnover && !occupying ? (
-                              <div className="absolute inset-0 cursor-pointer">
-                                {/* Departing guest: top-left triangle */}
-                                <div
-                                  className="absolute inset-0"
-                                  style={{
-                                    backgroundColor: departColor,
-                                    clipPath: 'polygon(0 0, 100% 0, 0 100%)',
-                                    opacity: 0.7,
-                                  }}
-                                  onClick={() => setSelectedReservation(departing)}
-                                  title={`Check-out: ${[departing.guestFirstName, departing.guestLastName].filter(Boolean).join(' ')}`}
-                                />
-                                {/* Arriving guest: bottom-right triangle */}
-                                <div
-                                  className="absolute inset-0"
-                                  style={{
-                                    backgroundColor: reservationColor.get(arriving.id) ?? COLORS[0],
-                                    clipPath: 'polygon(100% 0, 100% 100%, 0 100%)',
-                                  }}
-                                  onClick={() => setSelectedReservation(arriving)}
-                                  title={`Check-in: ${[arriving.guestFirstName, arriving.guestLastName].filter(Boolean).join(' ')}`}
-                                />
-                              </div>
-                            ) : occupying ? (
-                              /* Regular booking bar */
+                            {/* Departing bar: diagonal end in the first half of cell */}
+                            {departing && (!occupying || occupying.id !== departing.id) && (
                               <div
-                                className="absolute inset-y-1 inset-x-0 flex items-center cursor-pointer hover:brightness-110 transition-all"
+                                className="absolute top-0 left-0 bottom-0 cursor-pointer hover:brightness-110"
                                 style={{
+                                  width: '50%',
+                                  backgroundColor: departColor,
+                                  clipPath: `polygon(0 0, calc(100% - ${DIAG}px) 0, 100% 100%, 0 100%)`,
+                                }}
+                                onClick={() => setSelectedReservation(departing)}
+                              />
+                            )}
+
+                            {/* Occupying bar */}
+                            {occupying && (
+                              <div
+                                className="absolute top-0 bottom-0 flex items-center cursor-pointer hover:brightness-110 transition-all"
+                                style={{
+                                  left: departing && departing.id !== occupying.id ? '50%' : 0,
+                                  right: 0,
                                   backgroundColor: color,
-                                  borderRadius: isArrivalDay ? '4px 0 0 4px' : '0',
-                                  clipPath: isArrivalDay
-                                    ? 'polygon(8px 0, 100% 0, 100% 100%, 0 100%, 8px 0)'
-                                    : undefined,
+                                  clipPath,
                                 }}
                                 onClick={() => setSelectedReservation(occupying)}
-                                title={`${guestName} · ${occupying.arrivalDate ? formatDate(occupying.arrivalDate) : ''} – ${occupying.departureDate ? formatDate(occupying.departureDate) : ''}`}
                               >
-                                {isArrivalDay && (
-                                  <span className="text-[10px] text-white font-medium pl-3 truncate">
+                                {isArrival && (
+                                  <span className="text-[10px] text-white font-medium truncate pl-4 pr-1">
                                     {guestName}
                                   </span>
                                 )}
                               </div>
-                            ) : departing && !arriving ? (
-                              /* Departure-only day: top-left triangle */
-                              <div
-                                className="absolute inset-0 cursor-pointer"
-                                style={{
-                                  backgroundColor: departColor,
-                                  clipPath: 'polygon(0 0, 100% 0, 0 100%)',
-                                  opacity: 0.7,
-                                }}
-                                onClick={() => setSelectedReservation(departing)}
-                                title={`Check-out: ${[departing.guestFirstName, departing.guestLastName].filter(Boolean).join(' ')}`}
-                              />
-                            ) : null}
+                            )}
                           </td>
                         );
                       })}
@@ -281,10 +269,7 @@ export function CalendarView() {
       {/* Reservation popup */}
       {selectedReservation && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setSelectedReservation(null)}>
-          <div
-            className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
               <h2 className="text-sm font-bold text-slate-900">Reservation Details</h2>
               <button onClick={() => setSelectedReservation(null)} className="text-slate-400 hover:text-slate-600">
@@ -317,18 +302,12 @@ export function CalendarView() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {selectedReservation.status && (
-                  <Badge variant="secondary">{selectedReservation.status}</Badge>
-                )}
-                {selectedReservation.platform && (
-                  <Badge variant="outline">{selectedReservation.platform}</Badge>
-                )}
+                {selectedReservation.status && <Badge variant="secondary">{selectedReservation.status}</Badge>}
+                {selectedReservation.platform && <Badge variant="outline">{selectedReservation.platform}</Badge>}
               </div>
             </div>
             <div className="px-5 py-3 border-t border-slate-200 flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setSelectedReservation(null)}>
-                Close
-              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setSelectedReservation(null)}>Close</Button>
               <Link href={`/inbox?reservationId=${selectedReservation.id}`}>
                 <Button size="sm">
                   <ExternalLink className="h-3.5 w-3.5 mr-1.5" />

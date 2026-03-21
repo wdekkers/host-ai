@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { AiDraftPanel } from './AiDraftPanel';
+import { Badge } from '@/components/ui/badge';
+import { STATUS_BADGE_CONFIG, STATUS_ICONS, STATUS_COLORS } from './status-config';
 
 type Message = {
   id: string;
@@ -11,6 +13,7 @@ type Message = {
   senderType: string;
   senderFullName: string | null;
   createdAt: string;
+  raw: unknown;
 };
 
 type ReservationInfo = {
@@ -21,6 +24,7 @@ type ReservationInfo = {
   checkIn: string | null;
   checkOut: string | null;
   platform: string | null;
+  status: string | null;
 };
 
 function formatTime(iso: string) {
@@ -128,9 +132,9 @@ export function ConversationThread({
     return () => observer.disconnect();
   }, [hasMore, loadingOlder, loadOlder]);
 
-  const latestIsGuest =
-    messages.length > 0 && messages[messages.length - 1]?.senderType === 'guest';
-  const unrepliedMessage = latestIsGuest ? (messages[messages.length - 1] ?? null) : null;
+  const latestNonSystem = [...messages].reverse().find((m) => m.senderType !== 'system');
+  const latestIsGuest = latestNonSystem?.senderType === 'guest';
+  const unrepliedMessage = latestIsGuest ? (latestNonSystem ?? null) : null;
   const latestGuestMessage = [...messages].reverse().find((m) => m.senderType === 'guest') ?? null;
 
   const guestName =
@@ -147,7 +151,15 @@ export function ConversationThread({
           {initials(guestName)}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-slate-900">{guestName}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-bold text-slate-900">{guestName}</p>
+            {(() => {
+              const statusConfig = reservation?.status ? STATUS_BADGE_CONFIG[reservation.status] : undefined;
+              return statusConfig ? (
+                <Badge className={statusConfig.className}>{statusConfig.label}</Badge>
+              ) : null;
+            })()}
+          </div>
           <p className="text-xs truncate text-slate-500">
             {reservation?.propertyName ?? '—'}
             {reservation?.checkIn &&
@@ -171,6 +183,27 @@ export function ConversationThread({
               </div>
             )}
             {messages.map((m) => {
+              // System event card
+              if (m.senderType === 'system') {
+                const rawData = m.raw as { toStatus?: string } | null;
+                const statusKey = rawData?.toStatus ?? undefined;
+                const Icon = statusKey ? STATUS_ICONS[statusKey] : null;
+                const color = statusKey ? STATUS_COLORS[statusKey] : 'text-slate-500';
+
+                return (
+                  <div key={m.id} className="flex justify-center my-2">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 border border-slate-200">
+                      {Icon && <Icon className={`h-3.5 w-3.5 ${color}`} />}
+                      <span className={`text-xs font-medium ${color}`}>{m.body}</span>
+                      <span className="text-xs text-slate-400">
+                        · {new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                  </div>
+                );
+              }
+
+              // Regular message bubble
               const isHost = m.senderType === 'host';
               const isUnreplied = m === unrepliedMessage;
               return (
