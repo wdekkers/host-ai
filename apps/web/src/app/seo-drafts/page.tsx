@@ -10,6 +10,7 @@ import {
 
 import { DraftReviewActions } from './DraftReviewActions';
 import { RunSeoDraftsButton } from './RunSeoDraftsButton';
+import { SyncPropertiesButton } from './SyncPropertiesButton';
 
 import { hasPermission } from '@/lib/auth/permissions';
 import { db } from '@/lib/db';
@@ -229,8 +230,8 @@ export default async function SeoDraftsPage() {
       </div>
 
       {friscoProperties.length === 0 ? (
-        <div className="rounded-lg border border-gray-200 bg-white p-12 text-center text-gray-500">
-          No Frisco properties found yet. Sync property data before running the SEO draft pipeline.
+        <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
+          <SyncPropertiesButton />
         </div>
       ) : totalDrafts === 0 ? (
         <div className="rounded-lg border border-gray-200 bg-white p-12 text-center text-gray-500">
