@@ -3,14 +3,13 @@ import type { EventCallback, EventDeduplicator, RingEvent } from './events.js';
 
 export type FcmStatus = 'connected' | 'degraded' | 'stopped';
 
-interface FcmNotification {
+export interface FcmNotification {
   data?: FcmPushData;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface FcmReceiver {
   getToken: () => Promise<string>;
-  onNotification: (callback: (notification: any) => void) => void;
+  onNotification: (callback: (notification: FcmNotification) => void) => void;
   destroy?: () => void;
 }
 
@@ -101,7 +100,7 @@ export function createFcmListener(options: FcmListenerOptions): FcmListener {
         const fcmToken = await receiver.getToken();
 
         // Register FCM token with Ring
-        await fetch(`${RING_API_BASE}/device`, {
+        const regResponse = await fetch(`${RING_API_BASE}/device`, {
           method: 'PATCH',
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -119,6 +118,9 @@ export function createFcmListener(options: FcmListenerOptions): FcmListener {
             },
           }),
         });
+        if (!regResponse.ok) {
+          throw new Error(`FCM registration failed: HTTP ${regResponse.status}`);
+        }
 
         receiver.onNotification((notification) => {
           if (!notification.data) return;
