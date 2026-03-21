@@ -58,9 +58,9 @@ function formatCents(cents: number, currency?: string | null) {
 }
 
 const COLORS = ['#0284c7', '#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2', '#4f46e5', '#be185d'];
-const DIAG = 14;
-const ROW_H = 44;
-const COL_W = 56;
+const DIAG = 18;
+const ROW_H = 55;
+const COL_W = 70;
 
 export function CalendarView({ showRates = false }: { showRates?: boolean }) {
   const { getToken } = useAuth();
@@ -214,11 +214,14 @@ export function CalendarView({ showRates = false }: { showRates?: boolean }) {
 
                         let clipPath: string | undefined;
                         if (isArrival && isDepartTomorrow) {
-                          clipPath = `polygon(${DIAG}px 0, calc(100% - ${DIAG}px) 0, 100% 100%, 0 100%)`;
+                          // Single-day: indent bottom-left and bottom-right
+                          clipPath = `polygon(0 0, 100% 0, calc(100% - ${DIAG}px) 100%, ${DIAG}px 100%)`;
                         } else if (isArrival) {
-                          clipPath = `polygon(${DIAG}px 0, 100% 0, 100% 100%, 0 100%)`;
+                          // Arrival: indent bottom-left
+                          clipPath = `polygon(0 0, 100% 0, 100% 100%, ${DIAG}px 100%)`;
                         } else if (isDepartTomorrow) {
-                          clipPath = `polygon(0 0, calc(100% - ${DIAG}px) 0, 100% 100%, 0 100%)`;
+                          // Last night: indent bottom-right
+                          clipPath = `polygon(0 0, 100% 0, calc(100% - ${DIAG}px) 100%, 0 100%)`;
                         }
 
                         return (
@@ -236,7 +239,7 @@ export function CalendarView({ showRates = false }: { showRates?: boolean }) {
                                 style={{
                                   width: '50%',
                                   backgroundColor: departColor,
-                                  clipPath: `polygon(0 0, calc(100% - ${DIAG}px) 0, 100% 100%, 0 100%)`,
+                                  clipPath: `polygon(0 0, 100% 0, calc(100% - ${DIAG}px) 100%, 0 100%)`,
                                 }}
                                 onClick={() => setSelectedReservation(departing)}
                               />
