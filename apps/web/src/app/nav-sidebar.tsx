@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import type { ComponentType, ReactNode } from 'react';
+import React, { type ComponentType, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
@@ -76,10 +76,7 @@ export function AppSidebar({
                 return (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
-                      render={
-                        // eslint-disable-next-line react/no-children-prop
-                        <NavLink href={item.href} children={null as unknown as ReactNode} />
-                      }
+                      render={React.createElement(NavLink, { href: item.href, children: null }) as React.ReactElement}
                       isActive={isActive}
                       tooltip={item.label}
                     >
