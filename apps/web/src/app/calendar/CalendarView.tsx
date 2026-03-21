@@ -62,7 +62,7 @@ const DIAG = 14;
 const ROW_H = 44;
 const COL_W = 56;
 
-export function CalendarView() {
+export function CalendarView({ showRates = false }: { showRates?: boolean }) {
   const { getToken } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(() => startOfMonth(new Date()));
   const [properties, setProperties] = useState<Property[]>([]);
@@ -242,6 +242,19 @@ export function CalendarView() {
                               />
                             )}
 
+                            {/* Empty cell: show nightly rate for owners */}
+                            {!occupying && !departing && showRates && (() => {
+                              // Show rate from nearest reservation for this property
+                              const nearest = propReservations.find((r) => r.nightlyRate);
+                              return nearest?.nightlyRate ? (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <span className="text-[9px] text-slate-400">
+                                    {formatCents(nearest.nightlyRate, nearest.currency)}
+                                  </span>
+                                </div>
+                              ) : null;
+                            })()}
+
                             {/* Occupying bar */}
                             {occupying && (
                               <div
@@ -254,12 +267,16 @@ export function CalendarView() {
                                 }}
                                 onClick={() => setSelectedReservation(occupying)}
                               >
-                                {isArrival && (
+                                {isArrival ? (
                                   <span className="text-[10px] text-white font-medium truncate pl-4 pr-1">
                                     {guestName}
-                                    {occupying.nightlyRate ? ` · ${formatCents(occupying.nightlyRate, occupying.currency)}/n` : ''}
+                                    {showRates && occupying.nightlyRate ? ` · ${formatCents(occupying.nightlyRate, occupying.currency)}/n` : ''}
                                   </span>
-                                )}
+                                ) : showRates && occupying.nightlyRate ? (
+                                  <span className="text-[9px] text-white/70 w-full text-center">
+                                    {formatCents(occupying.nightlyRate, occupying.currency)}
+                                  </span>
+                                ) : null}
                               </div>
                             )}
                           </td>
