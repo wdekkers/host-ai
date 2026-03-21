@@ -13,6 +13,13 @@ describe('EventDeduplicator', () => {
     expect(dedup.isNew('evt-1')).toBe(false);
   });
 
+  it('returns true for a previously-seen ID after clear()', () => {
+    const dedup = new EventDeduplicator();
+    dedup.isNew('evt-1');
+    dedup.clear();
+    expect(dedup.isNew('evt-1')).toBe(true);
+  });
+
   it('evicts oldest entry when at capacity and treats evicted ID as new', () => {
     const dedup = new EventDeduplicator();
     for (let i = 0; i < 1000; i++) {
