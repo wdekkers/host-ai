@@ -54,6 +54,7 @@ export function ConversationThread({
   const [hasMore, setHasMore] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const topSentinelRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   const fetchMessages = useCallback(
     async (before?: string) => {
@@ -81,6 +82,9 @@ export function ConversationThread({
       setReservation(data.reservation);
       setHasMore(data.hasMore);
       setLoading(false);
+      requestAnimationFrame(() => {
+        bottomRef.current?.scrollIntoView({ behavior: 'instant' });
+      });
     });
   }, [reservationId, fetchMessages]);
 
@@ -202,6 +206,7 @@ export function ConversationThread({
             })}
           </>
         )}
+        <div ref={bottomRef} />
       </div>
 
       {reservation && (
@@ -214,6 +219,9 @@ export function ConversationThread({
             void fetchMessages().then((data) => {
               setMessages(data.messages);
               setHasMore(data.hasMore);
+              requestAnimationFrame(() => {
+                bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+              });
             });
           }}
         />

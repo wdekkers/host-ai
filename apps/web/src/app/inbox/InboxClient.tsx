@@ -27,7 +27,7 @@ export function InboxClient() {
   const showThread = selectedId !== null;
 
   return (
-    <div className="h-screen overflow-hidden grid grid-cols-1 md:grid-cols-[320px_1fr] bg-white">
+    <div className="h-full overflow-hidden grid grid-cols-1 md:grid-cols-[320px_1fr] bg-white">
       {/* Left column — hidden on mobile when thread is open */}
       <div
         className={`border-r border-slate-200 overflow-hidden flex flex-col ${showThread ? 'hidden md:flex' : 'flex'}`}
