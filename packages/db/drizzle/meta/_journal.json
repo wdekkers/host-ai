@@ -113,6 +113,13 @@
       "when": 1774396800000,
       "tag": "0015_property_is_active",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1774483200000,
+      "tag": "0016_checklists",
+      "breakpoints": true
     }
   ]
 }

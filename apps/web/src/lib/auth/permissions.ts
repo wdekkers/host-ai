@@ -113,8 +113,8 @@ export function getPermissionForApiRoute(pathname: string, method: string): Perm
     return 'properties.update';
   }
 
-  // Checklists
-  if (pathname.startsWith('/api/property-checklists')) {
+  // Checklists (new + legacy)
+  if (pathname.startsWith('/api/checklists') || pathname.startsWith('/api/property-checklists')) {
     if (method === 'GET') return 'checklists.read';
     if (method === 'POST') return 'checklists.create';
     if (method === 'PATCH' || method === 'PUT') return 'checklists.update';

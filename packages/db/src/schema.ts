@@ -344,6 +344,39 @@ export const propertyGuidebookEntries = waltSchema.table(
   }),
 );
 
+// --- Checklists ---
+
+export const checklistCategoryEnum = waltSchema.enum('checklist_category', [
+  'turnover',
+  'house_manager',
+  'maintenance',
+  'seasonal',
+]);
+
+export const checklistScopeEnum = waltSchema.enum('checklist_scope', ['global', 'property']);
+
+export const checklists = waltSchema.table('checklists', {
+  id: uuid('id').primaryKey(),
+  organizationId: text('organization_id').notNull(),
+  name: text('name').notNull(),
+  category: checklistCategoryEnum('category').notNull().default('turnover'),
+  scope: checklistScopeEnum('scope').notNull().default('property'),
+  propertyId: text('property_id'), // null when scope = 'global'
+  assignedRole: text('assigned_role'), // optional: 'cleaner', 'agent', etc.
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().default(sql`now()`),
+});
+
+export const checklistItems = waltSchema.table('checklist_items', {
+  id: uuid('id').primaryKey(),
+  checklistId: uuid('checklist_id').notNull(),
+  title: text('title').notNull(),
+  description: text('description'),
+  sortOrder: integer('sort_order').notNull().default(0),
+}, (table) => [
+  index('checklist_items_checklist_id_idx').on(table.checklistId),
+]);
+
 // --- SEO Draft Pipeline ---
 
 export const seoPipelineRuns = waltSchema.table(
