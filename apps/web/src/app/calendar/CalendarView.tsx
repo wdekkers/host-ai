@@ -199,22 +199,35 @@ export function CalendarView({ showRates = false }: { showRates?: boolean }) {
 
                       const arrival = new Date(r.arrivalDate);
                       const departure = new Date(r.departureDate);
+                      const arrivalDay = daysBetween(monthStart, arrival);
+                      const departureDay = daysBetween(monthStart, departure);
 
-                      // Calculate position relative to month start
-                      const startDay = Math.max(0, daysBetween(monthStart, arrival));
-                      // +1 so the bar extends INTO the checkout day (diagonal ends there)
-                      const endDay = Math.min(daysInMonth, daysBetween(monthStart, departure) + 1);
+                      // Check if another reservation checks out on our arrival day
+                      const hasCheckoutOnArrival = propReservations.some(
+                        (other) => other.id !== r.id && other.departureDate &&
+                          daysBetween(monthStart, new Date(other.departureDate)) === arrivalDay,
+                      );
+                      // Bar extends into checkout day: 45% of that cell
+                      // If another booking starts on our arrival day, offset by 55%
+                      const CHECKOUT_FRACTION = 0.45;
+                      const CHECKIN_OFFSET = 0.55;
 
-                      if (endDay <= 0 || startDay >= daysInMonth) return null;
+                      const rawStart = hasCheckoutOnArrival ? arrivalDay + CHECKIN_OFFSET : arrivalDay;
+                      const rawEnd = departureDay + CHECKOUT_FRACTION;
 
-                      const left = PROP_W + startDay * COL_W;
-                      const width = (endDay - startDay) * COL_W;
+                      const startPos = Math.max(0, rawStart);
+                      const endPos = Math.min(daysInMonth, rawEnd);
+
+                      if (endPos <= 0 || startPos >= daysInMonth) return null;
+
+                      const left = PROP_W + startPos * COL_W;
+                      const width = (endPos - startPos) * COL_W;
                       const color = getReservationColor(r);
                       const guestName = [r.guestFirstName, r.guestLastName].filter(Boolean).join(' ');
 
                       // Clip-path: diagonal at start (/) and end (/)
-                      const startsInView = startDay === daysBetween(monthStart, arrival);
-                      const endsInView = endDay === daysBetween(monthStart, departure) + 1;
+                      const startsInView = startPos <= arrivalDay + (hasCheckoutOnArrival ? CHECKIN_OFFSET : 0);
+                      const endsInView = endPos >= departureDay + CHECKOUT_FRACTION;
                       const leftDiag = startsInView ? DIAG : 0;
                       const rightDiag = endsInView ? DIAG : 0;
 
@@ -228,7 +241,7 @@ export function CalendarView({ showRates = false }: { showRates?: boolean }) {
                             top: BAR_INSET,
                             bottom: BAR_INSET,
                             backgroundColor: color,
-                            clipPath: `polygon(${leftDiag}px 0, calc(100% - 0px) 0, calc(100% - ${rightDiag}px) 100%, 0px 100%)`,
+                            clipPath: `polygon(${leftDiag}px 0, 100% 0, calc(100% - ${rightDiag}px) 100%, 0px 100%)`,
                           }}
                           onClick={() => setSelectedReservation(r)}
                           title={`${guestName} · ${formatDate(r.arrivalDate)} – ${formatDate(r.departureDate)}`}
