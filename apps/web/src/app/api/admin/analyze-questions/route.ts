@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import OpenAI from 'openai';
 import { eq } from 'drizzle-orm';
-import { messages, reservations, properties, propertyFaqs } from '@walt/db';
+import { messages, reservations, properties, propertyFaqs, knowledgeEntries, propertyMemory } from '@walt/db';
 import { db } from '@/lib/db';
 
 type QuestionCategory = {
@@ -12,13 +12,46 @@ type QuestionCategory = {
   suggestedAnswer: string;
 };
 
+async function getPropertyKnowledge(propertyId: string): Promise<string> {
+  const [entries, memories] = await Promise.all([
+    db
+      .select({ question: knowledgeEntries.question, answer: knowledgeEntries.answer })
+      .from(knowledgeEntries)
+      .where(eq(knowledgeEntries.propertyId, propertyId)),
+    db
+      .select({ fact: propertyMemory.fact })
+      .from(propertyMemory)
+      .where(eq(propertyMemory.propertyId, propertyId)),
+  ]);
+
+  const parts: string[] = [];
+  if (entries.length > 0) {
+    parts.push('KNOWN FACTS FROM KNOWLEDGE BASE:');
+    for (const e of entries) {
+      parts.push(`- Q: ${e.question}\n  A: ${e.answer ?? 'No answer documented'}`);
+    }
+  }
+  if (memories.length > 0) {
+    parts.push('\nPROPERTY MEMORY (verified facts):');
+    for (const m of memories) {
+      parts.push(`- ${m.fact}`);
+    }
+  }
+  if (parts.length === 0) {
+    parts.push('NO PROPERTY KNOWLEDGE AVAILABLE — all answers should note that the information needs to be verified with the host.');
+  }
+  return parts.join('\n');
+}
+
 async function analyzePropertyMessages(
   client: OpenAI,
+  propertyId: string,
   propertyName: string,
   guestMessages: string[],
 ): Promise<QuestionCategory[]> {
   if (guestMessages.length === 0) return [];
 
+  const knowledgeContext = await getPropertyKnowledge(propertyId);
   const messageList = guestMessages.map((m, i) => `${i + 1}. ${m}`).join('\n');
 
   const response = await client.chat.completions.create({
@@ -29,8 +62,20 @@ async function analyzePropertyMessages(
       {
         role: 'system',
         content: `You are analyzing guest messages for the short-term rental property "${propertyName}".
-Identify the most common question categories, count how many messages fall into each,
+
+CRITICAL RULES:
+- Only include amenities, features, or information that is EXPLICITLY documented in the property knowledge base below.
+- Do NOT infer, assume, or fabricate any amenities or features.
+- If a guest asks about something not documented in the knowledge base, the suggested answer MUST say: "This isn't documented in our records — please verify with the property manager."
+- Never make up plausible-sounding answers about amenities that are not confirmed below.
+
+${knowledgeContext}
+
+TASK:
+Identify the most common question categories from the guest messages, count how many messages fall into each,
 provide 2-3 example messages per category, and draft a concise suggested host answer for each category.
+Base ALL answers strictly on the property knowledge above.
+
 Return valid JSON only: { "categories": [{ "name": string, "count": number, "examples": string[], "suggestedAnswer": string }] }`,
       },
       {
@@ -101,7 +146,7 @@ export async function POST() {
     const msgs = messagesByProperty.get(prop.id) ?? [];
     if (msgs.length === 0) continue;
 
-    const categories = await analyzePropertyMessages(client, prop.name, msgs);
+    const categories = await analyzePropertyMessages(client, prop.id, prop.name, msgs);
 
     for (const cat of categories) {
       await db
@@ -113,6 +158,7 @@ export async function POST() {
           question: cat.name,
           answer: cat.suggestedAnswer,
           examples: cat.examples,
+          reviewStatus: 'unreviewed',
           analysedAt: now,
           updatedAt: now,
         })
@@ -122,6 +168,7 @@ export async function POST() {
             question: cat.name,
             answer: cat.suggestedAnswer,
             examples: cat.examples,
+            reviewStatus: 'unreviewed',
             analysedAt: now,
             updatedAt: now,
           },
