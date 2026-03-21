@@ -21,9 +21,10 @@ describe('RingClient', () => {
     }));
   });
 
-  it('skips fetch when savedTokens provided', async () => {
+  it('skips fetch and does not call onTokenUpdate when savedTokens provided', async () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal('fetch', fetchSpy);
+    const onTokenUpdate = vi.fn();
 
     const client = new RingClient({
       email: 'a@b.com',
@@ -34,9 +35,11 @@ describe('RingClient', () => {
         expires_in: 3600,
         hardware_id: 'hw-123',
       },
+      onTokenUpdate,
     });
     await client.auth({});
     expect(fetchSpy).not.toHaveBeenCalled();
+    expect(onTokenUpdate).not.toHaveBeenCalled();
   });
 
   it('getStatus returns not_started before startListening', () => {
