@@ -214,9 +214,9 @@ export function CalendarView({ showRates = false }: { showRates?: boolean }) {
 
                         let clipPath: string | undefined;
                         if (isArrival && isDepartTomorrow) {
-                          clipPath = `polygon(0 0, 100% 0, calc(100% - ${DIAG}px) 100%, ${DIAG}px 100%)`;
+                          clipPath = `polygon(${DIAG}px 0, 100% 0, calc(100% - ${DIAG}px) 100%, 0 100%)`;
                         } else if (isArrival) {
-                          clipPath = `polygon(0 0, 100% 0, 100% 100%, ${DIAG}px 100%)`;
+                          clipPath = `polygon(${DIAG}px 0, 100% 0, 100% 100%, 0 100%)`;
                         } else if (isDepartTomorrow) {
                           clipPath = `polygon(0 0, 100% 0, calc(100% - ${DIAG}px) 100%, 0 100%)`;
                         }
