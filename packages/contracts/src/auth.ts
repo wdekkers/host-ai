@@ -4,14 +4,47 @@ export const roleSchema = z.enum(['owner', 'manager', 'agent', 'cleaner', 'viewe
 export type Role = z.infer<typeof roleSchema>;
 
 export const permissionValues = [
-  'dashboard.read',
-  'drafts.write',
-  'decision.compute',
-  'incidents.write',
-  'ops.write',
-  'platform.configure',
-  'automation.execute',
-  'integration.read.provider',
+  // Today / dashboard
+  'today.read',
+  // Inbox
+  'inbox.read',
+  'inbox.create',
+  // Tasks
+  'tasks.read',
+  'tasks.create',
+  'tasks.update',
+  'tasks.delete',
+  // Reservations
+  'reservations.read',
+  // Properties
+  'properties.read',
+  'properties.update',
+  // Checklists
+  'checklists.read',
+  'checklists.create',
+  'checklists.update',
+  'checklists.delete',
+  // Contacts
+  'contacts.read',
+  'contacts.create',
+  'contacts.update',
+  // SEO
+  'seo.read',
+  'seo.create',
+  'seo.update',
+  // Questions / FAQ
+  'questions.read',
+  'questions.update',
+  // Settings
+  'settings.read',
+  'settings.update',
+  // Admin
+  'admin.read',
+  'admin.create',
+  'admin.update',
+  'admin.delete',
+  // Integrations
+  'integrations.read',
 ] as const;
 
 export const permissionSchema = z.enum(permissionValues);

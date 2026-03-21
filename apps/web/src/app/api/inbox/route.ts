@@ -12,7 +12,7 @@ const PAGE_SIZE = 25;
 // schema limitation). Auth is enforced at the Clerk session level — only authenticated users
 // with a valid org token can reach this route. This is consistent with all other inbox routes.
 // org-level data isolation in the DB is a future improvement.
-export const GET = withPermission('dashboard.read', async (request: Request) => {
+export const GET = withPermission('inbox.read', async (request: Request) => {
   try {
     const url = new URL(request.url);
     const filter = url.searchParams.get('filter') ?? 'all'; // 'all' | 'unreplied' | 'ai_ready'

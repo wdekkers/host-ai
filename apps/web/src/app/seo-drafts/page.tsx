@@ -201,7 +201,7 @@ export default async function SeoDraftsPage() {
     reviewNotes: row.reviewNotes ?? [],
     sourceUrls: Array.from(new Set([...(row.sourceUrls ?? []), row.sourceUrl])),
   }));
-  const canManageDrafts = hasPermission(authContext.role, 'drafts.write');
+  const canManageDrafts = hasPermission(authContext.role, 'seo.update');
   const counts = getStatusCounts(countRows);
   const totalDrafts = countRows.reduce((sum, row) => sum + Number(row.count), 0);
 

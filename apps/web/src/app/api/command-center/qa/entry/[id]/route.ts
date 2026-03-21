@@ -8,7 +8,7 @@ import { handleApiError } from '@/lib/secure-logger';
 type Params = { params: Promise<{ id: string }> };
 
 export const PATCH = withPermission(
-  'drafts.write',
+  'questions.update',
   async (request: Request, { params }: Params, authContext) => {
     const { id } = await params;
     try {

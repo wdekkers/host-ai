@@ -11,7 +11,7 @@ import { handleApiError } from '@/lib/secure-logger';
 type Params = { params: Promise<{ propertyId: string }> };
 
 export const GET = withPermission(
-  'dashboard.read',
+  'questions.read',
   async (request: Request, { params }: Params) => {
     const { propertyId } = await params;
     const statusRaw = new URL(request.url).searchParams.get('status');
@@ -21,7 +21,7 @@ export const GET = withPermission(
 );
 
 export const POST = withPermission(
-  'drafts.write',
+  'questions.update',
   async (request: Request, { params }: Params, authContext) => {
     const { propertyId } = await params;
     try {

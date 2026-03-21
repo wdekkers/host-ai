@@ -9,7 +9,7 @@ import { propertyMemory } from '@walt/db';
 type Params = { params: Promise<{ id: string; factId: string }> };
 
 export const DELETE = withPermission(
-  'ops.write',
+  'properties.update',
   async (_req: Request, { params }: Params, authContext) => {
     try {
       const { id: propertyId, factId } = await params;

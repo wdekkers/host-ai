@@ -10,7 +10,7 @@ import { messages, reservations } from '@walt/db';
 type Params = { params: Promise<{ reservationId: string }> };
 
 export const POST = withPermission(
-  'dashboard.read',
+  'inbox.read',
   async (request: Request, { params }: Params, authContext) => {
     try {
       const { reservationId } = await params;

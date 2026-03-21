@@ -14,7 +14,7 @@ const approveSuggestionInputSchema = z.object({
 });
 
 export const POST = withPermission(
-  'drafts.write',
+  'questions.update',
   async (request: Request, { params }: Params, authContext) => {
     const { id } = await params;
     try {
