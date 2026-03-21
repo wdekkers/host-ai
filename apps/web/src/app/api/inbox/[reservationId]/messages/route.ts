@@ -38,6 +38,7 @@ export const GET = withPermission(
             checkIn: reservations.checkIn,
             checkOut: reservations.checkOut,
             platform: reservations.platform,
+            status: reservations.status,
           })
           .from(reservations)
           .where(eq(reservations.id, reservationId))
@@ -57,6 +58,7 @@ export const GET = withPermission(
             checkIn: reservationRow.checkIn?.toISOString() ?? null,
             checkOut: reservationRow.checkOut?.toISOString() ?? null,
             platform: reservationRow.platform,
+            status: reservationRow.status,
           }
         : null;
 
