@@ -1,5 +1,5 @@
-import { asc, count, eq, sql } from 'drizzle-orm';
-import { properties, reservations, propertyAccess } from '@walt/db';
+import { asc, count } from 'drizzle-orm';
+import { properties, reservations } from '@walt/db';
 import { db } from '@/lib/db';
 import { getAuthContext } from '@/lib/auth/get-auth-context';
 import { PropertiesClient } from './PropertiesClient';
@@ -20,8 +20,6 @@ export default async function PropertiesPage() {
         hasPool: properties.hasPool,
       })
       .from(properties)
-      .innerJoin(propertyAccess, sql`${propertyAccess.propertyId} = ${properties.id}`)
-      .where(eq(propertyAccess.organizationId, auth.orgId))
       .orderBy(asc(properties.name)),
     db
       .select({ propertyId: reservations.propertyId, total: count() })
