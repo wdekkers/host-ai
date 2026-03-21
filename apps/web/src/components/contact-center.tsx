@@ -1,5 +1,6 @@
 'use client';
 
+import { useAuth } from '@clerk/nextjs';
 import { useEffect, useMemo, useState } from 'react';
 
 type Contact = {
@@ -40,6 +41,7 @@ const btnPrimary =
 
 
 export function ContactCenter() {
+  const { getToken } = useAuth();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedContactId, setSelectedContactId] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -69,8 +71,13 @@ export function ContactCenter() {
     );
   }, [contacts]);
 
+  const authHeader = async (): Promise<HeadersInit> => {
+    const token = await getToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   const loadContacts = async () => {
-    const res = await fetch('/api/messaging/contacts');
+    const res = await fetch('/api/messaging/contacts', { headers: await authHeader() });
     if (!res.ok) {
       setError('Unable to load contacts.');
       return;
@@ -88,7 +95,9 @@ export function ContactCenter() {
 
   const loadMessages = async (contactId: string) => {
     if (!contactId) return;
-    const res = await fetch(`/api/messaging/messages?contactId=${encodeURIComponent(contactId)}`);
+    const res = await fetch(`/api/messaging/messages?contactId=${encodeURIComponent(contactId)}`, {
+      headers: await authHeader(),
+    });
     if (!res.ok) {
       setError('Unable to load conversation.');
       return;
@@ -106,7 +115,7 @@ export function ContactCenter() {
     setAdding(true);
     const res = await fetch('/api/messaging/contacts', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', ...await authHeader() },
       body: JSON.stringify({
         displayName: contactName.trim(),
         contactType: contactType.trim(),
@@ -131,7 +140,7 @@ export function ContactCenter() {
   const setPreferredContact = async (id: string) => {
     const res = await fetch(`/api/messaging/contacts/${encodeURIComponent(id)}`, {
       method: 'PATCH',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', ...await authHeader() },
       body: JSON.stringify({ preferred: true }),
     });
     if (!res.ok) {
@@ -151,7 +160,7 @@ export function ContactCenter() {
     setSending(true);
     const res = await fetch('/api/messaging/messages', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', ...await authHeader() },
       body: JSON.stringify({
         contactId: selectedContactId,
         direction: composerDirection,

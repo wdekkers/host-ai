@@ -90,8 +90,12 @@ export default async function TodayPage() {
     getPoolTemperatures(auth.orgId),
   ]);
 
-  const checkoutsCount = turnovers.filter((t) => t.departureDate).length;
-  const checkinsCount = turnovers.filter((t) => t.arrivalDate).length;
+  const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
+  const isToday = (d: Date | null) =>
+    d !== null && new Date(d).toLocaleDateString('en-CA', { timeZone: 'America/Chicago' }) === todayStr;
+
+  const checkoutsCount = turnovers.filter((t) => isToday(t.departureDate)).length;
+  const checkinsCount = turnovers.filter((t) => isToday(t.arrivalDate)).length;
 
   const now = new Date();
   const dateLabel = now.toLocaleDateString('en-US', {
@@ -210,24 +214,24 @@ export default async function TodayPage() {
                     <div className="text-sm font-medium text-slate-900">{t.propertyName}</div>
                     <div className="mt-0.5 text-xs text-slate-500">
                       {t.guestFirstName} {t.guestLastName}
-                      {t.departureDate &&
+                      {isToday(t.departureDate) && t.departureDate &&
                         ` · Out ${new Date(t.departureDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' })}`}
-                      {t.arrivalDate &&
+                      {isToday(t.arrivalDate) && t.arrivalDate &&
                         ` · In ${new Date(t.arrivalDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' })}`}
                     </div>
                   </div>
                   <Badge
                     variant={
-                      t.arrivalDate && t.departureDate
+                      isToday(t.arrivalDate) && isToday(t.departureDate)
                         ? 'secondary'
-                        : t.arrivalDate
+                        : isToday(t.arrivalDate)
                           ? 'default'
                           : 'outline'
                     }
                   >
-                    {t.arrivalDate && t.departureDate
+                    {isToday(t.arrivalDate) && isToday(t.departureDate)
                       ? 'Turnover'
-                      : t.arrivalDate
+                      : isToday(t.arrivalDate)
                         ? 'Check-in'
                         : 'Check-out'}
                   </Badge>
