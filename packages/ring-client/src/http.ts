@@ -53,7 +53,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
         body: body ? JSON.stringify(body) : undefined,
       });
     } catch (err) {
-      throw new RingNetworkError(`RingNetworkError: fetch failed (${String(err)})`);
+      throw new RingNetworkError(`fetch failed (${String(err)})`);
     }
 
     // On first 401, refresh token and retry once
