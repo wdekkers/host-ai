@@ -8,7 +8,7 @@ import { AppChrome } from './app-chrome';
 type LinkStubProps = {
   href: string;
   className?: string;
-  children: ReactNode;
+  children?: ReactNode;
 };
 
 function LinkStub({ href, className, children }: LinkStubProps) {

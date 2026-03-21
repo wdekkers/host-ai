@@ -2,9 +2,8 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import React, { type ComponentType, type ReactNode } from 'react';
+import { type ComponentType, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 import { navGroups } from '@/lib/nav-links';
 import {
@@ -19,13 +18,12 @@ import {
   SidebarMenuItem,
   SidebarRail,
   SidebarTrigger,
-  useSidebar,
 } from '@/components/ui/sidebar';
 
 type NavLinkComponentProps = {
   href: string;
   className?: string;
-  children: ReactNode;
+  children?: ReactNode;
 };
 
 type AppSidebarProps = {
@@ -34,16 +32,7 @@ type AppSidebarProps = {
 };
 
 function CollapseToggle() {
-  const { open } = useSidebar();
-  return (
-    <SidebarTrigger className="-ml-1 text-slate-400 hover:text-slate-600">
-      {open ? (
-        <PanelLeftClose className="h-4 w-4" />
-      ) : (
-        <PanelLeftOpen className="h-4 w-4" />
-      )}
-    </SidebarTrigger>
-  );
+  return <SidebarTrigger className="-ml-1 text-slate-400 hover:text-slate-600" />;
 }
 
 export function AppSidebar({
@@ -76,7 +65,7 @@ export function AppSidebar({
                 return (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
-                      render={React.createElement(NavLink, { href: item.href, children: null }) as React.ReactElement}
+                      render={<NavLink href={item.href} />}
                       isActive={isActive}
                       tooltip={item.label}
                     >
