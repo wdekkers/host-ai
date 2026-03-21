@@ -61,28 +61,21 @@ export function ConversationList({
   const aiReadyCount = threads.filter((t) => t.aiReady).length;
 
   return (
-    <div className="flex flex-col h-full w-full" style={{ background: '#0d1f38' }}>
+    <div className="flex flex-col h-full w-full bg-white">
       {/* Header */}
-      <div className="px-4 pt-4 pb-3 border-b" style={{ borderColor: '#1a3a5c' }}>
-        <h1 className="text-sm font-bold mb-3" style={{ color: '#e2e8f0' }}>
-          Inbox
-        </h1>
+      <div className="px-4 pt-4 pb-3 border-b border-slate-200">
+        <h1 className="text-sm font-bold mb-3 text-slate-900">Inbox</h1>
         <input
           type="text"
           placeholder="Search guests or properties..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full text-xs px-3 py-2 rounded-lg border outline-none"
-          style={{
-            background: '#071428',
-            borderColor: '#1a3a5c',
-            color: '#94a3b8',
-          }}
+          className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 placeholder:text-slate-400 outline-none focus:border-sky-500"
         />
       </div>
 
       {/* Filter tabs */}
-      <div className="flex border-b" style={{ borderColor: '#1a3a5c' }}>
+      <div className="flex border-b border-slate-200">
         {(['all', 'unreplied', 'ai_ready'] as Filter[]).map((f) => {
           const label = f === 'all' ? 'All' : f === 'unreplied' ? 'Unreplied' : 'AI Ready';
           const badge = f === 'unreplied' ? unrepliedCount : f === 'ai_ready' ? aiReadyCount : null;
@@ -91,18 +84,15 @@ export function ConversationList({
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className="flex-1 py-2 text-xs font-medium flex items-center justify-center gap-1 border-b-2 transition-colors"
-              style={{
-                borderColor: active ? '#3b82f6' : 'transparent',
-                color: active ? '#60a5fa' : '#475569',
-              }}
+              className={`flex-1 py-2 text-xs font-medium flex items-center justify-center gap-1 border-b-2 transition-colors ${
+                active
+                  ? 'border-sky-600 text-sky-600'
+                  : 'border-transparent text-slate-400 hover:text-slate-600'
+              }`}
             >
               {label}
               {badge != null && badge > 0 && (
-                <span
-                  className="text-xs px-1.5 py-0.5 rounded-full"
-                  style={{ background: '#1d4ed8', color: '#93c5fd', fontSize: '9px' }}
-                >
+                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-sky-100 text-sky-700">
                   {badge}
                 </span>
               )}
@@ -114,74 +104,48 @@ export function ConversationList({
       {/* Thread list */}
       <div className="flex-1 overflow-y-auto">
         {loading ? (
-          <div className="p-4 text-xs text-center" style={{ color: '#334155' }}>
-            Loading…
-          </div>
+          <div className="p-4 text-xs text-center text-slate-400">Loading…</div>
         ) : threads.length === 0 ? (
-          <div className="p-4 text-xs text-center" style={{ color: '#334155' }}>
-            No conversations
-          </div>
+          <div className="p-4 text-xs text-center text-slate-400">No conversations</div>
         ) : (
           threads.map((t) => (
             <button
               key={t.reservationId}
               onClick={() => onSelect(t.reservationId)}
-              className="w-full text-left px-4 py-3 border-b transition-colors"
+              className={`w-full text-left px-4 py-3 border-b border-slate-100 transition-colors ${
+                t.reservationId === selectedId ? 'bg-sky-50' : 'hover:bg-slate-50'
+              }`}
               style={{
-                borderColor: '#122038',
-                background: t.reservationId === selectedId ? '#0f2d52' : 'transparent',
                 borderLeft:
-                  t.reservationId === selectedId ? '3px solid #3b82f6' : '3px solid transparent',
+                  t.reservationId === selectedId
+                    ? '3px solid #0284c7'
+                    : '3px solid transparent',
               }}
             >
               <div className="flex justify-between items-start mb-1">
                 <div className="flex items-center gap-1.5">
                   <span
-                    className="text-xs font-semibold"
-                    style={{ color: t.unreplied ? '#f1f5f9' : '#cbd5e1' }}
+                    className={`text-xs font-semibold ${t.unreplied ? 'text-slate-900' : 'text-slate-700'}`}
                   >
                     {t.guestName}
                   </span>
                   {t.unreplied && (
-                    <span
-                      className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                      style={{ background: '#3b82f6' }}
-                    />
+                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-sky-600" />
                   )}
                 </div>
-                <span className="text-xs flex-shrink-0" style={{ color: '#475569' }}>
+                <span className="text-xs flex-shrink-0 text-slate-400">
                   {formatRelativeTime(t.lastMessageAt)}
                 </span>
               </div>
-              <p className="text-xs truncate mb-1.5" style={{ color: '#64748b' }}>
-                {t.lastBody}
-              </p>
+              <p className="text-xs truncate mb-1.5 text-slate-500">{t.lastBody}</p>
               <div className="flex justify-between items-center">
-                <span className="text-xs" style={{ color: '#334155' }}>
-                  {t.propertyName ?? '—'}
-                </span>
+                <span className="text-xs text-slate-400">{t.propertyName ?? '—'}</span>
                 {t.aiReady ? (
-                  <span
-                    className="text-xs px-1.5 py-0.5 rounded-full border"
-                    style={{
-                      background: '#1e3a5f',
-                      color: '#60a5fa',
-                      borderColor: '#1d4ed8',
-                      fontSize: '9px',
-                    }}
-                  >
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-full border bg-sky-50 text-sky-600 border-sky-200">
                     ✦ AI draft
                   </span>
                 ) : t.unreplied ? (
-                  <span
-                    className="text-xs px-1.5 py-0.5 rounded-full border"
-                    style={{
-                      background: '#1a1a2e',
-                      color: '#f87171',
-                      borderColor: '#991b1b',
-                      fontSize: '9px',
-                    }}
-                  >
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-full border bg-red-50 text-red-600 border-red-200">
                     unreplied
                   </span>
                 ) : null}
