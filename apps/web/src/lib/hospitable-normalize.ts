@@ -30,6 +30,20 @@ export function normalizeReservation(
   const props = Array.isArray(raw.properties) ? (raw.properties as Record<string, unknown>[]) : [];
   const firstProp = props[0] ?? {};
 
+  // Extract pricing — Hospitable uses various field names
+  const pricing = (raw.pricing ?? raw.price ?? raw.financials ?? {}) as Record<string, unknown>;
+  const totalRaw = pricing.total ?? pricing.total_price ?? raw.total_price ?? raw.payout;
+  const nightlyRaw = pricing.nightly ?? pricing.nightly_rate ?? raw.nightly_rate ?? pricing.per_night;
+  const currencyRaw = pricing.currency ?? raw.currency;
+
+  // Convert to cents (Hospitable may return dollars as float or cents as int)
+  const toCents = (v: unknown): number | null => {
+    const n = Number(v);
+    if (isNaN(n)) return null;
+    // If it looks like dollars (has decimals or is small relative to nights), convert to cents
+    return n < 1000 && String(v).includes('.') ? Math.round(n * 100) : Math.round(n);
+  };
+
   return {
     id: String(raw.id),
     conversationId: str(raw.conversation_id),
@@ -49,6 +63,9 @@ export function normalizeReservation(
     guestEmail: str(guest.email),
     propertyId: str(firstProp.id),
     propertyName: str(firstProp.name),
+    totalPrice: toCents(totalRaw),
+    nightlyRate: toCents(nightlyRaw),
+    currency: str(currencyRaw) ?? null,
     raw,
   };
 }

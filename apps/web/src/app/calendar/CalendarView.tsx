@@ -18,6 +18,10 @@ type Reservation = {
   departureDate: string | null;
   status: string | null;
   platform: string | null;
+  totalPrice: number | null;
+  nightlyRate: number | null;
+  currency: string | null;
+  nights: number | null;
 };
 
 function startOfMonth(d: Date) {
@@ -37,6 +41,16 @@ function toDateStr(d: Date) {
 }
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function formatCents(cents: number, currency?: string | null) {
+  const dollars = cents / 100;
+  return dollars.toLocaleString('en-US', {
+    style: 'currency',
+    currency: currency ?? 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
 }
 
 const COLORS = ['#0284c7', '#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2', '#4f46e5', '#be185d'];
@@ -250,6 +264,7 @@ export function CalendarView() {
                                 {isArrival && (
                                   <span className="text-[10px] text-white font-medium truncate pl-4 pr-1">
                                     {guestName}
+                                    {occupying.nightlyRate ? ` · ${formatCents(occupying.nightlyRate, occupying.currency)}/n` : ''}
                                   </span>
                                 )}
                               </div>
@@ -301,6 +316,27 @@ export function CalendarView() {
                   </div>
                 </div>
               </div>
+              {(selectedReservation.nightlyRate || selectedReservation.totalPrice) && (
+                <div className="grid grid-cols-2 gap-3">
+                  {selectedReservation.nightlyRate && (
+                    <div>
+                      <div className="text-xs font-medium uppercase tracking-wide text-slate-400">Nightly Rate</div>
+                      <div className="text-sm font-semibold text-slate-900">
+                        {formatCents(selectedReservation.nightlyRate, selectedReservation.currency)}
+                      </div>
+                    </div>
+                  )}
+                  {selectedReservation.totalPrice && (
+                    <div>
+                      <div className="text-xs font-medium uppercase tracking-wide text-slate-400">Total</div>
+                      <div className="text-sm font-semibold text-slate-900">
+                        {formatCents(selectedReservation.totalPrice, selectedReservation.currency)}
+                        {selectedReservation.nights ? ` (${selectedReservation.nights} nights)` : ''}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 {selectedReservation.status && <Badge variant="secondary">{selectedReservation.status}</Badge>}
                 {selectedReservation.platform && <Badge variant="outline">{selectedReservation.platform}</Badge>}

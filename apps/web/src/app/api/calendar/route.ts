@@ -36,6 +36,10 @@ export const GET = withPermission('reservations.read', async (request) => {
       departureDate: reservations.departureDate,
       status: reservations.status,
       platform: reservations.platform,
+      totalPrice: reservations.totalPrice,
+      nightlyRate: reservations.nightlyRate,
+      currency: reservations.currency,
+      nights: reservations.nights,
     })
     .from(reservations)
     .where(
