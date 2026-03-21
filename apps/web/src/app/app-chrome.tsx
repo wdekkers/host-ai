@@ -10,7 +10,7 @@ import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/s
 type NavLinkComponentProps = {
   href: string;
   className?: string;
-  children: ReactNode;
+  children?: ReactNode;
 };
 
 type UserButtonComponentProps = Record<string, never>;
@@ -40,7 +40,7 @@ export function AppChrome({
       />
       <SidebarInset>
         <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-white px-4">
-          <SidebarTrigger className="text-slate-400 hover:text-slate-600" />
+          <SidebarTrigger className="text-slate-400 hover:text-slate-600 md:hidden" />
         </header>
         <main className="flex-1 overflow-y-auto bg-slate-50 p-5">
           {children}
