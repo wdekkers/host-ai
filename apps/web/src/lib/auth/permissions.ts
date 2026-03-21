@@ -20,6 +20,10 @@ const rolePermissionMap: Record<Role, ReadonlySet<Permission>> = {
     'incidents.write',
     'ops.write',
   ]),
+  cleaner: new Set([
+    'dashboard.read',
+    'ops.write',
+  ]),
   viewer: new Set(['dashboard.read']),
 };
 
