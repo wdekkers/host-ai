@@ -19,6 +19,7 @@ export type InboxThread = {
   aiReady: boolean;
   latestMessageId: string | null;
   latestSuggestion: string | null;
+  status: string | null;
 };
 
 export function InboxClient() {

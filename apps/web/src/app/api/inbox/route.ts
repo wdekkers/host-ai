@@ -52,6 +52,7 @@ export const GET = withPermission('inbox.read', async (request: Request) => {
         checkIn: reservations.checkIn,
         checkOut: reservations.checkOut,
         platform: reservations.platform,
+        status: reservations.status,
       })
       .from(reservations)
       .where(
@@ -85,6 +86,8 @@ export const GET = withPermission('inbox.read', async (request: Request) => {
       { senderType: string; suggestion: string | null; id: string }
     >();
     for (const m of mostRecentMessages) {
+      // Skip system messages for unreplied/aiReady detection
+      if (m.senderType === 'system') continue;
       if (!latestByReservation.has(m.reservationId)) {
         latestByReservation.set(m.reservationId, {
           senderType: m.senderType,
@@ -110,6 +113,7 @@ export const GET = withPermission('inbox.read', async (request: Request) => {
         checkIn: res?.checkIn ?? null,
         checkOut: res?.checkOut ?? null,
         platform: res?.platform ?? null,
+        status: res?.status ?? null,
         lastBody: t.lastBody,
         lastSenderType: t.lastSenderType,
         lastMessageAt: t.lastMessageAt,
