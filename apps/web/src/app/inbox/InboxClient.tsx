@@ -27,28 +27,25 @@ export function InboxClient() {
   const showThread = selectedId !== null;
 
   return (
-    <div
-      className="h-screen overflow-hidden grid grid-cols-1 md:grid-cols-[320px_1fr]"
-      style={{ background: '#071428' }}
-    >
+    <div className="h-screen overflow-hidden grid grid-cols-1 md:grid-cols-[320px_1fr] bg-white">
       {/* Left column — hidden on mobile when thread is open */}
       <div
-        className={`border-r overflow-hidden flex flex-col ${showThread ? 'hidden md:flex' : 'flex'}`}
-        style={{ borderColor: '#1a3a5c', minWidth: 0 }}
+        className={`border-r border-slate-200 overflow-hidden flex flex-col ${showThread ? 'hidden md:flex' : 'flex'}`}
+        style={{ minWidth: 0 }}
       >
         <ConversationList selectedId={selectedId} onSelect={setSelectedId} />
       </div>
 
       {/* Right column — hidden on mobile when no thread is open */}
       <div
-        className={`overflow-hidden flex flex-col ${showThread ? 'flex' : 'hidden md:flex'}`}
+        className={`overflow-hidden flex flex-col bg-slate-50 ${showThread ? 'flex' : 'hidden md:flex'}`}
         style={{ minWidth: 0 }}
       >
         {selectedId ? (
           <ConversationThread reservationId={selectedId} onBack={() => setSelectedId(null)} />
         ) : (
-          <div className="flex-1 flex items-center justify-center" style={{ color: '#334155' }}>
-            <p className="text-sm">Select a conversation</p>
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-sm text-slate-400">Select a conversation</p>
           </div>
         )}
       </div>
