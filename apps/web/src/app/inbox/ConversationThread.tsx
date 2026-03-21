@@ -122,26 +122,18 @@ export function ConversationThread({
     [reservation?.guestFirstName, reservation?.guestLastName].filter(Boolean).join(' ') || 'Guest';
 
   return (
-    <div className="flex flex-col h-full" style={{ background: '#071428' }}>
+    <div className="flex flex-col h-full bg-slate-50">
       {/* Header */}
-      <div
-        className="flex items-center gap-3 px-5 py-3 border-b flex-shrink-0"
-        style={{ borderColor: '#1a3a5c' }}
-      >
-        <button onClick={onBack} className="md:hidden text-sm mr-1" style={{ color: '#475569' }}>
+      <div className="flex items-center gap-3 px-5 py-3 border-b border-slate-200 bg-white flex-shrink-0">
+        <button onClick={onBack} className="md:hidden text-sm mr-1 text-slate-400">
           ←
         </button>
-        <div
-          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-          style={{ background: '#1d4ed8', color: '#fff' }}
-        >
+        <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 bg-sky-600 text-white">
           {initials(guestName)}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold" style={{ color: '#f1f5f9' }}>
-            {guestName}
-          </p>
-          <p className="text-xs truncate" style={{ color: '#475569' }}>
+          <p className="text-sm font-bold text-slate-900">{guestName}</p>
+          <p className="text-xs truncate text-slate-500">
             {reservation?.propertyName ?? '—'}
             {reservation?.checkIn &&
               ` · ${new Date(reservation.checkIn).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
@@ -155,17 +147,11 @@ export function ConversationThread({
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
         {loading ? (
-          <p className="text-xs text-center" style={{ color: '#334155' }}>
-            Loading…
-          </p>
+          <p className="text-xs text-center text-slate-400">Loading…</p>
         ) : (
           <>
             {hasMore && (
-              <div
-                ref={topSentinelRef}
-                className="py-1 text-xs text-center"
-                style={{ color: '#334155' }}
-              >
+              <div ref={topSentinelRef} className="py-1 text-xs text-center text-slate-400">
                 {loadingOlder ? 'Loading…' : ''}
               </div>
             )}
@@ -178,40 +164,34 @@ export function ConversationThread({
                   className={`flex gap-2 max-w-[75%] ${isHost ? 'self-end flex-row-reverse' : ''}`}
                 >
                   <div
-                    className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                    style={{
-                      background: isHost ? '#1d4ed8' : '#1e293b',
-                      color: isHost ? '#fff' : '#94a3b8',
-                    }}
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                      isHost ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-500'
+                    }`}
                   >
                     {initials(m.senderFullName ?? (isHost ? 'Host' : guestName))}
                   </div>
                   <div className="flex flex-col gap-1">
                     <div
-                      className="px-3 py-2 text-xs leading-relaxed"
+                      className={`px-3 py-2 text-xs leading-relaxed ${
+                        isHost ? 'bg-sky-600 text-white' : 'bg-white text-slate-800'
+                      }`}
                       style={{
-                        background: isHost ? '#1d4ed8' : '#0d1f38',
-                        color: isHost ? '#eff6ff' : '#e2e8f0',
                         borderRadius: isHost ? '10px 4px 10px 10px' : '4px 10px 10px 10px',
                         border: isUnreplied
-                          ? '1px solid #3b82f6'
+                          ? '1px solid #0284c7'
                           : isHost
                             ? 'none'
-                            : '1px solid #1a3a5c',
+                            : '1px solid #e2e8f0',
                       }}
                     >
                       {m.body}
                     </div>
                     <div
-                      className={`flex items-center gap-1.5 text-xs ${isHost ? 'justify-end' : ''}`}
-                      style={{ color: '#334155' }}
+                      className={`flex items-center gap-1.5 text-xs text-slate-400 ${isHost ? 'justify-end' : ''}`}
                     >
                       <span>{formatTime(m.createdAt)}</span>
                       {isUnreplied && (
-                        <span
-                          className="px-1.5 py-0.5 rounded text-xs"
-                          style={{ background: '#1e3a5f', color: '#60a5fa', fontSize: '9px' }}
-                        >
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-sky-50 text-sky-600">
                           needs reply
                         </span>
                       )}

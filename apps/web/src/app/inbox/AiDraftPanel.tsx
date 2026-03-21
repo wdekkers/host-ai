@@ -121,10 +121,7 @@ export function AiDraftPanel({
   // Do NOT return null when unrepliedMessage is absent — the manual reply bar must always be visible (spec §3.3)
 
   return (
-    <div
-      className="flex-shrink-0 border-t"
-      style={{ borderColor: '#1a3a5c', background: '#0a1e38' }}
-    >
+    <div className="flex-shrink-0 border-t border-slate-200 bg-white">
       {/* Learning toast */}
       {pendingFacts.length > 0 && propertyId && (
         <LearningToast
@@ -138,26 +135,19 @@ export function AiDraftPanel({
 
       {/* Draft section — always shown when a guest message exists */}
       {!dismissed && generateMessageId && (
-        <div className="px-4 py-3 border-b" style={{ borderColor: '#1a3a5c' }}>
+        <div className="px-4 py-3 border-b border-slate-200">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
-              <span style={{ color: '#60a5fa', fontSize: '12px' }}>✦</span>
-              <span className="text-xs font-semibold" style={{ color: '#93c5fd' }}>
-                AI Draft
-              </span>
-              {loading && (
-                <span className="text-xs" style={{ color: '#334155' }}>
-                  · generating…
-                </span>
-              )}
+              <span className="text-sky-600 text-xs">✦</span>
+              <span className="text-xs font-semibold text-sky-700">AI Draft</span>
+              {loading && <span className="text-xs text-slate-400">· generating…</span>}
             </div>
             <div className="flex gap-1.5">
               {suggestion && !loading && (
                 <button
                   onClick={() => void handleSend(suggestion)}
                   disabled={sending}
-                  className="text-xs px-3 py-1.5 rounded-md font-medium transition-colors disabled:opacity-50"
-                  style={{ background: '#14532d', color: '#4ade80' }}
+                  className="text-xs px-3 py-1.5 rounded-md font-medium transition-colors disabled:opacity-50 bg-green-600 text-white hover:bg-green-700"
                 >
                   {sending ? 'Sending…' : '✓ Approve & Send'}
                 </button>
@@ -165,8 +155,7 @@ export function AiDraftPanel({
               {suggestion && !loading && (
                 <button
                   onClick={() => void generate(generateMessageId, activeChips, extraContext)}
-                  className="text-xs px-2.5 py-1.5 rounded-md border transition-colors"
-                  style={{ background: '#0d1f38', borderColor: '#1a3a5c', color: '#94a3b8' }}
+                  className="text-xs px-2.5 py-1.5 rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors"
                 >
                   ↺
                 </button>
@@ -176,8 +165,7 @@ export function AiDraftPanel({
                   setDismissed(true);
                   setSuggestion(null);
                 }}
-                className="text-xs px-2 py-1.5 rounded-md border"
-                style={{ background: '#0d1f38', borderColor: '#1a3a5c', color: '#475569' }}
+                className="text-xs px-2 py-1.5 rounded-md border border-slate-200 text-slate-400 hover:bg-slate-50"
               >
                 ✕
               </button>
@@ -197,15 +185,13 @@ export function AiDraftPanel({
                     void generate(generateMessageId, activeChips, extraContext);
                   }
                 }}
-                className="w-full text-xs px-3 py-2 rounded-lg border outline-none mb-2"
-                style={{ background: '#071428', borderColor: '#1a3a5c', color: '#94a3b8' }}
+                className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 placeholder:text-slate-400 outline-none focus:border-sky-500 mb-2"
                 autoFocus
               />
               <button
                 onClick={() => void generate(generateMessageId, activeChips, extraContext)}
                 disabled={!extraContext.trim()}
-                className="text-xs px-3 py-1.5 rounded-md border disabled:opacity-50"
-                style={{ background: '#1d4ed8', borderColor: '#1d4ed8', color: '#fff' }}
+                className="text-xs px-3 py-1.5 rounded-md disabled:opacity-50 bg-sky-600 text-white hover:bg-sky-700 transition-colors"
               >
                 ✦ Generate
               </button>
@@ -215,10 +201,7 @@ export function AiDraftPanel({
           {suggestion && !loading && (
             <>
               {/* Draft text */}
-              <div
-                className="text-xs leading-relaxed rounded-lg px-3 py-2.5 mb-2.5"
-                style={{ background: '#071428', border: '1px solid #1a3a5c', color: '#cbd5e1' }}
-              >
+              <div className="text-xs leading-relaxed rounded-lg px-3 py-2.5 mb-2.5 bg-slate-50 border border-slate-200 text-slate-700">
                 {suggestion}
               </div>
 
@@ -228,12 +211,11 @@ export function AiDraftPanel({
                   <button
                     key={c.key}
                     onClick={() => toggleChip(c.key)}
-                    className="text-xs px-2.5 py-1 rounded-full border transition-colors"
-                    style={{
-                      background: activeChips.includes(c.key) ? '#1e3a5f' : '#0d1f38',
-                      borderColor: activeChips.includes(c.key) ? '#3b82f6' : '#1a3a5c',
-                      color: activeChips.includes(c.key) ? '#60a5fa' : '#64748b',
-                    }}
+                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                      activeChips.includes(c.key)
+                        ? 'bg-sky-50 border-sky-400 text-sky-600'
+                        : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                    }`}
                   >
                     {c.label}
                   </button>
@@ -251,14 +233,12 @@ export function AiDraftPanel({
                     void generate(generateMessageId, activeChips, extraContext);
                   }
                 }}
-                className="w-full text-xs px-3 py-2 rounded-lg border outline-none"
-                style={{ background: '#071428', borderColor: '#1a3a5c', color: '#94a3b8' }}
+                className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 placeholder:text-slate-400 outline-none focus:border-sky-500"
               />
               {(activeChips.length > 0 || extraContext.trim()) && (
                 <button
                   onClick={() => void generate(generateMessageId, activeChips, extraContext)}
-                  className="mt-2 text-xs px-3 py-1.5 rounded-md border"
-                  style={{ background: '#1d4ed8', borderColor: '#1d4ed8', color: '#fff' }}
+                  className="mt-2 text-xs px-3 py-1.5 rounded-md bg-sky-600 text-white hover:bg-sky-700 transition-colors"
                 >
                   ↺ Regenerate with hints
                 </button>
@@ -279,8 +259,7 @@ export function AiDraftPanel({
               setActiveChips([]);
               setExtraContext('');
             }}
-            className="text-xs px-2.5 py-2 rounded-lg border flex-shrink-0"
-            style={{ background: '#0d1f38', borderColor: '#1a3a5c', color: '#60a5fa' }}
+            className="text-xs px-2.5 py-2 rounded-lg border border-slate-200 text-sky-600 flex-shrink-0 hover:bg-sky-50 transition-colors"
             title="Reopen AI Draft"
           >
             ✦
@@ -294,14 +273,12 @@ export function AiDraftPanel({
           onKeyDown={(e) => {
             if (e.key === 'Enter' && manualReply.trim()) void handleSend(manualReply);
           }}
-          className="flex-1 text-xs px-3 py-2 rounded-lg border outline-none"
-          style={{ background: '#071428', borderColor: '#1a3a5c', color: '#94a3b8' }}
+          className="flex-1 text-xs px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 placeholder:text-slate-400 outline-none focus:border-sky-500"
         />
         <button
           onClick={() => void handleSend(manualReply)}
           disabled={!manualReply.trim() || sending}
-          className="text-xs px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
-          style={{ background: '#1d4ed8', color: '#fff' }}
+          className="text-xs px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 bg-sky-600 text-white hover:bg-sky-700"
         >
           Send
         </button>

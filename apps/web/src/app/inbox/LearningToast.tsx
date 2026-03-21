@@ -89,17 +89,12 @@ export function LearningToast({
 
   return (
     <div
-      className="mx-4 my-3 rounded-xl border p-3"
-      style={{
-        background: '#0a1e38',
-        borderColor: '#1e3a5f',
-        borderLeftColor: '#3b82f6',
-        borderLeftWidth: '3px',
-      }}
+      className="mx-4 my-3 rounded-xl border border-slate-200 p-3 bg-sky-50"
+      style={{ borderLeftColor: '#0284c7', borderLeftWidth: '3px' }}
     >
       <div className="flex items-center gap-2 mb-2.5">
         <span className="text-sm">🧠</span>
-        <span className="text-xs font-semibold" style={{ color: '#93c5fd' }}>
+        <span className="text-xs font-semibold text-sky-700">
           I picked up something — save to this property?
         </span>
       </div>
@@ -108,13 +103,9 @@ export function LearningToast({
         {propertyFacts.map((f, i) => (
           <div
             key={i}
-            className="flex items-start gap-2 rounded-lg px-2.5 py-2"
-            style={{ background: '#071428', border: '1px solid #1a3a5c' }}
+            className="flex items-start gap-2 rounded-lg px-2.5 py-2 bg-white border border-slate-200"
           >
-            <span
-              className="text-xs px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5"
-              style={{ background: '#1e3a5f', color: '#60a5fa', fontSize: '9px' }}
-            >
+            <span className="text-[9px] px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5 bg-sky-100 text-sky-700">
               Property fact
             </span>
             {editingIdx === i ? (
@@ -123,37 +114,31 @@ export function LearningToast({
                   autoFocus
                   value={editText}
                   onChange={(e) => setEditText(e.target.value)}
-                  className="flex-1 text-xs px-2 py-1 rounded border outline-none"
-                  style={{ background: '#0d1f38', borderColor: '#3b82f6', color: '#e2e8f0' }}
+                  className="flex-1 text-xs px-2 py-1 rounded border border-sky-400 bg-white text-slate-800 outline-none"
                 />
                 <button
                   onClick={() => void saveSingle(editText)}
                   disabled={saving}
-                  className="text-xs px-2 py-1 rounded"
-                  style={{ background: '#14532d', color: '#4ade80' }}
+                  className="text-xs px-2 py-1 rounded bg-green-600 text-white disabled:opacity-50"
                 >
                   Save
                 </button>
                 <button
                   onClick={() => setEditingIdx(null)}
-                  className="text-xs px-2 py-1 rounded"
-                  style={{ background: '#1a1a2e', color: '#64748b' }}
+                  className="text-xs px-2 py-1 rounded border border-slate-200 text-slate-500"
                 >
                   Cancel
                 </button>
               </div>
             ) : (
               <div className="flex-1 flex justify-between items-start gap-2">
-                <span className="text-xs leading-relaxed" style={{ color: '#e2e8f0' }}>
-                  {f.text}
-                </span>
+                <span className="text-xs leading-relaxed text-slate-700">{f.text}</span>
                 <button
                   onClick={() => {
                     setEditingIdx(i);
                     setEditText(f.text);
                   }}
-                  className="text-xs flex-shrink-0"
-                  style={{ color: '#475569' }}
+                  className="text-xs flex-shrink-0 text-slate-400 hover:text-slate-600"
                 >
                   Edit
                 </button>
@@ -165,18 +150,12 @@ export function LearningToast({
         {situational.map((f, i) => (
           <div
             key={i}
-            className="flex items-start gap-2 rounded-lg px-2.5 py-2 opacity-40"
-            style={{ background: '#071428', border: '1px solid #1a3a5c' }}
+            className="flex items-start gap-2 rounded-lg px-2.5 py-2 opacity-50 bg-white border border-slate-200"
           >
-            <span
-              className="text-xs px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5"
-              style={{ background: '#1a1a2e', color: '#64748b', fontSize: '9px' }}
-            >
+            <span className="text-[9px] px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5 bg-slate-100 text-slate-500">
               One-off
             </span>
-            <span className="text-xs" style={{ color: '#94a3b8' }}>
-              {f.text}
-            </span>
+            <span className="text-xs text-slate-500">{f.text}</span>
           </div>
         ))}
       </div>
@@ -185,8 +164,7 @@ export function LearningToast({
         <button
           onClick={() => void saveAll()}
           disabled={saving}
-          className="flex-1 text-xs py-1.5 rounded-md font-medium transition-colors disabled:opacity-50"
-          style={{ background: '#1d4ed8', color: '#fff' }}
+          className="flex-1 text-xs py-1.5 rounded-md font-medium transition-colors disabled:opacity-50 bg-sky-600 text-white hover:bg-sky-700"
         >
           {saving ? 'Saving…' : '✓ Save to Memory'}
         </button>
@@ -196,16 +174,14 @@ export function LearningToast({
               setEditingIdx(0);
               setEditText(propertyFacts[0]!.text);
             }}
-            className="text-xs px-3 py-1.5 rounded-md border"
-            style={{ background: '#0d1f38', borderColor: '#1a3a5c', color: '#94a3b8' }}
+            className="text-xs px-3 py-1.5 rounded-md border border-slate-200 text-slate-500 hover:bg-slate-50"
           >
             Edit first
           </button>
         )}
         <button
           onClick={onDismiss}
-          className="text-xs px-2 py-1.5 rounded-md border"
-          style={{ background: '#0d1f38', borderColor: '#1a3a5c', color: '#475569' }}
+          className="text-xs px-2 py-1.5 rounded-md border border-slate-200 text-slate-400 hover:bg-slate-50"
         >
           ✕
         </button>
