@@ -701,3 +701,25 @@ export const opsMessages = waltSchema.table('ops_messages', {
 }, (table) => [
   index('ops_messages_thread_id_idx').on(table.threadId),
 ]);
+
+// --- Property Inventory ---
+
+export const inventoryRooms = waltSchema.table('inventory_rooms', {
+  id: uuid('id').primaryKey(),
+  propertyId: text('property_id').notNull(),
+  name: text('name').notNull(),
+  sortOrder: integer('sort_order').notNull().default(0),
+}, (table) => [
+  index('inventory_rooms_property_id_idx').on(table.propertyId),
+]);
+
+export const inventoryItems = waltSchema.table('inventory_items', {
+  id: uuid('id').primaryKey(),
+  roomId: uuid('room_id').notNull(),
+  name: text('name').notNull(),
+  quantity: integer('quantity').notNull().default(0),
+  minQuantity: integer('min_quantity').notNull().default(0),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().default(sql`now()`),
+}, (table) => [
+  index('inventory_items_room_id_idx').on(table.roomId),
+]);
