@@ -4,6 +4,13 @@ import { db } from '@/lib/db';
 import { getAuthContext } from '@/lib/auth/get-auth-context';
 import { SuggestionsStack } from './SuggestionsStack';
 import { getPoolTemperatures } from './get-pool-temperatures';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  CalendarCheck,
+  CheckSquare,
+  Thermometer,
+} from 'lucide-react';
 
 async function getTurnovers(orgId: string) {
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
@@ -83,48 +90,89 @@ export default async function TodayPage() {
     getPoolTemperatures(auth.orgId),
   ]);
 
+  const checkoutsCount = turnovers.filter((t) => t.departureDate).length;
+  const checkinsCount = turnovers.filter((t) => t.arrivalDate).length;
+
   const now = new Date();
   const dateLabel = now.toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
+    weekday: 'long',
+    month: 'long',
     day: 'numeric',
     timeZone: 'America/Chicago',
   });
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-      <h1 className="text-xl font-semibold text-gray-900">Today &middot; {dateLabel}</h1>
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-xl font-bold text-slate-900">Today</h1>
+        <p className="text-sm text-slate-500">{dateLabel}</p>
+      </div>
 
       <SuggestionsStack />
 
-      <div className="flex gap-3">
-        <a href="#turnovers" className="flex-1 rounded-lg bg-yellow-50 p-3 text-center">
-          <div className="text-2xl font-bold text-yellow-700">{turnovers.length}</div>
-          <div className="text-xs text-yellow-600">Turnovers</div>
-        </a>
-        <a href="#tasks" className="flex-1 rounded-lg bg-blue-50 p-3 text-center">
-          <div className="text-2xl font-bold text-blue-700">{tasks.length}</div>
-          <div className="text-xs text-blue-600">Tasks Due</div>
-        </a>
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-sky-50">
+              <CalendarCheck className="h-4 w-4 text-sky-600" />
+            </div>
+            <div className="text-2xl font-bold text-slate-900">{checkoutsCount}</div>
+            <div className="text-xs font-medium uppercase tracking-wide text-slate-400">Check-outs</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-green-50">
+              <CalendarCheck className="h-4 w-4 text-green-600" />
+            </div>
+            <div className="text-2xl font-bold text-slate-900">{checkinsCount}</div>
+            <div className="text-xs font-medium uppercase tracking-wide text-slate-400">Check-ins</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50">
+              <CheckSquare className="h-4 w-4 text-amber-600" />
+            </div>
+            <div className="text-2xl font-bold text-slate-900">{tasks.length}</div>
+            <div className="text-xs font-medium uppercase tracking-wide text-slate-400">Tasks Due</div>
+          </CardContent>
+        </Card>
+        {poolTemps.length > 0 && (
+          <Card>
+            <CardContent className="p-4">
+              <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50">
+                <Thermometer className="h-4 w-4 text-blue-600" />
+              </div>
+              <div className="text-2xl font-bold text-slate-900">{poolTemps.length}</div>
+              <div className="text-xs font-medium uppercase tracking-wide text-slate-400">Pool Temps</div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
+      {/* Pool Temperatures */}
       {poolTemps.length > 0 && (
-        <section id="pool-temperatures">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">
-            Pool Temperatures
-          </h2>
-          <div className="flex gap-3 overflow-x-auto pb-1">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between px-4 py-3">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+              <Thermometer className="h-4 w-4 text-slate-400" />
+              Pool Temperatures
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex gap-3 overflow-x-auto px-4 pb-4">
             {poolTemps.map((pool) => (
               <div
                 key={pool.propertyId}
-                className="rounded-lg border border-gray-200 bg-white p-4 min-w-[160px] shrink-0"
+                className="min-w-[140px] shrink-0 rounded-lg border border-slate-100 bg-slate-50 p-3"
               >
-                <div className="text-sm font-medium text-gray-900 truncate">{pool.propertyName}</div>
-                <div className="text-2xl font-bold text-blue-700 mt-1">
+                <div className="truncate text-sm font-medium text-slate-900">{pool.propertyName}</div>
+                <div className="mt-1 text-2xl font-bold text-sky-600">
                   {pool.temperatureF !== null ? `${pool.temperatureF}°F` : '—'}
                 </div>
                 {pool.asOf && (
-                  <div className="text-xs text-gray-400 mt-1">
+                  <div className="mt-1 text-xs text-slate-400">
                     as of{' '}
                     {pool.asOf.toLocaleTimeString('en-US', {
                       hour: 'numeric',
@@ -134,71 +182,91 @@ export default async function TodayPage() {
                   </div>
                 )}
                 {!pool.pumpRunning && (
-                  <span className="mt-2 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
-                    Pump off
-                  </span>
+                  <Badge variant="secondary" className="mt-2 text-xs">Pump off</Badge>
                 )}
               </div>
             ))}
-          </div>
-        </section>
+          </CardContent>
+        </Card>
       )}
 
-      <section id="turnovers">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">
-          Turnovers Today
-        </h2>
-        {turnovers.length === 0 ? (
-          <p className="text-sm text-gray-400">No turnovers today.</p>
-        ) : (
-          <div className="space-y-2">
-            {turnovers.map((t) => (
-              <div key={t.id} className="rounded-lg border border-gray-200 bg-white p-4">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-gray-900">{t.propertyName}</span>
-                  <span className="text-xs bg-yellow-100 text-yellow-700 rounded-full px-2 py-0.5">
+      {/* Turnovers */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between px-4 py-3">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <CalendarCheck className="h-4 w-4 text-slate-400" />
+            Turnovers Today
+          </CardTitle>
+          <Badge variant="secondary">{turnovers.length}</Badge>
+        </CardHeader>
+        <CardContent className="p-0">
+          {turnovers.length === 0 ? (
+            <p className="px-4 py-3 text-sm text-slate-400">No turnovers today.</p>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {turnovers.map((t) => (
+                <div key={t.id} className="flex items-center justify-between px-4 py-3">
+                  <div>
+                    <div className="text-sm font-medium text-slate-900">{t.propertyName}</div>
+                    <div className="mt-0.5 text-xs text-slate-500">
+                      {t.guestFirstName} {t.guestLastName}
+                      {t.departureDate &&
+                        ` · Out ${new Date(t.departureDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' })}`}
+                      {t.arrivalDate &&
+                        ` · In ${new Date(t.arrivalDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' })}`}
+                    </div>
+                  </div>
+                  <Badge
+                    variant={
+                      t.arrivalDate && t.departureDate
+                        ? 'secondary'
+                        : t.arrivalDate
+                          ? 'default'
+                          : 'outline'
+                    }
+                  >
                     {t.arrivalDate && t.departureDate
                       ? 'Turnover'
                       : t.arrivalDate
                         ? 'Check-in'
                         : 'Check-out'}
-                  </span>
+                  </Badge>
                 </div>
-                <div className="text-sm text-gray-500 mt-1">
-                  {t.guestFirstName} {t.guestLastName}
-                  {t.departureDate &&
-                    ` · Out ${new Date(t.departureDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' })}`}
-                  {t.arrivalDate &&
-                    ` · In ${new Date(t.arrivalDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' })}`}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      <section id="tasks">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3">
-          Tasks Due Today
-        </h2>
-        {tasks.length === 0 ? (
-          <p className="text-sm text-gray-400">No tasks due today.</p>
-        ) : (
-          <div className="space-y-2">
-            {(tasks as Array<{ id: string; title: string; priority: string }>).map((task) => (
-              <div
-                key={task.id}
-                className="rounded-lg border border-gray-200 bg-white p-4 flex items-start gap-3"
-              >
-                <span
-                  className={`mt-0.5 w-2 h-2 rounded-full shrink-0 ${task.priority === 'high' ? 'bg-red-500' : 'bg-gray-300'}`}
-                />
-                <span className="text-sm text-gray-900">{task.title}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      {/* Tasks */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between px-4 py-3">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <CheckSquare className="h-4 w-4 text-slate-400" />
+            Tasks Due Today
+          </CardTitle>
+          <Badge variant="secondary">{tasks.length}</Badge>
+        </CardHeader>
+        <CardContent className="p-0">
+          {tasks.length === 0 ? (
+            <p className="px-4 py-3 text-sm text-slate-400">No tasks due today.</p>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {(tasks as Array<{ id: string; title: string; priority: string }>).map((task) => (
+                <div key={task.id} className="flex items-center gap-3 px-4 py-3">
+                  <div
+                    className={`h-2 w-2 shrink-0 rounded-full ${task.priority === 'high' ? 'bg-red-500' : 'bg-slate-300'}`}
+                  />
+                  <span className="text-sm text-slate-900">{task.title}</span>
+                  {task.priority === 'high' && (
+                    <Badge variant="destructive" className="ml-auto text-xs">High</Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
