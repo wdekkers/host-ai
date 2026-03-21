@@ -184,6 +184,7 @@ export const propertyFaqs = waltSchema.table(
     question: text('question').notNull(),
     answer: text('answer'),
     examples: jsonb('examples').$type<string[]>(),
+    reviewStatus: text('review_status').notNull().default('unreviewed'), // unreviewed | approved | manually_verified
     analysedAt: timestamp('analysed_at', { withTimezone: true }).notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
   },
