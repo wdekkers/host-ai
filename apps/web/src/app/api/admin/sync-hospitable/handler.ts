@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { eq } from 'drizzle-orm';
 import { properties, reservations, messages } from '@walt/db';
 import { db } from '@/lib/db';
 import { getHospitableApiConfig } from '@/lib/integrations-env';
@@ -7,6 +8,15 @@ import {
   normalizeMessage,
   normalizeProperty,
 } from '@/lib/hospitable-normalize';
+
+const CORE_STATUSES = ['inquiry', 'pending', 'confirmed', 'cancelled'] as const;
+
+const STATUS_MESSAGES: Record<string, string> = {
+  inquiry: 'Guest sent an inquiry',
+  pending: 'New booking request received',
+  confirmed: 'Reservation confirmed',
+  cancelled: 'Reservation cancelled',
+};
 
 type HospitableListResponse = {
   data: Record<string, unknown>[];
@@ -167,6 +177,22 @@ export async function syncHospitable() {
       };
 
       const normalized = normalizeReservation(enriched);
+
+      // --- BEFORE the reservation upsert: fetch old status ---
+      const newStatus = normalized.status;
+      let oldStatus: string | null = null;
+
+      const [existing] = await db
+        .select({ status: reservations.status })
+        .from(reservations)
+        .where(eq(reservations.id, normalized.id))
+        .limit(1);
+
+      if (existing) {
+        oldStatus = existing.status;
+      }
+
+      // --- Reservation upsert ---
       await db
         .insert(reservations)
         .values({ ...normalized, syncedAt: now })
@@ -175,6 +201,33 @@ export async function syncHospitable() {
           set: { ...normalized, syncedAt: now },
         });
       reservationCount++;
+
+      // --- AFTER the reservation upsert: insert system message if status changed ---
+      if (
+        newStatus &&
+        CORE_STATUSES.includes(newStatus as (typeof CORE_STATUSES)[number]) &&
+        newStatus !== oldStatus
+      ) {
+        // Use Hospitable's updated_at timestamp when available, fall back to now()
+        const statusChangedAt = raw.updated_at
+          ? new Date(String(raw.updated_at))
+          : new Date();
+
+        await db
+          .insert(messages)
+          .values({
+            id: uuidv4(),
+            reservationId: normalized.id,
+            platform: normalized.platform ?? null,
+            body: STATUS_MESSAGES[newStatus] ?? `Reservation status: ${newStatus}`,
+            senderType: 'system',
+            senderFullName: null,
+            createdAt: statusChangedAt,
+            raw: { type: 'status_change', fromStatus: oldStatus, toStatus: newStatus },
+            suggestionScannedAt: new Date(), // skip AI suggestion scanner
+          })
+          .onConflictDoNothing();
+      }
 
       for (const msg of rawMessages) {
         const normalizedMsg = normalizeMessage(msg, normalized.id);
