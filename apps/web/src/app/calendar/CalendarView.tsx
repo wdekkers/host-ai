@@ -24,43 +24,29 @@ type Reservation = {
   nights: number | null;
 };
 
-function startOfMonth(d: Date) {
-  return new Date(d.getFullYear(), d.getMonth(), 1);
-}
-function endOfMonth(d: Date) {
-  return new Date(d.getFullYear(), d.getMonth() + 1, 0);
-}
-function addMonths(d: Date, n: number) {
-  return new Date(d.getFullYear(), d.getMonth() + n, 1);
-}
-function formatMonth(d: Date) {
-  return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-}
-function toDateStr(d: Date) {
-  return d.toISOString().slice(0, 10);
-}
+function startOfMonth(d: Date) { return new Date(d.getFullYear(), d.getMonth(), 1); }
+function endOfMonth(d: Date) { return new Date(d.getFullYear(), d.getMonth() + 1, 0); }
+function addMonths(d: Date, n: number) { return new Date(d.getFullYear(), d.getMonth() + n, 1); }
+function formatMonth(d: Date) { return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); }
+function toDateStr(d: Date) { return d.toISOString().slice(0, 10); }
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
+  return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+function formatCents(cents: number, currency?: string | null) {
+  return (cents / 100).toLocaleString('en-US', {
+    style: 'currency', currency: currency ?? 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0,
   });
 }
-
-function formatCents(cents: number, currency?: string | null) {
-  const dollars = cents / 100;
-  return dollars.toLocaleString('en-US', {
-    style: 'currency',
-    currency: currency ?? 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
+function daysBetween(a: Date, b: Date) {
+  return Math.round((b.getTime() - a.getTime()) / (86400000));
 }
 
 const COLORS = ['#0284c7', '#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2', '#4f46e5', '#be185d'];
 const DIAG = 18;
 const ROW_H = 55;
 const COL_W = 70;
+const PROP_W = 220;
+const BAR_INSET = 4; // top/bottom inset for bars
 
 export function CalendarView({ showRates = false }: { showRates?: boolean }) {
   const { getToken } = useAuth();
@@ -110,7 +96,6 @@ export function CalendarView({ showRates = false }: { showRates?: boolean }) {
     return map;
   }, [reservations]);
 
-  // Assign a color per reservation for visual distinction
   const reservationColor = useMemo(() => {
     const map = new Map<string, string>();
     let idx = 0;
@@ -124,6 +109,8 @@ export function CalendarView({ showRates = false }: { showRates?: boolean }) {
   const selectedProperty = selectedReservation
     ? properties.find((p) => p.id === selectedReservation.propertyId)
     : null;
+
+  const todayStr = toDateStr(new Date());
 
   return (
     <div className="space-y-5">
@@ -153,140 +140,112 @@ export function CalendarView({ showRates = false }: { showRates?: boolean }) {
       ) : (
         <Card>
           <CardContent className="p-0 overflow-x-auto">
-            <table className="border-collapse" style={{ minWidth: `${200 + daysInMonth * COL_W}px` }}>
-              <thead>
-                <tr>
-                  <th className="sticky left-0 z-20 bg-white border-b border-r border-slate-200 px-4 py-2 text-left text-xs font-medium text-slate-500" style={{ width: 200, minWidth: 200 }}>
-                    Property
-                  </th>
-                  {dayHeaders.map((d) => {
-                    const isToday = toDateStr(d) === toDateStr(new Date());
-                    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-                    return (
-                      <th
-                        key={d.getDate()}
-                        className={`border-b border-r border-slate-100 px-0 py-2 text-center text-xs font-normal ${
-                          isToday ? 'bg-sky-50 text-sky-700 font-bold' : isWeekend ? 'bg-slate-50 text-slate-400' : 'text-slate-500'
-                        }`}
-                        style={{ width: COL_W, minWidth: COL_W }}
-                      >
-                        <div className="text-[11px]">{d.getDate()}</div>
-                        <div className="text-[9px] uppercase">{d.toLocaleDateString('en-US', { weekday: 'narrow' })}</div>
-                      </th>
-                    );
-                  })}
-                </tr>
-              </thead>
-              <tbody>
-                {properties.map((prop) => {
-                  const propReservations = reservationsByProperty.get(prop.id) ?? [];
+            <div style={{ minWidth: PROP_W + daysInMonth * COL_W }}>
+              {/* Header row */}
+              <div className="flex border-b border-slate-200">
+                <div
+                  className="sticky left-0 z-20 bg-white border-r border-slate-200 px-4 py-2 text-xs font-medium text-slate-500 shrink-0"
+                  style={{ width: PROP_W, minWidth: PROP_W }}
+                >
+                  Property
+                </div>
+                {dayHeaders.map((d) => {
+                  const isToday = toDateStr(d) === todayStr;
+                  const isWeekend = d.getDay() === 0 || d.getDay() === 6;
                   return (
-                    <tr key={prop.id}>
-                      <td className="sticky left-0 z-20 bg-white border-b border-r border-slate-200 px-4 text-xs font-medium text-slate-900 truncate" style={{ height: ROW_H, width: 200, minWidth: 200 }}>
-                        {prop.name}
-                      </td>
-                      {dayHeaders.map((d) => {
-                        const dateStr = toDateStr(d);
-                        const isToday = dateStr === toDateStr(new Date());
-                        const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-
-                        const occupying = propReservations.find((r) => {
-                          if (!r.arrivalDate || !r.departureDate) return false;
-                          return dateStr >= toDateStr(new Date(r.arrivalDate)) && dateStr < toDateStr(new Date(r.departureDate));
-                        });
-
-                        const departing = propReservations.find(
-                          (r) => r.departureDate && toDateStr(new Date(r.departureDate)) === dateStr,
-                        );
-
-                        const isArrival = occupying?.arrivalDate && toDateStr(new Date(occupying.arrivalDate)) === dateStr;
-                        const isDepartTomorrow = occupying?.departureDate && (() => {
-                          const nextDay = new Date(d);
-                          nextDay.setDate(nextDay.getDate() + 1);
-                          return toDateStr(new Date(occupying.departureDate!)) === toDateStr(nextDay);
-                        })();
-
-                        const color = occupying ? reservationColor.get(occupying.id) : undefined;
-                        const departColor = departing ? reservationColor.get(departing.id) : undefined;
-                        const guestName = occupying
-                          ? [occupying.guestFirstName, occupying.guestLastName?.charAt(0)].filter(Boolean).join(' ')
-                          : '';
-
-                        let clipPath: string | undefined;
-                        if (isArrival && isDepartTomorrow) {
-                          clipPath = `polygon(0 0, 100% 0, calc(100% - ${DIAG}px) 100%, ${DIAG}px 100%)`;
-                        } else if (isArrival) {
-                          clipPath = `polygon(0 0, 100% 0, 100% 100%, ${DIAG}px 100%)`;
-                        } else if (isDepartTomorrow) {
-                          clipPath = `polygon(0 0, 100% 0, calc(100% - ${DIAG}px) 100%, 0 100%)`;
-                        }
-
-                        return (
-                          <td
-                            key={d.getDate()}
-                            className={`border-b border-r border-slate-100 p-0 relative overflow-hidden ${
-                              isToday ? 'bg-sky-50' : isWeekend ? 'bg-slate-50/50' : ''
-                            }`}
-                            style={{ height: ROW_H, width: COL_W, minWidth: COL_W }}
-                          >
-                            {/* Departing bar: diagonal end */}
-                            {departing && (!occupying || occupying.id !== departing.id) && (
-                              <div
-                                className="absolute top-0 left-0 bottom-0 cursor-pointer hover:brightness-110"
-                                style={{
-                                  width: '50%',
-                                  backgroundColor: departColor,
-                                  clipPath: `polygon(0 0, 100% 0, calc(100% - ${DIAG}px) 100%, 0 100%)`,
-                                }}
-                                onClick={() => setSelectedReservation(departing)}
-                              />
-                            )}
-
-                            {/* Empty cell: show nightly rate for owners */}
-                            {!occupying && !departing && showRates && (() => {
-                              // Show rate from nearest reservation for this property
-                              const nearest = propReservations.find((r) => r.nightlyRate);
-                              return nearest?.nightlyRate ? (
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                  <span className="text-[9px] text-slate-400">
-                                    {formatCents(nearest.nightlyRate, nearest.currency)}
-                                  </span>
-                                </div>
-                              ) : null;
-                            })()}
-
-                            {/* Occupying bar */}
-                            {occupying && (
-                              <div
-                                className="absolute top-0 bottom-0 flex items-center cursor-pointer hover:brightness-110 transition-all"
-                                style={{
-                                  left: departing && departing.id !== occupying.id ? '50%' : 0,
-                                  right: 0,
-                                  backgroundColor: color,
-                                  clipPath,
-                                }}
-                                onClick={() => setSelectedReservation(occupying)}
-                              >
-                                {isArrival ? (
-                                  <span className="text-[10px] text-white font-medium truncate pl-4 pr-1">
-                                    {guestName}
-                                    {showRates && occupying.nightlyRate ? ` · ${formatCents(occupying.nightlyRate, occupying.currency)}/n` : ''}
-                                  </span>
-                                ) : showRates && occupying.nightlyRate ? (
-                                  <span className="text-[9px] text-white/70 w-full text-center">
-                                    {formatCents(occupying.nightlyRate, occupying.currency)}
-                                  </span>
-                                ) : null}
-                              </div>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
+                    <div
+                      key={d.getDate()}
+                      className={`shrink-0 px-0 py-2 text-center text-xs font-normal border-r border-slate-100 ${
+                        isToday ? 'bg-sky-50 text-sky-700 font-bold' : isWeekend ? 'bg-slate-50 text-slate-400' : 'text-slate-500'
+                      }`}
+                      style={{ width: COL_W, minWidth: COL_W }}
+                    >
+                      <div className="text-[11px]">{d.getDate()}</div>
+                      <div className="text-[9px] uppercase">{d.toLocaleDateString('en-US', { weekday: 'narrow' })}</div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
+              </div>
+
+              {/* Property rows */}
+              {properties.map((prop) => {
+                const propReservations = reservationsByProperty.get(prop.id) ?? [];
+
+                return (
+                  <div key={prop.id} className="flex relative" style={{ height: ROW_H }}>
+                    {/* Property name — sticky */}
+                    <div
+                      className="sticky left-0 z-20 bg-white border-b border-r border-slate-200 px-4 flex items-center text-xs font-medium text-slate-900 truncate shrink-0"
+                      style={{ width: PROP_W, minWidth: PROP_W }}
+                    >
+                      {prop.name}
+                    </div>
+
+                    {/* Day grid cells (empty — just for grid lines) */}
+                    {dayHeaders.map((d) => {
+                      const isToday = toDateStr(d) === todayStr;
+                      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                      return (
+                        <div
+                          key={d.getDate()}
+                          className={`shrink-0 border-b border-r border-slate-100 ${
+                            isToday ? 'bg-sky-50' : isWeekend ? 'bg-slate-50/50' : ''
+                          }`}
+                          style={{ width: COL_W, minWidth: COL_W, height: ROW_H }}
+                        />
+                      );
+                    })}
+
+                    {/* Reservation bars — single continuous elements overlaid */}
+                    {propReservations.map((r) => {
+                      if (!r.arrivalDate || !r.departureDate) return null;
+
+                      const arrival = new Date(r.arrivalDate);
+                      const departure = new Date(r.departureDate);
+
+                      // Calculate position relative to month start
+                      const startDay = Math.max(0, daysBetween(monthStart, arrival));
+                      const endDay = Math.min(daysInMonth, daysBetween(monthStart, departure));
+
+                      if (endDay <= 0 || startDay >= daysInMonth) return null;
+
+                      const left = PROP_W + startDay * COL_W;
+                      const width = (endDay - startDay) * COL_W;
+                      const color = reservationColor.get(r.id) ?? COLORS[0];
+                      const guestName = [r.guestFirstName, r.guestLastName?.charAt(0)].filter(Boolean).join(' ');
+
+                      // Clip-path: diagonal at start (/) and end (/)
+                      const startsInView = startDay === daysBetween(monthStart, arrival);
+                      const endsInView = endDay === daysBetween(monthStart, departure);
+                      const leftDiag = startsInView ? DIAG : 0;
+                      const rightDiag = endsInView ? DIAG : 0;
+
+                      return (
+                        <div
+                          key={r.id}
+                          className="absolute z-10 flex items-center cursor-pointer hover:brightness-110 transition-all"
+                          style={{
+                            left,
+                            width,
+                            top: BAR_INSET,
+                            bottom: BAR_INSET,
+                            backgroundColor: color,
+                            clipPath: `polygon(${leftDiag}px 0, calc(100% - 0px) 0, calc(100% - ${rightDiag}px) 100%, 0px 100%)`,
+                          }}
+                          onClick={() => setSelectedReservation(r)}
+                          title={`${guestName} · ${formatDate(r.arrivalDate)} – ${formatDate(r.departureDate)}`}
+                        >
+                          <span className="text-[11px] text-white font-medium truncate pl-5 pr-2">
+                            {guestName}
+                            {showRates && r.nightlyRate ? ` · ${formatCents(r.nightlyRate, r.currency)}/n` : ''}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -294,10 +253,7 @@ export function CalendarView({ showRates = false }: { showRates?: boolean }) {
       {/* Reservation popup */}
       {selectedReservation && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setSelectedReservation(null)}>
-          <div
-            className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
               <h2 className="text-sm font-bold text-slate-900">Reservation Details</h2>
               <button onClick={() => setSelectedReservation(null)} className="text-slate-400 hover:text-slate-600">
@@ -351,18 +307,12 @@ export function CalendarView({ showRates = false }: { showRates?: boolean }) {
                 </div>
               )}
               <div className="flex items-center gap-2">
-                {selectedReservation.status && (
-                  <Badge variant="secondary">{selectedReservation.status}</Badge>
-                )}
-                {selectedReservation.platform && (
-                  <Badge variant="outline">{selectedReservation.platform}</Badge>
-                )}
+                {selectedReservation.status && <Badge variant="secondary">{selectedReservation.status}</Badge>}
+                {selectedReservation.platform && <Badge variant="outline">{selectedReservation.platform}</Badge>}
               </div>
             </div>
             <div className="px-5 py-3 border-t border-slate-200 flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setSelectedReservation(null)}>
-                Close
-              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setSelectedReservation(null)}>Close</Button>
               <Link href={`/inbox?reservationId=${selectedReservation.id}`}>
                 <Button size="sm">
                   <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
