@@ -134,6 +134,13 @@
       "when": 1774656000000,
       "tag": "0018_ops_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1774742400000,
+      "tag": "0019_reservation_pricing",
+      "breakpoints": true
     }
   ]
 }
