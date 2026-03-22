@@ -26,7 +26,7 @@ Two repositories (host-ai and WALT) share the same PostgreSQL database, same tec
 - Building a PMS abstraction layer (future work — currently Hospitable only)
 - Building a marketplace/global discovery site (future vision, not this spec)
 - Self-service host onboarding or website builder UI in Hostpilot (future)
-- Migrating WALT's Terraform infrastructure config (can remain separate or be addressed later)
+- Building a PMS-agnostic booking engine (Stripe integration is Hospitable-specific for now)
 
 ## Architecture
 
@@ -53,10 +53,13 @@ host-ai/
 │   ├── stripe/                     # Stripe integration (FROM WALT libraries/stripe)
 │   ├── ses/                        # AWS SES email (FROM WALT libraries/ses)
 │   ├── cdn/                        # Image CDN utilities (FROM WALT libraries/cdn)
+│   ├── mailerlite/                 # Newsletter integration (FROM WALT libraries/mailerlite)
+│   ├── ring-client/                # (existing, unchanged)
 │   ├── config-eslint/              # (existing)
 │   └── config-typescript/          # (existing)
 └── infra/
-    ├── docker/                     # Extended with sites + bookings Dockerfiles
+    ├── docker/                     # Extended with Dockerfile.sites + bookings in Dockerfile.fastify
+    ├── terraform/                  # Infrastructure as code (FROM WALT — RDS, CloudFront, Lambda@Edge)
     ├── docker-compose.yml
     └── docker-compose.prod.yml     # Extended with sites + bookings containers
 ```
@@ -65,7 +68,7 @@ host-ai/
 
 | WALT Component | Destination | Notes |
 |---|---|---|
-| `libraries/hospitable-api` | `packages/hospitable` | Generated API client, reused by host-ai's sync |
+| `libraries/hospitable-api` | `packages/hospitable` | Generated API client. Existing host-ai Hospitable sync code should import from this package. |
 | `libraries/stripe` | `packages/stripe` | Booking payments |
 | `libraries/ses` | `packages/ses` | Email sending |
 | `libraries/cdn` | `packages/cdn` | Image URL helpers, CloudFront integration |
@@ -82,7 +85,7 @@ host-ai/
 | `apps/walt-management` | Dropped (superseded by host-ai web) | Admin features already in Hostpilot |
 | `apps/service-walt-management` | Absorbed into existing services | Hospitable sync consolidated, content endpoints distributed |
 | `apps/service-bookings` | `services/bookings` | Booking processing + Stripe checkout |
-| `infra/terraform` | Evaluate separately | RDS, CloudFront, Lambda@Edge may remain standalone |
+| `infra/terraform` | Move to `infra/terraform/` | RDS, CloudFront, Lambda@Edge configs are needed by `apps/sites` — should live alongside the code that depends on them |
 
 ### Multi-Tenant Website App (`apps/sites`)
 
@@ -106,60 +109,52 @@ New tables in `@walt/db`:
 ```
 sites
   id              UUID PK
-  organizationId  UUID FK → organizations
+  organizationId  TEXT FK → organizations  -- text type to match existing org PKs
   slug            TEXT UNIQUE
-  domain          TEXT UNIQUE          -- custom domain
+  domain          TEXT UNIQUE              -- custom domain
   templateType    ENUM('property', 'portfolio')
-  name            TEXT                 -- site display name
+  name            TEXT                     -- site display name
   tagline         TEXT
   description     TEXT
   logoUrl         TEXT
   faviconUrl      TEXT
   ogImageUrl      TEXT
-  createdAt       TIMESTAMP
-  updatedAt       TIMESTAMP
-
-siteThemes
-  id              UUID PK
-  siteId          UUID FK → sites
-  primaryColor    TEXT                 -- hex color (e.g. #0284c7)
+  -- Theme fields (inline, 1:1 with site — no separate table)
+  primaryColor    TEXT                     -- hex color (e.g. #0284c7)
   secondaryColor  TEXT
   accentColor     TEXT
-  fontHeading     TEXT                 -- font family name
+  fontHeading     TEXT                     -- font family name
   fontBody        TEXT
-  borderRadius    TEXT                 -- 'sm' | 'md' | 'lg'
+  borderRadius    TEXT                     -- 'sm' | 'md' | 'lg'
   createdAt       TIMESTAMP
   updatedAt       TIMESTAMP
 
 siteProperties
   id              UUID PK
   siteId          UUID FK → sites
-  propertyId      UUID FK → properties
+  organizationId  TEXT FK → organizations  -- denormalized for query efficiency + RLS
+  propertyId      TEXT FK → properties     -- text type to match existing property PKs
   featured        BOOLEAN DEFAULT false
   sortOrder       INTEGER DEFAULT 0
   createdAt       TIMESTAMP
+  updatedAt       TIMESTAMP
 
 sitePages
   id              UUID PK
   siteId          UUID FK → sites
-  slug            TEXT                 -- e.g. 'about', 'contact', 'house-rules'
+  organizationId  TEXT FK → organizations  -- denormalized for query efficiency + RLS
+  slug            TEXT                     -- e.g. 'about', 'contact', 'house-rules'
   title           TEXT
-  content         JSONB               -- structured page content
+  content         JSONB                    -- structured page content (schema defined in @walt/contracts)
   seoTitle        TEXT
   seoDescription  TEXT
   enabled         BOOLEAN DEFAULT true
   sortOrder       INTEGER DEFAULT 0
   createdAt       TIMESTAMP
   updatedAt       TIMESTAMP
-
-siteNavItems
-  id              UUID PK
-  siteId          UUID FK → sites
-  label           TEXT
-  href            TEXT
-  sortOrder       INTEGER DEFAULT 0
-  enabled         BOOLEAN DEFAULT true
 ```
+
+Navigation is derived from the template type + which `sitePages` are enabled — no separate `siteNavItems` table needed.
 
 #### Template System
 
@@ -201,7 +196,7 @@ Two template types, each a set of Next.js page components that receive site conf
 
 #### Theming System
 
-CSS custom properties driven by the `siteThemes` table, injected via a root layout provider:
+CSS custom properties driven by the site's theme columns, injected via a root layout provider:
 
 ```tsx
 // Simplified concept
@@ -235,6 +230,16 @@ The websites consume content generated by host-ai's existing pipelines:
 
 No duplicate data fetching — the sites app reads directly from the shared `@walt/db`.
 
+#### Caching Strategy
+
+Site config (domain → site → theme → properties) changes infrequently but is read on every request. Strategy:
+
+- **Site config resolution**: In-memory LRU cache with 5-minute TTL. On cache miss, query DB. Invalidation: TTL-based (no need for active invalidation since config changes are rare and a 5-minute delay is acceptable).
+- **Property pages**: Use Next.js ISR with `revalidate: 300` (5 minutes). Property data changes infrequently. On-demand revalidation via webhook when Hospitable syncs new data.
+- **Static content pages** (about, house-rules, policies): ISR with `revalidate: 3600` (1 hour).
+- **Availability/calendar**: Fetched fresh on each request (no cache) — booking accuracy requires real-time data.
+- **Blog/events**: ISR with `revalidate: 600` (10 minutes).
+
 ### Competitive Improvements to Incorporate
 
 Based on analysis of Airbnb, VRBO, and top direct-booking sites:
@@ -261,11 +266,9 @@ Based on analysis of Airbnb, VRBO, and top direct-booking sites:
 ### Database Schema Changes
 
 #### New Tables
-- `sites` — Site configuration (domain, template type, name, branding)
-- `siteThemes` — Per-site color/font theming
+- `sites` — Site configuration (domain, template type, name, branding, theme)
 - `siteProperties` — Many-to-many linking sites to properties
-- `sitePages` — Custom page content per site
-- `siteNavItems` — Navigation configuration per site
+- `sitePages` — Custom page content per site (content schema defined in `@walt/contracts`)
 
 #### Merged Tables (from WALT)
 The following WALT tables need to be evaluated for merge into `@walt/db`:
@@ -288,7 +291,8 @@ The following WALT tables need to be evaluated for merge into `@walt/db`:
 - New `Dockerfile.sites` — builds `apps/sites` as a standalone Next.js app
 - New service in `docker-compose.prod.yml`: `sites` container on an internal port
 - Caddy routing: property domains → sites container, `ai.walt-services.com` → web container (unchanged)
-- `services/bookings` added to the existing `Dockerfile.fastify` multi-service build
+- `services/bookings` added to the existing `Dockerfile.fastify` multi-service build — requires updating COPY statements in `Dockerfile.fastify` for the new service and new packages (`hospitable`, `stripe`, `ses`, `cdn`, `mailerlite`)
+- New environment variables needed: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `SES_REGION`, `SES_FROM_EMAIL`, `MAILERLITE_API_KEY`, `CDN_URL` — added to AWS Secrets Manager and docker-compose env config
 
 #### Domain Routing (Caddy)
 ```
@@ -324,7 +328,16 @@ This should be executed in phases to minimize risk:
 
 **Phase 6: Competitive improvements** — Add book-direct messaging, enhanced amenity showcases, sleep arrangements, price breakdown, weather/seasonal info.
 
-**Phase 7: Deploy & cut over** — Deploy the sites app alongside existing containers. Update DNS for property domains to point to the new sites app. Verify everything works. Retire WALT repo.
+**Phase 7: Deploy & cut over** — Deploy the sites app alongside existing containers. Run both systems in parallel for 1-2 weeks:
+  1. Reduce DNS TTL to 60s one week before cutover
+  2. Deploy `apps/sites` to production, verify with direct IP/port access
+  3. Run visual regression checks (screenshot comparison) and Lighthouse audits against current WALT sites
+  4. Verify structured data and sitemaps match existing sites
+  5. Switch DNS for one property domain first (e.g. Palmera) as a canary
+  6. Monitor for 48 hours — check analytics, search console, booking flow
+  7. If issues: revert DNS (60s TTL means fast rollback). WALT containers remain running throughout.
+  8. If stable: cut over remaining domains
+  9. After 2 weeks of stable operation with all domains: archive WALT repo
 
 ## Risks & Mitigations
 
@@ -341,6 +354,7 @@ This should be executed in phases to minimize risk:
 1. All 4 WALT websites render identically (or better) from the single `apps/sites` app
 2. Zero duplicate Hospitable API calls — all property data comes from `@walt/db`
 3. SEO pipeline content (blog posts, events) surfaces on the websites without cross-repo coordination
-4. Adding a new property website requires only database configuration (new `sites` + `siteThemes` + `siteProperties` rows), no code changes
-5. WALT repository is archived
-6. CI pipeline passes: typecheck, lint, build for all apps and packages
+4. Adding a new property website requires only database configuration (new `sites` + `siteProperties` rows), no code changes
+5. Property website pages achieve LCP under 2.5s (Lighthouse), matching or exceeding current WALT site performance
+6. WALT repository is archived
+7. CI pipeline passes: typecheck, lint, build for all apps and packages
