@@ -96,6 +96,9 @@ export const reservations = waltSchema.table('reservations', {
   totalPrice: integer('total_price'), // cents
   nightlyRate: integer('nightly_rate'), // cents
   currency: text('currency'), // e.g. 'USD', 'EUR'
+  guestScore: integer('guest_score'),
+  guestScoreSummary: text('guest_score_summary'),
+  guestScoredAt: timestamp('guest_scored_at', { withTimezone: true }),
   raw: jsonb('raw').notNull(),
   syncedAt: timestamp('synced_at', { withTimezone: true }).notNull(),
 });
