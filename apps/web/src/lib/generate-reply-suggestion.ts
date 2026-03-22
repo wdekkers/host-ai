@@ -17,6 +17,18 @@ const CHIP_INSTRUCTIONS: Record<string, string> = {
   more_detail: 'Provide more detail and explanation in the reply.',
 };
 
+export type SourceReference = {
+  type: 'knowledge_entry' | 'property_field' | 'property_memory';
+  id: string;
+  label: string;
+  snippet?: string;
+};
+
+export type SuggestionResult = {
+  suggestion: string;
+  sourcesUsed: SourceReference[];
+};
+
 export async function generateReplySuggestion({
   guestFirstName,
   guestLastName,
@@ -41,7 +53,7 @@ export async function generateReplySuggestion({
   chips?: string[];
   extraContext?: string;
   temperature?: number;
-}): Promise<string | null> {
+}): Promise<SuggestionResult | null> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
 
@@ -90,16 +102,31 @@ export async function generateReplySuggestion({
   });
   const knowledgeContext = formatKnowledgeForPrompt(aiKnowledge);
 
+  const sourcesUsed: SourceReference[] = aiKnowledge.map((entry) => ({
+    type: 'knowledge_entry' as const,
+    id: entry.id,
+    label: entry.question ?? entry.answer?.slice(0, 60) ?? 'Knowledge entry',
+    snippet: entry.answer?.slice(0, 120),
+  }));
+
   // --- Knowledge: Learned Memory ---
   let memoryContext = '';
   if (propertyId) {
     const facts = await db
-      .select({ fact: propertyMemory.fact })
+      .select({ id: propertyMemory.id, fact: propertyMemory.fact })
       .from(propertyMemory)
       .where(eq(propertyMemory.propertyId, propertyId))
       .limit(20);
     if (facts.length > 0) {
       memoryContext = `\n\nProperty facts (learned):\n${facts.map((f) => `- ${f.fact}`).join('\n')}`;
+      for (const f of facts) {
+        sourcesUsed.push({
+          type: 'property_memory',
+          id: f.id,
+          label: f.fact.slice(0, 60),
+          snippet: f.fact.slice(0, 120),
+        });
+      }
     }
   }
 
@@ -180,5 +207,7 @@ Reply in the same language as the guest message. Do not start with "Of course" o
     messages: [{ role: 'system', content: systemPrompt }, ...historyMessages],
   });
 
-  return response.choices[0]?.message?.content ?? null;
+  const content = response.choices[0]?.message?.content ?? null;
+  if (!content) return null;
+  return { suggestion: content, sourcesUsed };
 }
