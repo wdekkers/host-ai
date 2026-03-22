@@ -83,6 +83,8 @@ These use the existing `events` table structure (type, account_id, aggregate_id,
 
 **Note:** The `events` table `id` column has no `.defaultRandom()` — callers must supply an explicit UUID (e.g., `crypto.randomUUID()`) when inserting.
 
+**Implementation note:** The `events.accountId` column is `uuid` but Clerk organization IDs are text strings (`org_xxx`). Writing to the `events` table is deferred to ticket #004 (event contracts), which will reconcile this type mismatch. The `draftEvents` table (which uses `text` for `organizationId`) provides full audit trail coverage in the meantime.
+
 ---
 
 ## 2. AI Generation Enhancements
