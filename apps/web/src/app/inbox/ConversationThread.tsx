@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { AiDraftPanel } from './AiDraftPanel';
+import { RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { STATUS_BADGE_CONFIG, STATUS_ICONS, STATUS_COLORS } from './status-config';
 
@@ -25,6 +26,9 @@ type ReservationInfo = {
   checkOut: string | null;
   platform: string | null;
   status: string | null;
+  guestScore: number | null;
+  guestScoreSummary: string | null;
+  guestScoredAt: string | null;
 };
 
 function formatTime(iso: string) {
@@ -57,6 +61,7 @@ export function ConversationThread({
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
+  const [scoring, setScoring] = useState(false);
   const topSentinelRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -117,6 +122,24 @@ export function ConversationThread({
     }
   }, [loadingOlder, hasMore, messages, fetchMessages]);
 
+  const handleRescore = useCallback(async () => {
+    setScoring(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/inbox/${reservationId}/score`, {
+        method: 'POST',
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      if (res.ok) {
+        const data = await fetchMessages();
+        setMessages(data.messages);
+        setReservation(data.reservation);
+      }
+    } finally {
+      setScoring(false);
+    }
+  }, [reservationId, getToken, fetchMessages]);
+
   useEffect(() => {
     const sentinel = topSentinelRef.current;
     if (!sentinel) return;
@@ -168,6 +191,40 @@ export function ConversationThread({
               ` – ${new Date(reservation.checkOut).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
             {reservation?.platform && ` · ${reservation.platform}`}
           </p>
+          {reservation?.guestScore != null && (
+            <div className="flex items-center gap-2 mt-1">
+              <span
+                className={`text-xs font-bold px-1.5 py-0.5 rounded ${
+                  reservation.guestScore >= 8
+                    ? 'bg-green-100 text-green-700'
+                    : reservation.guestScore >= 5
+                      ? 'bg-amber-100 text-amber-700'
+                      : 'bg-red-100 text-red-700'
+                }`}
+              >
+                {reservation.guestScore}/10
+              </span>
+              <span className="text-xs text-slate-500">{reservation.guestScoreSummary}</span>
+              <button
+                onClick={handleRescore}
+                disabled={scoring}
+                className="text-slate-400 hover:text-sky-600 disabled:opacity-50"
+                title="Re-score guest"
+              >
+                <RefreshCw className={`h-3 w-3 ${scoring ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+          )}
+          {reservation?.guestScore == null && (
+            <button
+              onClick={handleRescore}
+              disabled={scoring}
+              className="flex items-center gap-1 mt-1 text-xs text-slate-400 hover:text-sky-600 disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3 w-3 ${scoring ? 'animate-spin' : ''}`} />
+              {scoring ? 'Scoring...' : 'Score guest'}
+            </button>
+          )}
         </div>
       </div>
 
