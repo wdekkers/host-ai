@@ -212,10 +212,44 @@ export const messages = waltSchema.table(
     suggestionGeneratedAt: timestamp('suggestion_generated_at', { withTimezone: true }),
     raw: jsonb('raw').notNull(),
     suggestionScannedAt: timestamp('suggestion_scanned_at', { withTimezone: true }),
+    draftStatus: text('draft_status'),
+    intent: text('intent'),
+    escalationLevel: text('escalation_level'),
+    escalationReason: text('escalation_reason'),
+    sourcesUsed: jsonb('sources_used'),
   },
   (table) => ({
     uniq: uniqueIndex('messages_reservation_created_at_idx').on(
       table.reservationId,
+      table.createdAt,
+    ),
+  }),
+);
+
+export const draftEvents = waltSchema.table(
+  'draft_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    messageId: uuid('message_id')
+      .notNull()
+      .references(() => messages.id),
+    action: text('action').notNull(),
+    actorId: text('actor_id'),
+    beforePayload: text('before_payload'),
+    afterPayload: text('after_payload'),
+    metadata: jsonb('metadata'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    messageCreatedIdx: index('draft_events_message_created_idx').on(
+      table.messageId,
+      table.createdAt,
+    ),
+    orgCreatedIdx: index('draft_events_org_created_idx').on(
+      table.organizationId,
       table.createdAt,
     ),
   }),
