@@ -53,6 +53,8 @@ export const GET = withPermission('inbox.read', async (request: Request) => {
         checkOut: reservations.checkOut,
         platform: reservations.platform,
         status: reservations.status,
+        guestScore: reservations.guestScore,
+        guestScoreSummary: reservations.guestScoreSummary,
       })
       .from(reservations)
       .where(
@@ -114,6 +116,8 @@ export const GET = withPermission('inbox.read', async (request: Request) => {
         checkOut: res?.checkOut ?? null,
         platform: res?.platform ?? null,
         status: res?.status ?? null,
+        guestScore: res?.guestScore ?? null,
+        guestScoreSummary: res?.guestScoreSummary ?? null,
         lastBody: t.lastBody,
         lastSenderType: t.lastSenderType,
         lastMessageAt: t.lastMessageAt,
