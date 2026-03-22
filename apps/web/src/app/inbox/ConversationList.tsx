@@ -138,6 +138,19 @@ export function ConversationList({
                       {statusBadge.label}
                     </Badge>
                   )}
+                  {t.guestScore != null && (
+                    <Badge
+                      className={`text-[9px] h-4 border-0 ${
+                        t.guestScore >= 8
+                          ? 'bg-green-100 text-green-700'
+                          : t.guestScore >= 5
+                            ? 'bg-amber-100 text-amber-700'
+                            : 'bg-red-100 text-red-700'
+                      }`}
+                    >
+                      {t.guestScore}/10
+                    </Badge>
+                  )}
                   {t.unreplied && (
                     <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-sky-600" />
                   )}
