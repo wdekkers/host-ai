@@ -8,6 +8,7 @@ import {
   normalizeMessage,
   normalizeProperty,
 } from '@/lib/hospitable-normalize';
+import { scoreGuest } from '@/lib/guest-scoring';
 
 const CORE_STATUSES = ['inquiry', 'request', 'accepted', 'cancelled'] as const;
 
@@ -227,6 +228,31 @@ export async function syncHospitable() {
             suggestionScannedAt: new Date(), // skip AI suggestion scanner
           })
           .onConflictDoNothing();
+      }
+
+      // --- Score reservation if not yet scored ---
+      const [currentRes] = await db
+        .select({ guestScoredAt: reservations.guestScoredAt })
+        .from(reservations)
+        .where(eq(reservations.id, normalized.id))
+        .limit(1);
+
+      if (!currentRes?.guestScoredAt) {
+        try {
+          const scoreResult = await scoreGuest(normalized.id);
+          if (scoreResult) {
+            await db
+              .update(reservations)
+              .set({
+                guestScore: scoreResult.score,
+                guestScoreSummary: scoreResult.summary,
+                guestScoredAt: new Date(),
+              })
+              .where(eq(reservations.id, normalized.id));
+          }
+        } catch {
+          // Scoring failure is non-fatal — user can re-score manually
+        }
       }
 
       for (const msg of rawMessages) {
