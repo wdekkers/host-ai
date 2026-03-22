@@ -5,12 +5,14 @@ import {
   index,
   integer,
   jsonb,
+  numeric,
   pgSchema,
   primaryKey,
   text,
   timestamp,
   uniqueIndex,
   uuid,
+  varchar,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
@@ -863,3 +865,69 @@ export const simulatorResults = waltSchema.table('simulator_results', {
 }, (table) => [
   index('simulator_results_run_id_idx').on(table.runId),
 ]);
+
+// ── Booking Engine ──
+
+export const siteConfigs = waltSchema.table(
+  'site_configs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    siteId: varchar('site_id', { length: 80 }).notNull(),
+    stripeSecretKey: text('stripe_secret_key').notNull(),
+    stripeWebhookSecret: text('stripe_webhook_secret').notNull(),
+    hospitableApiKey: text('hospitable_api_key').notNull(),
+    serviceFeeRate: numeric('service_fee_rate', { precision: 5, scale: 4 }).default('0.05'),
+    taxRate: numeric('tax_rate', { precision: 5, scale: 4 }).default('0'),
+    damageDepositAmountCents: integer('damage_deposit_amount_cents').default(0),
+    holdDurationMinutes: integer('hold_duration_minutes').default(15),
+    notificationEmails: text('notification_emails').array(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('site_configs_site_id_idx').on(t.siteId)],
+);
+
+export const inventoryHolds = waltSchema.table(
+  'inventory_holds',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    siteId: varchar('site_id', { length: 80 }).notNull(),
+    propertyId: varchar('property_id', { length: 120 }).notNull(),
+    checkIn: timestamp('check_in', { withTimezone: true }).notNull(),
+    checkOut: timestamp('check_out', { withTimezone: true }).notNull(),
+    paymentIntentId: varchar('payment_intent_id', { length: 120 }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    released: boolean('released').notNull().default(false),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('inventory_holds_site_id_idx').on(t.siteId),
+    index('inventory_holds_site_property_idx').on(t.siteId, t.propertyId),
+    index('inventory_holds_expires_at_idx').on(t.expiresAt),
+  ],
+);
+
+export const bookings = waltSchema.table(
+  'bookings',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    siteId: varchar('site_id', { length: 80 }).notNull(),
+    hospitableBookingId: varchar('hospitable_booking_id', { length: 120 }),
+    propertyId: varchar('property_id', { length: 120 }).notNull(),
+    checkIn: timestamp('check_in', { withTimezone: true }).notNull(),
+    checkOut: timestamp('check_out', { withTimezone: true }).notNull(),
+    guestName: varchar('guest_name', { length: 160 }).notNull(),
+    guestEmail: varchar('guest_email', { length: 254 }).notNull(),
+    guestPhone: varchar('guest_phone', { length: 40 }),
+    totalAmountCents: integer('total_amount_cents').notNull(),
+    paymentIntentId: varchar('payment_intent_id', { length: 120 }).notNull(),
+    status: varchar('status', { length: 40 }).default('pending').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('bookings_site_id_idx').on(t.siteId),
+    uniqueIndex('bookings_payment_intent_id_idx').on(t.paymentIntentId),
+    index('bookings_status_idx').on(t.status),
+  ],
+);
