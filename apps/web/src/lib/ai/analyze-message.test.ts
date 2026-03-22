@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { analyzeMessage, type MessageAnalysis } from './analyze-message.js';
+import { analyzeMessage } from './analyze-message.js';
 
 void test('returns intent, escalation, and suggestedTask from LLM', async () => {
   const result = await analyzeMessage(
