@@ -745,3 +745,51 @@ export const propertyAppliances = waltSchema.table('property_appliances', {
 }, (table) => [
   index('property_appliances_property_id_active_idx').on(table.propertyId, table.isActive),
 ]);
+
+// --- Guest Simulator ---
+
+export const simulatorQuestionSets = waltSchema.table('simulator_question_sets', {
+  id: uuid('id').primaryKey(),
+  organizationId: text('organization_id').notNull(),
+  propertyId: text('property_id').notNull(),
+  name: text('name').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().default(sql`now()`),
+}, (table) => [
+  index('simulator_question_sets_org_property_idx').on(table.organizationId, table.propertyId),
+]);
+
+export const simulatorQuestions = waltSchema.table('simulator_questions', {
+  id: uuid('id').primaryKey(),
+  questionSetId: uuid('question_set_id').notNull(),
+  question: text('question').notNull(),
+  sortOrder: integer('sort_order').notNull().default(0),
+}, (table) => [
+  index('simulator_questions_set_id_idx').on(table.questionSetId),
+]);
+
+export const simulatorRuns = waltSchema.table('simulator_runs', {
+  id: uuid('id').primaryKey(),
+  organizationId: text('organization_id').notNull(),
+  propertyId: text('property_id').notNull(),
+  questionSetId: uuid('question_set_id').notNull(),
+  summary: jsonb('summary').notNull(),
+  agentConfigSnapshot: jsonb('agent_config_snapshot'),
+  knowledgeCount: integer('knowledge_count'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
+}, (table) => [
+  index('simulator_runs_property_created_idx').on(table.propertyId, table.createdAt),
+]);
+
+export const simulatorResults = waltSchema.table('simulator_results', {
+  id: uuid('id').primaryKey(),
+  runId: uuid('run_id').notNull(),
+  question: text('question').notNull(),
+  response: text('response').notNull(),
+  grade: text('grade').notNull(),
+  gradeReason: text('grade_reason').notNull(),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
+}, (table) => [
+  index('simulator_results_run_id_idx').on(table.runId),
+]);
