@@ -9,12 +9,12 @@ import {
   normalizeProperty,
 } from '@/lib/hospitable-normalize';
 
-const CORE_STATUSES = ['inquiry', 'pending', 'confirmed', 'cancelled'] as const;
+const CORE_STATUSES = ['inquiry', 'request', 'accepted', 'cancelled'] as const;
 
 const STATUS_MESSAGES: Record<string, string> = {
   inquiry: 'Guest sent an inquiry',
-  pending: 'New booking request received',
-  confirmed: 'Reservation confirmed',
+  request: 'New booking request received',
+  accepted: 'Reservation confirmed',
   cancelled: 'Reservation cancelled',
 };
 
