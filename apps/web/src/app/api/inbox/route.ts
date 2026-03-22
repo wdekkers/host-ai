@@ -124,6 +124,19 @@ export const GET = withPermission('inbox.read', async (request: Request) => {
       };
     });
 
+    // Sort: recently cancelled (within 24h) first, then by lastMessageAt
+    const now = new Date();
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    threads.sort((a, b) => {
+      const aRecentlyCancelled =
+        a.status === 'cancelled' && new Date(a.lastMessageAt) > twentyFourHoursAgo;
+      const bRecentlyCancelled =
+        b.status === 'cancelled' && new Date(b.lastMessageAt) > twentyFourHoursAgo;
+      if (aRecentlyCancelled && !bRecentlyCancelled) return -1;
+      if (!aRecentlyCancelled && bRecentlyCancelled) return 1;
+      return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
+    });
+
     // Filter
     if (filter === 'unreplied') threads = threads.filter((t) => t.unreplied);
     if (filter === 'ai_ready') threads = threads.filter((t) => t.aiReady);
