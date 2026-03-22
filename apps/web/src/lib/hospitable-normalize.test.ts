@@ -66,3 +66,22 @@ void test('normalizeMessage returns null when body is empty', () => {
   const result = normalizeMessage(raw, 'res-1');
   assert.equal(result, null);
 });
+
+void test('normalizeReservation reads status from reservation_status.current.category', () => {
+  const raw = {
+    id: 'res-status-1',
+    status: 'booking', // deprecated field
+    reservation_status: {
+      current: { category: 'accepted', sub_category: 'accepted' },
+      history: [],
+    },
+  };
+  const result = normalizeReservation(raw);
+  assert.equal(result.status, 'accepted');
+});
+
+void test('normalizeReservation falls back to raw.status when reservation_status is absent', () => {
+  const raw = { id: 'res-fallback', status: 'cancelled' };
+  const result = normalizeReservation(raw);
+  assert.equal(result.status, 'cancelled');
+});
