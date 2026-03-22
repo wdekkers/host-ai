@@ -28,6 +28,7 @@ export async function generateReplySuggestion({
   conversationHistory,
   chips,
   extraContext,
+  temperature,
 }: {
   guestFirstName: string | null;
   guestLastName: string | null;
@@ -39,6 +40,7 @@ export async function generateReplySuggestion({
   conversationHistory: Array<{ body: string; senderType: string }>;
   chips?: string[];
   extraContext?: string;
+  temperature?: number;
 }): Promise<string | null> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
@@ -174,6 +176,7 @@ Reply in the same language as the guest message. Do not start with "Of course" o
   const response = await client.chat.completions.create({
     model: 'gpt-4o-mini',
     max_tokens: 500,
+    temperature: temperature ?? undefined,
     messages: [{ role: 'system', content: systemPrompt }, ...historyMessages],
   });
 

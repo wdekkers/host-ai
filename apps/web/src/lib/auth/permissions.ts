@@ -137,6 +137,12 @@ export function getPermissionForApiRoute(pathname: string, method: string): Perm
     return 'appliances.read';
   }
 
+  // Simulator
+  if (pathname.startsWith('/api/simulator')) {
+    if (method === 'GET') return 'settings.read';
+    return 'settings.update';
+  }
+
   // Properties
   if (pathname.startsWith('/api/properties')) {
     if (method === 'GET') return 'properties.read';
