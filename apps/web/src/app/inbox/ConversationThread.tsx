@@ -15,6 +15,7 @@ type Message = {
   senderFullName: string | null;
   createdAt: string;
   raw: unknown;
+  draftStatus: string | null;
 };
 
 type ReservationInfo = {
@@ -291,6 +292,9 @@ export function ConversationThread({
                     >
                       {m.body}
                     </div>
+                    {isHost && m.draftStatus === 'sent' && (
+                      <span className="text-[10px] text-slate-400 mt-0.5">AI-assisted</span>
+                    )}
                     <div
                       className={`flex items-center gap-1.5 text-xs text-slate-400 ${isHost ? 'justify-end' : ''}`}
                     >
