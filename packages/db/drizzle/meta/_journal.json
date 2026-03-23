@@ -169,6 +169,13 @@
       "when": 1774234800000,
       "tag": "0023_backfill_missing_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1774282972831,
+      "tag": "0024_wonderful_vision",
+      "breakpoints": true
     }
   ]
 }

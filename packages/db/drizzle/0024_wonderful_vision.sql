@@ -1,0 +1,1 @@
+ALTER TABLE "walt"."messages" ADD COLUMN IF NOT EXISTS "needs_reply" boolean;
