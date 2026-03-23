@@ -16,6 +16,11 @@ COPY packages/config-eslint/package.json ./packages/config-eslint/package.json
 COPY packages/contracts/package.json ./packages/contracts/
 COPY packages/db/package.json ./packages/db/
 COPY packages/api-client/package.json ./packages/api-client/
+COPY packages/hospitable/package.json ./packages/hospitable/
+COPY packages/stripe/package.json ./packages/stripe/
+COPY packages/ses/package.json ./packages/ses/
+COPY packages/cdn/package.json ./packages/cdn/
+COPY packages/mailerlite/package.json ./packages/mailerlite/
 COPY apps/web/package.json ./apps/web/
 COPY apps/gateway/package.json ./apps/gateway/
 COPY services/identity/package.json ./services/identity/
