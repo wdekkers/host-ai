@@ -252,6 +252,7 @@ export const messages = waltSchema.table(
     escalationLevel: text('escalation_level'),
     escalationReason: text('escalation_reason'),
     sourcesUsed: jsonb('sources_used'),
+    needsReply: boolean('needs_reply'),
   },
   (table) => ({
     uniq: uniqueIndex('messages_reservation_created_at_idx').on(

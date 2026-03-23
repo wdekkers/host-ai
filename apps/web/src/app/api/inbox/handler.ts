@@ -77,6 +77,7 @@ export const handleGetInbox = withPermission('inbox.read', async (request: Reque
         intent: messages.intent,
         escalationLevel: messages.escalationLevel,
         escalationReason: messages.escalationReason,
+        needsReply: messages.needsReply,
       })
       .from(messages)
       .where(
@@ -97,6 +98,7 @@ export const handleGetInbox = withPermission('inbox.read', async (request: Reque
         intent: string | null;
         escalationLevel: string | null;
         escalationReason: string | null;
+        needsReply: boolean | null;
       }
     >();
     for (const m of mostRecentMessages) {
@@ -111,6 +113,7 @@ export const handleGetInbox = withPermission('inbox.read', async (request: Reque
           intent: m.intent,
           escalationLevel: m.escalationLevel,
           escalationReason: m.escalationReason,
+          needsReply: m.needsReply,
         });
       }
     }
@@ -119,7 +122,7 @@ export const handleGetInbox = withPermission('inbox.read', async (request: Reque
     let threads = threadStats.map((t) => {
       const res = reservationMap.get(t.reservationId);
       const latest = latestByReservation.get(t.reservationId);
-      const unreplied = latest?.senderType === 'guest';
+      const unreplied = latest?.senderType === 'guest' && latest?.needsReply !== false;
       const aiReady = unreplied && latest?.suggestion != null;
       const guestName =
         [res?.guestFirstName, res?.guestLastName].filter(Boolean).join(' ') || 'Guest';
@@ -153,6 +156,15 @@ export const handleGetInbox = withPermission('inbox.read', async (request: Reque
       new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime(),
     );
 
+    // Compute aggregate counts from the full thread list (before filter/search/pagination)
+    const counts = {
+      unreplied: threads.filter((t) => t.unreplied).length,
+      aiReady: threads.filter((t) => t.aiReady).length,
+      escalated: threads.filter((t) =>
+        t.escalationLevel === 'caution' || t.escalationLevel === 'escalate',
+      ).length,
+    };
+
     // Filter
     if (filter === 'unreplied') threads = threads.filter((t) => t.unreplied);
     if (filter === 'ai_ready') threads = threads.filter((t) => t.aiReady);
@@ -173,7 +185,7 @@ export const handleGetInbox = withPermission('inbox.read', async (request: Reque
     const total = threads.length;
     const paged = threads.slice(offset, offset + perPage);
 
-    return NextResponse.json({ threads: paged, total, page, perPage });
+    return NextResponse.json({ threads: paged, total, page, perPage, counts });
   } catch (error) {
     return handleApiError({ error, route: '/api/inbox' });
   }

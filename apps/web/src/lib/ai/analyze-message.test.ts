@@ -126,3 +126,84 @@ void test('parse failure with escalation keyword falls back to caution', async (
 
   assert.equal(result.escalationLevel, 'caution');
 });
+
+void test('returns needsReply true for a question', async () => {
+  const result = await analyzeMessage(
+    {
+      body: 'What time is check-in?',
+      guestFirstName: 'Grace',
+      propertyName: 'Lake House',
+      arrivalDate: '2026-04-01',
+    },
+    {
+      callAi: async () => JSON.stringify({
+        intent: 'general_question',
+        escalationLevel: 'none',
+        escalationReason: null,
+        hasSuggestedTask: false,
+        needsReply: true,
+      }),
+    },
+  );
+
+  assert.equal(result.needsReply, true);
+});
+
+void test('returns needsReply false for a conversation-ender', async () => {
+  const result = await analyzeMessage(
+    {
+      body: 'Ok thanks!',
+      guestFirstName: 'Hank',
+      propertyName: 'Beach Villa',
+      arrivalDate: '2026-04-05',
+    },
+    {
+      callAi: async () => JSON.stringify({
+        intent: 'compliment',
+        escalationLevel: 'none',
+        escalationReason: null,
+        hasSuggestedTask: false,
+        needsReply: false,
+      }),
+    },
+  );
+
+  assert.equal(result.needsReply, false);
+});
+
+void test('defaults needsReply to true when AI omits it', async () => {
+  const result = await analyzeMessage(
+    {
+      body: 'Hello there',
+      guestFirstName: 'Ivy',
+      propertyName: 'Mountain Lodge',
+      arrivalDate: '2026-04-10',
+    },
+    {
+      callAi: async () => JSON.stringify({
+        intent: 'general_question',
+        escalationLevel: 'none',
+        escalationReason: null,
+        hasSuggestedTask: false,
+      }),
+    },
+  );
+
+  assert.equal(result.needsReply, true);
+});
+
+void test('defaults needsReply to true on JSON parse failure', async () => {
+  const result = await analyzeMessage(
+    {
+      body: 'Hello',
+      guestFirstName: 'Jay',
+      propertyName: 'Sunset',
+      arrivalDate: '2026-04-15',
+    },
+    {
+      callAi: async () => 'not valid json',
+    },
+  );
+
+  assert.equal(result.needsReply, true);
+});
