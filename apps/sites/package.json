@@ -12,6 +12,7 @@
   "dependencies": {
     "@walt/contracts": "workspace:*",
     "@walt/db": "workspace:*",
+    "drizzle-orm": "^0.40.1",
     "@walt/cdn": "workspace:*",
     "@walt/ses": "workspace:*",
     "@walt/mailerlite": "workspace:*",

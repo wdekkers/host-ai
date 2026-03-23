@@ -1,0 +1,133 @@
+[
+  {
+    "id": "amenity-01",
+    "label": "Private pool",
+    "detail": "Floaties provided, including kid-friendly options",
+    "icon": "fa-swimmer",
+    "style": "fad"
+  },
+  {
+    "id": "amenity-02",
+    "label": "Hot tub / spa",
+    "detail": "Controlled through the kitchen touch screen",
+    "icon": "fa-hot-tub",
+    "style": "fad"
+  },
+  {
+    "id": "amenity-03",
+    "label": "9-hole mini golf",
+    "icon": "fa-golf-ball",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-04",
+    "label": "Game room + arcade",
+    "icon": "fa-gamepad",
+    "style": "fad"
+  },
+  {
+    "id": "amenity-05",
+    "label": "Outdoor movie projector",
+    "detail": "Connects to your phone or mobile device",
+    "icon": "fa-film",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-06",
+    "label": "Fire pit lounge",
+    "detail": "Firewood provided, s'mores roasting sticks, and s'mores kits",
+    "icon": "fa-fire",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-07",
+    "label": "BBQ grill + patio dining",
+    "detail": "Outdoor wine + beverage glasses, Blackstone grill",
+    "icon": "fa-hamburger",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-08",
+    "label": "Fully stocked kitchen",
+    "detail": "Cling wrap, foil, and Ziploc baggies provided",
+    "icon": "fa-utensils",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-08b",
+    "label": "Gourmet coffee station",
+    "detail": "Wide variety of coffee, espresso, creamers, and flavors",
+    "icon": "fa-mug-hot",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-09",
+    "label": "Smart TVs",
+    "icon": "fa-tv",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-09b",
+    "label": "Fast Wi-Fi",
+    "icon": "fa-wifi",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-10",
+    "label": "Washer + dryer",
+    "detail": "Detergent provided",
+    "icon": "fa-soap",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-11",
+    "label": "Plush towels + bedding",
+    "detail": "Extra pillows and blankets provided",
+    "icon": "fa-bed",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-11b",
+    "label": "Luxury toiletries",
+    "detail": "Shampoo, conditioner, and body wash",
+    "icon": "fa-soap",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-12",
+    "label": "Full-size crib",
+    "icon": "fa-baby",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-12b",
+    "label": "White noise machine",
+    "icon": "fa-wave-sine",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-12c",
+    "label": "Baby monitor",
+    "icon": "fa-baby-carriage",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-12d",
+    "label": "High chair",
+    "icon": "fa-chair",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-12e",
+    "label": "Feeding essentials",
+    "detail": "Silicone bibs + plastic dinnerware",
+    "icon": "fa-utensil-spoon",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-13",
+    "label": "Parking for up to 4 vehicles",
+    "icon": "fa-car",
+    "style": "fal"
+  }
+]

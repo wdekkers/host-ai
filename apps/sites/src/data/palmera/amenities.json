@@ -1,0 +1,113 @@
+[
+  {
+    "id": "amenity-01",
+    "label": "Private pool",
+    "detail": "Resort-style backyard pool",
+    "icon": "fa-swimmer",
+    "style": "fad"
+  },
+  {
+    "id": "amenity-02",
+    "label": "Hot tub / spa",
+    "detail": "Included with your stay",
+    "icon": "fa-hot-tub",
+    "style": "fad"
+  },
+  {
+    "id": "amenity-03",
+    "label": "Sauna",
+    "detail": "Private in-home sauna",
+    "icon": "fa-spa",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-04",
+    "label": "Outdoor shower",
+    "icon": "fa-shower",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-05",
+    "label": "Fire pit lounge",
+    "detail": "Gather under the stars",
+    "icon": "fa-fire",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-06",
+    "label": "Covered patio + lounge",
+    "detail": "Comfortable outdoor seating",
+    "icon": "fa-umbrella-beach",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-07",
+    "label": "BBQ grill + outdoor dining",
+    "icon": "fa-hamburger",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-08",
+    "label": "Game room",
+    "detail": "Pool table, foosball, and arcade",
+    "icon": "fa-gamepad",
+    "style": "fad"
+  },
+  {
+    "id": "amenity-08b",
+    "label": "Console gaming",
+    "detail": "Xbox + Nintendo Switch",
+    "icon": "fa-gamepad",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-09",
+    "label": "Smart TVs",
+    "icon": "fa-tv",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-09b",
+    "label": "Fast Wi-Fi",
+    "icon": "fa-wifi",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-10",
+    "label": "Fully equipped kitchen",
+    "detail": "Everything you need to cook at home",
+    "icon": "fa-utensils",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-10b",
+    "label": "Coffee station",
+    "icon": "fa-mug-hot",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-11",
+    "label": "Dedicated workspace",
+    "detail": "Private office setup",
+    "icon": "fa-laptop",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-12",
+    "label": "Washer + dryer",
+    "icon": "fa-soap",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-12b",
+    "label": "Pack 'n play + high chair",
+    "icon": "fa-baby",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-13",
+    "label": "Free parking on premises",
+    "icon": "fa-car",
+    "style": "fal"
+  }
+]
