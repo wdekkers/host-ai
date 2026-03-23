@@ -1,4 +1,4 @@
-import { ZodSchema } from "zod";
+import type { ZodSchema } from "zod";
 import { HospitableError, errorCodeFromStatus } from "./error.js";
 
 const BASE_URL = "https://public.api.hospitable.com/v2";
