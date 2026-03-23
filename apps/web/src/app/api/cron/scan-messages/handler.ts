@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { and, isNull, gt, eq } from 'drizzle-orm';
 import { messages, reservations, properties, taskSuggestions, propertyAccess } from '@walt/db';
-import type { SuggestedTask } from '@/lib/ai/classify-message';
+import type { MessageAnalysis } from '@/lib/ai/analyze-message';
+import type { SuggestionResult } from '@/lib/generate-reply-suggestion';
 
 type ReservationContext = {
   reservationId: string;
@@ -17,8 +18,11 @@ type Deps = {
   getUnscannedMessages?: () => Promise<Array<{ id: string; reservationId: string | null; body: string | null; senderType: string | null }>>;
   markScanned?: (id: string) => Promise<void>;
   getReservationContext?: (reservationId: string) => Promise<ReservationContext | null>;
-  classify?: (context: { body: string; guestFirstName: string; propertyName: string; arrivalDate: string }) => Promise<SuggestedTask | null>;
+  analyze?: (context: { body: string; guestFirstName: string; propertyName: string; arrivalDate: string }) => Promise<MessageAnalysis>;
+  generateSuggestion?: (params: { guestFirstName: string | null; guestLastName: string | null; propertyName: string; propertyId: string | null; organizationId: string; checkIn: Date | string | null; checkOut: Date | string | null; conversationHistory: Array<{ body: string; senderType: string }> }) => Promise<SuggestionResult | null>;
   insertSuggestion?: (row: Record<string, unknown>) => Promise<void>;
+  insertDraftEvent?: (row: Record<string, unknown>) => Promise<void>;
+  updateMessageDraft?: (id: string, fields: Record<string, unknown>) => Promise<void>;
 };
 
 export async function handleScanMessages(request: Request, deps: Deps = {}) {
@@ -56,13 +60,27 @@ export async function handleScanMessages(request: Request, deps: Deps = {}) {
     };
   });
 
-  const classify = deps.classify ?? (async (ctx) => {
-    const { classifyMessage } = await import('@/lib/ai/classify-message');
-    return classifyMessage(ctx);
+  const analyze = deps.analyze ?? (async (ctx) => {
+    const { analyzeMessage } = await import('@/lib/ai/analyze-message');
+    return analyzeMessage(ctx);
+  });
+
+  const generateSuggestion = deps.generateSuggestion ?? (async (params) => {
+    const { generateReplySuggestion } = await import('@/lib/generate-reply-suggestion');
+    return generateReplySuggestion(params);
   });
 
   const insertSuggestion = deps.insertSuggestion ?? (async (row: Record<string, unknown>) => {
     await db.insert(taskSuggestions).values(row as never).onConflictDoNothing();
+  });
+
+  const insertDraftEvent = deps.insertDraftEvent ?? (async (row: Record<string, unknown>) => {
+    const { draftEvents } = await import('@walt/db');
+    await db.insert(draftEvents).values(row as never);
+  });
+
+  const updateMessageDraft = deps.updateMessageDraft ?? (async (id: string, fields: Record<string, unknown>) => {
+    await db.update(messages).set(fields as never).where(eq(messages.id, id));
   });
 
   const unscanned = await getUnscannedMessages();
@@ -75,29 +93,69 @@ export async function handleScanMessages(request: Request, deps: Deps = {}) {
     const ctx = await getReservationContext(message.reservationId);
     if (!ctx) continue;
 
-    const suggestion = await classify({
+    // Step 1: Analyze message (intent + escalation + task suggestion)
+    const analysis = await analyze({
       body: message.body ?? '',
       guestFirstName: ctx.guestFirstName,
       propertyName: ctx.propertyName,
       arrivalDate: ctx.arrivalDate,
     });
 
-    if (!suggestion) continue;
-
-    await insertSuggestion({
-      id: crypto.randomUUID(),
-      organizationId: ctx.organizationId,
-      propertyId: ctx.propertyId,
+    // Step 2: Generate AI draft
+    const draft = await generateSuggestion({
+      guestFirstName: ctx.guestFirstName,
+      guestLastName: null,
       propertyName: ctx.propertyName,
-      reservationId: ctx.reservationId,
-      messageId: message.id,
-      title: suggestion.title,
-      description: suggestion.description,
-      source: 'message',
-      status: 'pending',
-      createdAt: new Date(),
+      propertyId: ctx.propertyId,
+      organizationId: ctx.organizationId,
+      checkIn: null, // not available in cron context without full reservation query
+      checkOut: null,
+      conversationHistory: [{ body: message.body ?? '', senderType: 'guest' }],
     });
-    inserted++;
+
+    // Step 3: Update message with draft + analysis metadata
+    if (draft) {
+      await updateMessageDraft(message.id, {
+        suggestion: draft.suggestion,
+        suggestionGeneratedAt: new Date(),
+        draftStatus: 'pending_review',
+        intent: analysis.intent,
+        escalationLevel: analysis.escalationLevel,
+        escalationReason: analysis.escalationReason,
+        sourcesUsed: draft.sourcesUsed,
+      });
+
+      // Step 4: Insert draft event
+      await insertDraftEvent({
+        organizationId: ctx.organizationId,
+        messageId: message.id,
+        action: 'generated',
+        afterPayload: draft.suggestion,
+        metadata: {
+          intent: analysis.intent,
+          escalationLevel: analysis.escalationLevel,
+          sourcesUsed: draft.sourcesUsed,
+        },
+      });
+    }
+
+    // Step 5: If task suggested, insert task suggestion (existing behavior)
+    if (analysis.suggestedTask) {
+      await insertSuggestion({
+        id: crypto.randomUUID(),
+        organizationId: ctx.organizationId,
+        propertyId: ctx.propertyId,
+        propertyName: ctx.propertyName,
+        reservationId: ctx.reservationId,
+        messageId: message.id,
+        title: analysis.suggestedTask.title,
+        description: analysis.suggestedTask.description,
+        source: 'message',
+        status: 'pending',
+        createdAt: new Date(),
+      });
+      inserted++;
+    }
   }
 
   return NextResponse.json({ ok: true, inserted });
