@@ -931,3 +931,78 @@ export const bookings = waltSchema.table(
     index('bookings_status_idx').on(t.status),
   ],
 );
+
+// ── Sites (Multi-Tenant Websites) ──
+
+export const siteTemplateTypeEnum = waltSchema.enum('site_template_type', [
+  'property',
+  'portfolio',
+]);
+
+export const sites = waltSchema.table(
+  'sites',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: text('organization_id').notNull(),
+    slug: text('slug').notNull(),
+    domain: text('domain'),
+    templateType: siteTemplateTypeEnum('template_type').default('property').notNull(),
+    name: text('name').notNull(),
+    tagline: text('tagline'),
+    description: text('description'),
+    logoUrl: text('logo_url'),
+    faviconUrl: text('favicon_url'),
+    ogImageUrl: text('og_image_url'),
+    primaryColor: text('primary_color').default('#0284c7').notNull(),
+    secondaryColor: text('secondary_color'),
+    accentColor: text('accent_color'),
+    fontHeading: text('font_heading').default('Playfair Display').notNull(),
+    fontBody: text('font_body').default('Inter').notNull(),
+    borderRadius: text('border_radius').default('md').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('sites_slug_idx').on(t.slug),
+    uniqueIndex('sites_domain_idx').on(t.domain),
+  ],
+);
+
+export const siteProperties = waltSchema.table(
+  'site_properties',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    siteId: uuid('site_id').notNull().references(() => sites.id),
+    organizationId: text('organization_id').notNull(),
+    propertyId: text('property_id').notNull(),
+    featured: boolean('featured').default(false).notNull(),
+    sortOrder: integer('sort_order').default(0).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('site_properties_site_id_idx').on(t.siteId),
+  ],
+);
+
+export const sitePages = waltSchema.table(
+  'site_pages',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    siteId: uuid('site_id').notNull().references(() => sites.id),
+    organizationId: text('organization_id').notNull(),
+    slug: text('slug').notNull(),
+    title: text('title'),
+    content: jsonb('content'),
+    seoTitle: text('seo_title'),
+    seoDescription: text('seo_description'),
+    enabled: boolean('enabled').default(true).notNull(),
+    sortOrder: integer('sort_order').default(0).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('site_pages_site_id_idx').on(t.siteId),
+    uniqueIndex('site_pages_site_slug_idx').on(t.siteId, t.slug),
+  ],
+);

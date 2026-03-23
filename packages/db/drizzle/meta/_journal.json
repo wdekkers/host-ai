@@ -176,6 +176,13 @@
       "when": 1774282972831,
       "tag": "0024_wonderful_vision",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1774299008320,
+      "tag": "0025_melted_sleeper",
+      "breakpoints": true
     }
   ]
 }
