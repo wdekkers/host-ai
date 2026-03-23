@@ -12,11 +12,20 @@
 
 import pg from 'pg';
 
+// Strip sslmode from connection string so the explicit ssl option takes effect.
+// Matches the pattern in packages/db/src/client.ts.
+let connStr = process.env.DATABASE_URL ?? '';
+let isLocalhost = false;
+if (connStr) {
+  const url = new URL(connStr);
+  url.searchParams.delete('sslmode');
+  connStr = url.toString();
+  isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+}
+
 const pool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL?.includes('localhost')
-    ? false
-    : { rejectUnauthorized: false },
+  connectionString: connStr,
+  ssl: isLocalhost ? false : { rejectUnauthorized: false },
 });
 
 try {
