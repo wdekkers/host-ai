@@ -22,6 +22,10 @@ export type InboxThread = {
   status: string | null;
   guestScore: number | null;
   guestScoreSummary: string | null;
+  draftStatus: string | null;
+  intent: string | null;
+  escalationLevel: string | null;
+  escalationReason: string | null;
 };
 
 export function InboxClient() {

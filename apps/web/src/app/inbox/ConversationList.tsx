@@ -5,8 +5,15 @@ import { useEffect, useState, useCallback } from 'react';
 import type { InboxThread } from './InboxClient';
 import { Badge } from '@/components/ui/badge';
 import { STATUS_BADGE_CONFIG } from './status-config';
+import { AlertTriangle } from 'lucide-react';
 
-type Filter = 'all' | 'unreplied' | 'ai_ready';
+type Filter = 'all' | 'unreplied' | 'ai_ready' | 'escalated';
+
+function formatIntent(intent: string): string {
+  return intent
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 function formatRelativeTime(iso: string) {
   const d = new Date(iso);
@@ -61,6 +68,7 @@ export function ConversationList({
 
   const unrepliedCount = threads.filter((t) => t.unreplied).length;
   const aiReadyCount = threads.filter((t) => t.aiReady).length;
+  const escalatedCount = threads.filter((t) => t.escalationLevel === 'caution' || t.escalationLevel === 'escalate').length;
 
   return (
     <div className="flex flex-col h-full w-full bg-white">
@@ -78,9 +86,9 @@ export function ConversationList({
 
       {/* Filter tabs */}
       <div className="flex border-b border-slate-200">
-        {(['all', 'unreplied', 'ai_ready'] as Filter[]).map((f) => {
-          const label = f === 'all' ? 'All' : f === 'unreplied' ? 'Unreplied' : 'AI Ready';
-          const badge = f === 'unreplied' ? unrepliedCount : f === 'ai_ready' ? aiReadyCount : null;
+        {(['all', 'unreplied', 'ai_ready', 'escalated'] as Filter[]).map((f) => {
+          const label = f === 'all' ? 'All' : f === 'unreplied' ? 'Unreplied' : f === 'ai_ready' ? 'AI Ready' : 'Escalated';
+          const badge = f === 'unreplied' ? unrepliedCount : f === 'ai_ready' ? aiReadyCount : f === 'escalated' ? escalatedCount : null;
           const active = filter === f;
           return (
             <button
@@ -151,6 +159,12 @@ export function ConversationList({
                       {t.guestScore}/10
                     </Badge>
                   )}
+                  {t.escalationLevel === 'escalate' && (
+                    <AlertTriangle className="h-3.5 w-3.5 text-red-500 flex-shrink-0" />
+                  )}
+                  {t.escalationLevel === 'caution' && (
+                    <AlertTriangle className="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
+                  )}
                   {t.unreplied && (
                     <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-sky-600" />
                   )}
@@ -161,7 +175,14 @@ export function ConversationList({
               </div>
               <p className={`text-xs truncate mb-1.5 text-slate-500 ${t.lastSenderType === 'system' ? 'italic' : ''}`}>{t.lastBody}</p>
               <div className="flex justify-between items-center">
-                <span className="text-xs text-slate-400">{t.propertyName ?? '—'}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-slate-400">{t.propertyName ?? '—'}</span>
+                  {t.intent && t.intent !== 'unknown' && (
+                    <Badge variant="secondary" className="text-[9px] h-4 px-1.5">
+                      {formatIntent(t.intent)}
+                    </Badge>
+                  )}
+                </div>
                 {t.aiReady ? (
                   <span className="text-[9px] px-1.5 py-0.5 rounded-full border bg-sky-50 text-sky-600 border-sky-200">
                     ✦ AI draft

@@ -10,6 +10,7 @@ type Params = { params: Promise<{ reservationId: string }> };
 
 export const handleDraftHistory = withPermission(
   'inbox.read',
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async (request: Request, _ctx: Params) => {
     try {
       const url = new URL(request.url);
