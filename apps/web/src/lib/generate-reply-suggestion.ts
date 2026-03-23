@@ -1,13 +1,14 @@
 import OpenAI from 'openai';
 import { and, eq, isNull } from 'drizzle-orm';
 import type { KnowledgeEntry } from '@walt/contracts';
-import { agentConfigs, knowledgeEntries, propertyMemory } from '@walt/db';
+import { agentConfigs, knowledgeEntries, properties, propertyMemory } from '@walt/db';
 import { db } from '@/lib/db';
 import {
   formatKnowledgeForPrompt,
   resolveKnowledgeForProperty,
   type KnowledgeEntrySource,
 } from './knowledge-resolver';
+import { formatPropertyFacts } from './property-facts';
 
 const CHIP_INSTRUCTIONS: Record<string, string> = {
   shorter: 'Keep the reply to 1-2 sentences maximum.',
@@ -130,6 +131,43 @@ export async function generateReplySuggestion({
     }
   }
 
+  // --- Property Facts: structured fields from listing ---
+  let propertyFactsContext = '';
+  if (propertyId) {
+    const [propRow] = await db
+      .select({
+        checkInTime: properties.checkInTime,
+        checkOutTime: properties.checkOutTime,
+        timezone: properties.timezone,
+        maxGuests: properties.maxGuests,
+        bedrooms: properties.bedrooms,
+        beds: properties.beds,
+        bathrooms: properties.bathrooms,
+        petsAllowed: properties.petsAllowed,
+        smokingAllowed: properties.smokingAllowed,
+        eventsAllowed: properties.eventsAllowed,
+        amenities: properties.amenities,
+        propertyType: properties.propertyType,
+        hasPool: properties.hasPool,
+        description: properties.description,
+      })
+      .from(properties)
+      .where(eq(properties.id, propertyId))
+      .limit(1);
+
+    if (propRow) {
+      propertyFactsContext = formatPropertyFacts(propRow);
+      if (propertyFactsContext) {
+        sourcesUsed.push({
+          type: 'property_field',
+          id: propertyId,
+          label: 'Listing details',
+          snippet: propertyFactsContext.slice(0, 120),
+        });
+      }
+    }
+  }
+
   // --- Agent Config: global then property override ---
   let tone = 'warm and friendly';
   let emojiUse = 'light (1-2 emoji max)';
@@ -193,7 +231,7 @@ Length: ${responseLength}
 ${specialInstructions ? `Special instructions: ${specialInstructions}` : ''}
 ${chipLines ? `Style modifiers for this reply:\n${chipLines}` : ''}
 ${extraContext ? `IMPORTANT additional instructions for this reply (follow these precisely):\n${extraContext}\n` : ''}
-Reply in the same language as the guest message. Do not start with "Of course" or "Certainly".${knowledgeContext ? `\n\n${knowledgeContext}` : ''}${memoryContext}`;
+Reply in the same language as the guest message. Do not start with "Of course" or "Certainly".${propertyFactsContext ? `\n\n${propertyFactsContext}` : ''}${knowledgeContext ? `\n\n${knowledgeContext}` : ''}${memoryContext}`;
 
   const historyMessages = conversationHistory.map((m) => ({
     role: (m.senderType === 'guest' ? 'user' : 'assistant') as 'user' | 'assistant',
