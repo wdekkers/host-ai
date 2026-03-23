@@ -113,15 +113,20 @@ export async function handleScanMessages(request: Request, deps: Deps = {}) {
       conversationHistory: [{ body: message.body ?? '', senderType: 'guest' }],
     });
 
-    // Step 3: Update message with draft + analysis metadata
+    // Step 3: Persist analysis metadata + draft (analysis always saved, draft only when generated)
+    const analysisFields = {
+      intent: analysis.intent,
+      escalationLevel: analysis.escalationLevel,
+      escalationReason: analysis.escalationReason,
+      needsReply: analysis.needsReply,
+    };
+
     if (draft) {
       await updateMessageDraft(message.id, {
+        ...analysisFields,
         suggestion: draft.suggestion,
         suggestionGeneratedAt: new Date(),
         draftStatus: 'pending_review',
-        intent: analysis.intent,
-        escalationLevel: analysis.escalationLevel,
-        escalationReason: analysis.escalationReason,
         sourcesUsed: draft.sourcesUsed,
       });
 
@@ -137,6 +142,9 @@ export async function handleScanMessages(request: Request, deps: Deps = {}) {
           sourcesUsed: draft.sourcesUsed,
         },
       });
+    } else {
+      // Draft generation failed — still persist analysis metadata
+      await updateMessageDraft(message.id, analysisFields);
     }
 
     // Step 5: If task suggested, insert task suggestion (existing behavior)
