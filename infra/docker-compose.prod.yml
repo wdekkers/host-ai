@@ -61,6 +61,23 @@ services:
           memory: 384M
 
   # ──────────────────────────────────────────
+  # Next.js Sites (property marketing sites)
+  # ──────────────────────────────────────────
+  sites:
+    image: ghcr.io/wdekkers/walt-sites:${IMAGE_TAG:-latest}
+    <<: *common
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      - PORT=3001
+      - HOSTNAME=0.0.0.0
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+
+  # ──────────────────────────────────────────
   # API Gateway
   # ──────────────────────────────────────────
   gateway:

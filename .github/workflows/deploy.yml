@@ -87,6 +87,9 @@ jobs:
           - name: caddy
             dockerfile: infra/docker/Dockerfile.caddy
             image_suffix: caddy
+          - name: sites
+            dockerfile: infra/docker/Dockerfile.sites
+            image_suffix: sites
     steps:
       - uses: actions/checkout@v4
 

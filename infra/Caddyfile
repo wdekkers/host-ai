@@ -2,6 +2,22 @@
 	email admin@walt-services.com
 }
 
+palmera-frisco.com, dreamscapefrisco.com, friscowavesandfairways.com {
+	reverse_proxy sites:3001
+
+	log {
+		output stdout
+		format console
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+}
+
 ai.walt-services.com {
 	# API Gateway routes only
 	handle /api/health* {
