@@ -79,6 +79,7 @@ assignee: name | unassigned
 | `intelligence` | Portfolio intelligence |
 | `data` | Data capture / training data |
 | `feedback` | Host feedback capture |
+| `communication` | Communication provider evaluation |
 
 ## Backlog by Priority
 
@@ -96,6 +97,8 @@ assignee: name | unassigned
 | 006 | Add structured onboarding fields to properties table |
 | 007 | Expand intent detection to cover all V1 intents |
 | 008 | Codify draft message templates with variable injection |
+| 023 | Extract Hospitable integration into @walt/hospitable package |
+| 024 | Extract Twilio integration into @walt/twilio package |
 
 ### Medium (V1 polish + V1.5 features)
 | ID | Title |
@@ -104,6 +107,7 @@ assignee: name | unassigned
 | 014 | Implement structured escalation matrix |
 | 013 | Implement guest risk/trust scoring visible to host |
 | 018 | Extract AI logic into packages/ai shared package |
+| 025 | Extract Resend integration into @walt/resend package |
 | 009 | Build "Today's Priorities" problems-first panel |
 | 010 | Implement proactive/scheduled message generation |
 | 011 | Wire early check-in JIT cleaner workflow end-to-end |
@@ -152,4 +156,8 @@ assignee: name | unassigned
 016 (Recovery State Machine) — independent
 018 (packages/ai extraction) — independent
 019 (Portfolio Intelligence) — independent
+
+023 (Hospitable package) — independent
+024 (Twilio package) — independent
+025 (Resend package) — independent
 ```
