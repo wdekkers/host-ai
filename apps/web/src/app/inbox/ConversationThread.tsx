@@ -278,7 +278,7 @@ export function ConversationThread({
                   </div>
                   <div className="flex flex-col gap-1">
                     <div
-                      className={`px-3 py-2 text-xs leading-relaxed ${
+                      className={`px-3 py-2 text-xs leading-relaxed whitespace-pre-line ${
                         isHost ? 'bg-sky-600 text-white' : 'bg-white text-slate-800'
                       }`}
                       style={{
