@@ -46,7 +46,7 @@ export const POST = withPermission(
 
       const organizationId = authContext.orgId;
 
-      const suggestion = await generateReplySuggestion({
+      const result = await generateReplySuggestion({
         guestFirstName: reservation.guestFirstName ?? null,
         guestLastName: reservation.guestLastName ?? null,
         propertyName: reservation.propertyName ?? 'the property',
@@ -59,16 +59,20 @@ export const POST = withPermission(
         extraContext,
       });
 
-      if (!suggestion) {
+      if (!result) {
         return NextResponse.json({ error: 'Could not generate suggestion' }, { status: 503 });
       }
 
       await db
         .update(messages)
-        .set({ suggestion, suggestionGeneratedAt: new Date() })
+        .set({
+          suggestion: result.suggestion,
+          sourcesUsed: result.sourcesUsed,
+          suggestionGeneratedAt: new Date(),
+        })
         .where(eq(messages.id, messageId));
 
-      return NextResponse.json({ suggestion });
+      return NextResponse.json({ suggestion: result.suggestion, sourcesUsed: result.sourcesUsed });
     } catch (error) {
       return handleApiError({ error, route: '/api/inbox/[reservationId]/suggest' });
     }
