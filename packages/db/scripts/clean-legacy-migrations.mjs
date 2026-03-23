@@ -1,0 +1,40 @@
+/**
+ * Removes legacy migration entries from the Drizzle tracking table.
+ *
+ * Background: An older Drizzle setup left 7 rows in drizzle.__drizzle_migrations
+ * with timestamps before the current journal (created_at < 1772000000000).
+ * Drizzle counts total rows to decide which migrations to skip, so these
+ * ghost entries cause it to skip real pending migrations.
+ *
+ * This script is safe to run repeatedly — it only deletes rows with
+ * timestamps that predate the current journal's first entry.
+ */
+
+import pg from 'pg';
+
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL?.includes('localhost')
+    ? false
+    : { rejectUnauthorized: false },
+});
+
+try {
+  const { rowCount } = await pool.query(
+    'DELETE FROM drizzle.__drizzle_migrations WHERE created_at < 1772000000000',
+  );
+  if (rowCount > 0) {
+    console.log(`Cleaned ${rowCount} legacy migration entries`);
+  } else {
+    console.log('No legacy migration entries to clean');
+  }
+} catch (err) {
+  // Table may not exist on fresh databases — that's fine
+  if (err.code === '42P01') {
+    console.log('Migration table does not exist yet — skipping cleanup');
+  } else {
+    throw err;
+  }
+} finally {
+  await pool.end();
+}
