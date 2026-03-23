@@ -76,6 +76,10 @@ export function normalizeReservation(
 
 export function normalizeProperty(raw: Record<string, unknown>): Omit<PropertyInsert, 'syncedAt'> {
   const addr = (raw.address ?? {}) as Record<string, unknown>;
+  const capacity = (raw.capacity ?? {}) as Record<string, unknown>;
+  const houseRules = (raw.house_rules ?? {}) as Record<string, unknown>;
+  const coordinates = (addr.coordinates ?? {}) as Record<string, unknown>;
+
   return {
     id: String(raw.id),
     name: String(raw.name ?? raw.public_name ?? ''),
@@ -83,6 +87,48 @@ export function normalizeProperty(raw: Record<string, unknown>): Omit<PropertyIn
     city: str(addr.city) ?? null,
     status: raw.listed === false ? 'inactive' : 'active',
     raw,
+
+    // Tier 1 — High AI value
+    checkInTime: str(raw.check_in),
+    checkOutTime: str(raw.check_out),
+    timezone: str(raw.timezone),
+    maxGuests: num(capacity.max) != null ? Math.round(num(capacity.max)!) : null,
+    bedrooms: num(capacity.bedrooms) != null ? Math.round(num(capacity.bedrooms)!) : null,
+    beds: num(capacity.beds) != null ? Math.round(num(capacity.beds)!) : null,
+    bathrooms: capacity.bathrooms != null ? String(capacity.bathrooms) : null,
+    petsAllowed: typeof houseRules.pets_allowed === 'boolean' ? houseRules.pets_allowed : null,
+    smokingAllowed: typeof houseRules.smoking_allowed === 'boolean' ? houseRules.smoking_allowed : null,
+    eventsAllowed: typeof houseRules.events_allowed === 'boolean' ? houseRules.events_allowed : null,
+    amenities: Array.isArray(raw.amenities) ? (raw.amenities as string[]) : null,
+
+    // Tier 2 — Descriptive & structural
+    description: str(raw.description),
+    summary: str(raw.summary),
+    propertyType: str(raw.property_type),
+    roomType: str(raw.room_type),
+    pictureUrl: str(raw.picture),
+    currency: str(raw.currency),
+    addressState: str(addr.state),
+    country: str(addr.country),
+    postcode: str(addr.postcode),
+    addressNumber: str(addr.number),
+    latitude: typeof coordinates.latitude === 'number' ? coordinates.latitude : null,
+    longitude: typeof coordinates.longitude === 'number' ? coordinates.longitude : null,
+    listings: Array.isArray(raw.listings)
+      ? (raw.listings as Array<{ platform: string; platform_id: string; platform_name?: string; platform_email?: string }>)
+      : null,
+    roomDetails: Array.isArray(raw.room_details)
+      ? (raw.room_details as Array<{ type: string; quantity: number }>)
+      : null,
+    tags: Array.isArray(raw.tags) ? (raw.tags as string[]) : null,
+    publicName: str(raw.public_name),
+    calendarRestricted: typeof raw.calendar_restricted === 'boolean' ? raw.calendar_restricted : null,
+    parentChild: raw.parent_child && typeof raw.parent_child === 'object'
+      ? (raw.parent_child as { type: string; parent?: string; children?: string[]; siblings?: string[] })
+      : null,
+    icalImports: Array.isArray(raw.ical_imports)
+      ? (raw.ical_imports as Array<{ uuid: string; url: string; name?: string }>)
+      : null,
   };
 }
 
