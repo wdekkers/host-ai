@@ -148,23 +148,10 @@ export const handleGetInbox = withPermission('inbox.read', async (request: Reque
       };
     });
 
-    // Sort: unreplied first (oldest waiting), then recently cancelled, then by recency
-    threads.sort((a, b) => {
-      if (a.unreplied && !b.unreplied) return -1;
-      if (!a.unreplied && b.unreplied) return 1;
-      if (a.unreplied && b.unreplied) {
-        return new Date(a.lastMessageAt).getTime() - new Date(b.lastMessageAt).getTime();
-      }
-      const now = new Date();
-      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      const aRecentlyCancelled =
-        a.status === 'cancelled' && new Date(a.lastMessageAt) > twentyFourHoursAgo;
-      const bRecentlyCancelled =
-        b.status === 'cancelled' && new Date(b.lastMessageAt) > twentyFourHoursAgo;
-      if (aRecentlyCancelled && !bRecentlyCancelled) return -1;
-      if (!aRecentlyCancelled && bRecentlyCancelled) return 1;
-      return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
-    });
+    // Sort: most recent activity first (chronological)
+    threads.sort((a, b) =>
+      new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime(),
+    );
 
     // Filter
     if (filter === 'unreplied') threads = threads.filter((t) => t.unreplied);
