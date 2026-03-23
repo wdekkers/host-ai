@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import * as React from "react";
 import { buildImageUrl, buildSrcSet, type ImageParams } from "./utils.js";
 
 export interface CdnImageProps
