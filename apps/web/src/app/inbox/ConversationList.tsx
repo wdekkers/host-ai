@@ -41,6 +41,11 @@ export function ConversationList({
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [threads, setThreads] = useState<InboxThread[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [counts, setCounts] = useState<{ unreplied: number; aiReady: number; escalated: number }>({ unreplied: 0, aiReady: 0, escalated: 0 });
+  const perPage = 50;
+  const totalPages = Math.ceil(total / perPage);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -51,24 +56,35 @@ export function ConversationList({
     setLoading(true);
     try {
       const token = await getToken();
-      const params = new URLSearchParams({ filter, search: debouncedSearch, per_page: '50' });
+      const params = new URLSearchParams({
+        filter,
+        search: debouncedSearch,
+        per_page: String(perPage),
+        page: String(page),
+      });
       const res = await fetch(`/api/inbox?${params}`, {
         headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       });
-      const data = (await res.json()) as { threads: InboxThread[]; total: number };
+      const data = (await res.json()) as {
+        threads: InboxThread[];
+        total: number;
+        counts: { unreplied: number; aiReady: number; escalated: number };
+      };
       setThreads(data.threads ?? []);
+      setTotal(data.total ?? 0);
+      if (data.counts) setCounts(data.counts);
     } finally {
       setLoading(false);
     }
-  }, [filter, debouncedSearch, getToken]);
+  }, [filter, debouncedSearch, page, getToken]);
 
   useEffect(() => {
     void fetchThreads();
   }, [fetchThreads]);
 
-  const unrepliedCount = threads.filter((t) => t.unreplied).length;
-  const aiReadyCount = threads.filter((t) => t.aiReady).length;
-  const escalatedCount = threads.filter((t) => t.escalationLevel === 'caution' || t.escalationLevel === 'escalate').length;
+  useEffect(() => { setPage(1); }, [filter, debouncedSearch]);
+
+  const { unreplied: unrepliedCount, aiReady: aiReadyCount, escalated: escalatedCount } = counts;
 
   return (
     <div className="flex flex-col h-full w-full bg-white">
@@ -198,6 +214,55 @@ export function ConversationList({
           })
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="border-t border-slate-200 px-4 py-2 flex items-center justify-between">
+          <span className="text-xs text-slate-400">
+            Page {page} of {totalPages}
+          </span>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="px-2 py-1 text-xs rounded border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Prev
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+              .reduce<(number | 'ellipsis')[]>((acc, p, i, arr) => {
+                if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push('ellipsis');
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((item, i) =>
+                item === 'ellipsis' ? (
+                  <span key={`e${i}`} className="px-1 text-xs text-slate-400">…</span>
+                ) : (
+                  <button
+                    key={item}
+                    onClick={() => setPage(item)}
+                    className={`px-2 py-1 text-xs rounded border ${
+                      item === page
+                        ? 'bg-sky-600 text-white border-sky-600'
+                        : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ),
+              )}
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="px-2 py-1 text-xs rounded border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
