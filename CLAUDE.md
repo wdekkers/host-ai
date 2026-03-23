@@ -16,6 +16,15 @@ pnpm turbo run typecheck lint
 
 Fix any errors before opening a PR. Do not raise a PR with a failing typecheck, lint, or build.
 
+### Clean PRs from clean branches
+
+Never create a PR from a long-lived feature branch that has accumulated unrelated commits. Before creating a PR:
+
+1. **Create a new branch from `origin/main`** for the specific change (e.g. `fix/inbox-sort-order`, not reusing `feat/big-feature-branch`).
+2. **Cherry-pick or re-apply only the relevant commits** — do not include unrelated work.
+3. **Verify the diff** with `git log --oneline origin/main..HEAD` and `git diff --stat origin/main..HEAD` before running `gh pr create`. The PR should contain only files related to the change described in the title.
+4. **Do not include auto-generated snapshot files** (e.g. Drizzle `*_snapshot.json`) in hand-written migrations.
+
 ## Next.js route files
 
 Route files (`route.ts`) may only export HTTP method handlers: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, `OPTIONS`.
