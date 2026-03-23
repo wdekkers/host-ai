@@ -20,6 +20,8 @@ export type InboxThread = {
   latestMessageId: string | null;
   latestSuggestion: string | null;
   status: string | null;
+  guestScore: number | null;
+  guestScoreSummary: string | null;
 };
 
 export function InboxClient() {

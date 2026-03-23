@@ -53,6 +53,8 @@ export const GET = withPermission('inbox.read', async (request: Request) => {
         checkOut: reservations.checkOut,
         platform: reservations.platform,
         status: reservations.status,
+        guestScore: reservations.guestScore,
+        guestScoreSummary: reservations.guestScoreSummary,
       })
       .from(reservations)
       .where(
@@ -114,6 +116,8 @@ export const GET = withPermission('inbox.read', async (request: Request) => {
         checkOut: res?.checkOut ?? null,
         platform: res?.platform ?? null,
         status: res?.status ?? null,
+        guestScore: res?.guestScore ?? null,
+        guestScoreSummary: res?.guestScoreSummary ?? null,
         lastBody: t.lastBody,
         lastSenderType: t.lastSenderType,
         lastMessageAt: t.lastMessageAt,
@@ -122,6 +126,19 @@ export const GET = withPermission('inbox.read', async (request: Request) => {
         latestMessageId: latest?.id ?? null,
         latestSuggestion: latest?.suggestion ?? null,
       };
+    });
+
+    // Sort: recently cancelled (within 24h) first, then by lastMessageAt
+    const now = new Date();
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    threads.sort((a, b) => {
+      const aRecentlyCancelled =
+        a.status === 'cancelled' && new Date(a.lastMessageAt) > twentyFourHoursAgo;
+      const bRecentlyCancelled =
+        b.status === 'cancelled' && new Date(b.lastMessageAt) > twentyFourHoursAgo;
+      if (aRecentlyCancelled && !bRecentlyCancelled) return -1;
+      if (!aRecentlyCancelled && bRecentlyCancelled) return 1;
+      return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
     });
 
     // Filter

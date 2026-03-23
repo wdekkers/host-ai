@@ -48,7 +48,12 @@ export function normalizeReservation(
     conversationId: str(raw.conversation_id),
     platform: str(raw.platform),
     platformId: str(raw.platform_id),
-    status: str(raw.status),
+    status: (() => {
+      const rs = raw.reservation_status as Record<string, unknown> | undefined;
+      const current = rs?.current as Record<string, unknown> | undefined;
+      const category = current?.category;
+      return str(category) ?? str(raw.status);
+    })(),
     arrivalDate: ts(raw.arrival_date),
     departureDate: ts(raw.departure_date),
     checkIn: ts(raw.check_in),

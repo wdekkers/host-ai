@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, lte } from 'drizzle-orm';
+import { and, asc, eq, gte, lte, ne } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { withPermission } from '@/lib/auth/authorize';
@@ -46,6 +46,7 @@ export const GET = withPermission('reservations.read', async (request) => {
       and(
         lte(reservations.arrivalDate, new Date(end)),
         gte(reservations.departureDate, new Date(start)),
+        ne(reservations.status, 'cancelled'),
       ),
     )
     .orderBy(asc(reservations.arrivalDate));
