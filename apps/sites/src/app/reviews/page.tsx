@@ -25,7 +25,7 @@ export default async function ReviewsPage(): Promise<React.ReactNode> {
   const site = await resolveSiteCached(domain);
   if (!site) return null;
 
-  const reviews = await getReviewsData(site.slug, site.organizationId);
+  const reviews = await getReviewsData(site.slug);
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 pb-20 pt-28">

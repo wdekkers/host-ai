@@ -67,7 +67,6 @@ export default function GalleryGrid({ items, categories }: GalleryGridProps): Re
                   }
                   className="group overflow-hidden rounded-2xl border border-gray-200 bg-white/90 text-left shadow-sm"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={image.src}
                     alt={image.alt}
@@ -108,7 +107,6 @@ export default function GalleryGrid({ items, categories }: GalleryGridProps): Re
             Prev
           </button>
           <div className="w-full max-w-5xl overflow-hidden rounded-3xl border border-white/20 bg-black/60 shadow-lg">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={activeItem.src}
               alt={activeItem.alt}

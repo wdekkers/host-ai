@@ -26,7 +26,7 @@ export default async function BlogPage(): Promise<React.ReactNode> {
   const site = await resolveSiteCached(domain);
   if (!site) return null;
 
-  const posts = await getBlogPosts(site.organizationId);
+  const posts = await getBlogPosts();
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 pb-20 pt-28">

@@ -40,7 +40,7 @@ export default async function HomePage(): Promise<React.ReactNode> {
   const [property, amenities, reviews] = await Promise.all([
     getPropertyData(site.slug, propertyId),
     getAmenitiesData(site.slug),
-    getReviewsData(site.slug, site.organizationId),
+    getReviewsData(site.slug),
   ]);
 
   const jsonLd = buildLodgingJsonLd(site, reviews.length);

@@ -119,7 +119,6 @@ export type ReviewData = {
 
 export async function getReviewsData(
   siteSlug: string,
-  _organizationId: string,
 ): Promise<ReviewData[]> {
   try {
     const rows = await getDb().select().from(reviews).limit(20);
@@ -169,9 +168,7 @@ export type BlogPost = {
   publishedAt: string | null;
 };
 
-export async function getBlogPosts(
-  _organizationId: string,
-): Promise<BlogPost[]> {
+export async function getBlogPosts(): Promise<BlogPost[]> {
   try {
     const rows = await getDb()
       .select()

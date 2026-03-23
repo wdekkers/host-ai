@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const site = await resolveSiteCached(domain);
   if (!site) return { title: 'Not Found' };
 
-  const posts = await getBlogPosts(site.organizationId);
+  const posts = await getBlogPosts();
   const post = posts.find((p) => p.slug === slug);
   if (!post) return { title: 'Not Found' };
 
@@ -37,7 +37,7 @@ export default async function BlogPostPage({ params }: PageProps): Promise<React
   const site = await resolveSiteCached(domain);
   if (!site) return null;
 
-  const posts = await getBlogPosts(site.organizationId);
+  const posts = await getBlogPosts();
   const post = posts.find((p) => p.slug === slug);
   if (!post) notFound();
 
