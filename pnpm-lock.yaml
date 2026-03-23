@@ -240,6 +240,22 @@ importers:
         specifier: ^14.0.0
         version: 14.25.0
 
+  services/bookings:
+    dependencies:
+      '@walt/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@walt/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@walt/stripe':
+        specifier: workspace:*
+        version: link:../../packages/stripe
+    devDependencies:
+      tsx:
+        specifier: ^4.19.3
+        version: 4.21.0
+
   services/identity:
     dependencies:
       '@walt/contracts':
