@@ -25,7 +25,7 @@ void test('scans unscanned messages and marks them scanned', async () => {
         arrivalDate: '2026-03-20',
         organizationId: 'org-1',
       }),
-      analyze: async () => ({ intent: 'pool_heating', escalationLevel: 'none' as const, escalationReason: null, suggestedTask: { title: 'Start pool heating before Alice arrival', description: 'Guest mentioned pool.' } }),
+      analyze: async () => ({ intent: 'pool_heating', escalationLevel: 'none' as const, escalationReason: null, suggestedTask: { title: 'Start pool heating before Alice arrival', description: 'Guest mentioned pool.' }, needsReply: true }),
       generateSuggestion: async () => null,
       insertSuggestion: async () => { inserted = true; },
       insertDraftEvent: async () => {},
@@ -60,7 +60,7 @@ void test('marks scanned even if no suggestion is generated', async () => {
         arrivalDate: '2026-03-21',
         organizationId: 'org-1',
       }),
-      analyze: async () => ({ intent: 'compliment', escalationLevel: 'none' as const, escalationReason: null, suggestedTask: null }),
+      analyze: async () => ({ intent: 'compliment', escalationLevel: 'none' as const, escalationReason: null, suggestedTask: null, needsReply: false }),
       generateSuggestion: async () => null,
       insertSuggestion: async () => { inserted = true; },
       insertDraftEvent: async () => {},
@@ -104,7 +104,7 @@ void test('generates AI draft and inserts draft event', async () => {
       }),
       analyze: async () => ({
         intent: 'early_check_in', escalationLevel: 'none' as const,
-        escalationReason: null, suggestedTask: { title: 'Early check-in for Alice', description: 'Wants 2pm' },
+        escalationReason: null, suggestedTask: { title: 'Early check-in for Alice', description: 'Wants 2pm' }, needsReply: true,
       }),
       generateSuggestion: async () => ({
         suggestion: 'Let me check with our cleaners!',

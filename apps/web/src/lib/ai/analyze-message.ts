@@ -18,6 +18,7 @@ export type MessageAnalysis = {
   escalationLevel: EscalationLevel;
   escalationReason: string | null;
   suggestedTask: SuggestedTask | null;
+  needsReply: boolean;
 };
 
 type AnalyzeDeps = {
@@ -35,6 +36,8 @@ const SYSTEM_PROMPT = `You are a property management assistant. Analyze a guest 
 4. "hasSuggestedTask": true if a host action is needed (pool/spa requests, early check-in, late check-out, extra supplies, special occasions)
 5. "taskTitle": short title if hasSuggestedTask (under 60 chars, include guest name and property)
 6. "taskDescription": brief description if hasSuggestedTask
+7. "needsReply": true if the host should respond, false if the message is a conversation-ender
+   (e.g. "Thanks!", "Ok got it", "Sounds good", "Perfect", simple acknowledgments with no question)
 
 Respond ONLY with valid JSON.`;
 
@@ -81,6 +84,7 @@ Message: "${context.body}"`;
     hasSuggestedTask?: boolean;
     taskTitle?: string;
     taskDescription?: string;
+    needsReply?: boolean;
   };
 
   try {
@@ -91,6 +95,7 @@ Message: "${context.body}"`;
       escalationLevel: keywordLevel === 'escalate' ? 'caution' : 'none',
       escalationReason: null,
       suggestedTask: null,
+      needsReply: true,
     };
   }
 
@@ -110,5 +115,6 @@ Message: "${context.body}"`;
     escalationLevel: resolvedLevel,
     escalationReason: parsed.escalationReason ?? null,
     suggestedTask,
+    needsReply: parsed.needsReply !== false,
   };
 }
