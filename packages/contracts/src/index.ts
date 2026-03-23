@@ -7,3 +7,4 @@ export * from './tasks.js';
 export * from './seo.js';
 export * from './knowledge.js';
 export * from './task-suggestions.js';
+export * from './bookings.js';

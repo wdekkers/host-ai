@@ -1,0 +1,1 @@
+{"type":"object","properties":{"amount":{"type":"integer","examples":[12345]},"formatted":{"type":"string","examples":["$123.45"]}},"x-readme-ref-name":"FinancialV2"}
