@@ -35,8 +35,8 @@ export async function gradeSimulatorResponse({
 Grade the response using exactly one of these grades:
 - "good" — The response accurately answers the question using information from the knowledge base.
 - "incomplete" — The response partially answers the question, but relevant information exists in the knowledge base that wasn't fully used.
-- "no_knowledge" — The question topic is not covered in the knowledge base at all. The agent has no information to draw from.
-- "hallucinated" — The response contains specific claims or details that are NOT supported by the knowledge base.
+- "no_knowledge" — The question topic is not covered in the knowledge base AND the agent correctly declined to answer or said it would check. Use this only if the agent did NOT state specific facts.
+- "hallucinated" — The response contains specific claims, numbers, times, or details that are NOT supported by the knowledge base. If the agent states something as fact (e.g., "check-in is at 3 PM") but this information is not in the knowledge base, this is hallucination — even if the answer might happen to be correct.
 
 Respond in JSON format: {"grade": "...", "reason": "..."}
 The reason should be one sentence explaining why you chose that grade.
