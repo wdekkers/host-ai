@@ -1,0 +1,65 @@
+# ──────────────────────────────────────────────
+# Stage 1: base — node + pnpm
+# ──────────────────────────────────────────────
+FROM node:22-alpine AS base
+RUN corepack enable && corepack prepare pnpm@10.6.0 --activate
+WORKDIR /app
+
+# ──────────────────────────────────────────────
+# Stage 2: deps — install all workspace dependencies
+# ──────────────────────────────────────────────
+FROM base AS deps
+
+# Copy workspace config + all package.json files (pnpm needs the full workspace structure)
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY packages/config-typescript/ ./packages/config-typescript/
+COPY packages/config-eslint/package.json ./packages/config-eslint/package.json
+COPY packages/contracts/package.json ./packages/contracts/
+COPY packages/db/package.json ./packages/db/
+COPY packages/cdn/package.json ./packages/cdn/
+COPY packages/ses/package.json ./packages/ses/
+COPY packages/mailerlite/package.json ./packages/mailerlite/
+COPY packages/hospitable/package.json ./packages/hospitable/
+COPY packages/stripe/package.json ./packages/stripe/
+COPY apps/sites/package.json ./apps/sites/
+
+RUN pnpm install --frozen-lockfile
+
+# ──────────────────────────────────────────────
+# Stage 3: build — build contracts + sites app
+# ──────────────────────────────────────────────
+FROM deps AS build
+
+COPY tsconfig.base.json turbo.json ./
+COPY packages/ ./packages/
+COPY apps/sites/ ./apps/sites/
+
+# Build sites and all its dependencies (contracts, etc.)
+RUN pnpm turbo run build --filter=@walt/sites...
+
+# ──────────────────────────────────────────────
+# Stage 4: runner — standalone Next.js server
+# ──────────────────────────────────────────────
+FROM node:22-alpine AS runner
+
+ENV NODE_ENV=production
+ENV PORT=3001
+ENV HOSTNAME=0.0.0.0
+
+WORKDIR /app
+
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 walt
+
+# Copy standalone server (preserves monorepo directory structure)
+COPY --from=build --chown=walt:nodejs /app/apps/sites/.next/standalone ./
+# Copy static assets
+COPY --from=build --chown=walt:nodejs /app/apps/sites/.next/static ./apps/sites/.next/static
+USER walt
+
+EXPOSE 3001
+
+HEALTHCHECK --interval=15s --timeout=3s --start-period=20s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/ || exit 1
+
+CMD ["node", "apps/sites/server.js"]

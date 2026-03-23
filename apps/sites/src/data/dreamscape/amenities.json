@@ -1,0 +1,60 @@
+[
+  {
+    "id": "amenity-01",
+    "label": "Private pool",
+    "detail": "Resort-style backyard pool",
+    "icon": "fa-swimmer",
+    "style": "fad"
+  },
+  {
+    "id": "amenity-02",
+    "label": "Hot tub",
+    "detail": "Included with your stay",
+    "icon": "fa-hot-tub",
+    "style": "fad"
+  },
+  {
+    "id": "amenity-03",
+    "label": "Covered patio + lounge",
+    "detail": "Comfortable outdoor seating",
+    "icon": "fa-umbrella-beach",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-04",
+    "label": "BBQ grill + outdoor dining",
+    "icon": "fa-hamburger",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-05",
+    "label": "Smart TVs",
+    "icon": "fa-tv",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-06",
+    "label": "Fast Wi-Fi",
+    "icon": "fa-wifi",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-07",
+    "label": "Fully equipped kitchen",
+    "detail": "Everything you need to cook at home",
+    "icon": "fa-utensils",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-08",
+    "label": "Washer + dryer",
+    "icon": "fa-soap",
+    "style": "fal"
+  },
+  {
+    "id": "amenity-09",
+    "label": "Free parking on premises",
+    "icon": "fa-car",
+    "style": "fal"
+  }
+]

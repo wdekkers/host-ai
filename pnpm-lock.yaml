@@ -124,6 +124,60 @@ importers:
         specifier: workspace:*
         version: link:../../packages/contracts
 
+  apps/sites:
+    dependencies:
+      '@tailwindcss/postcss':
+        specifier: ^4.2.1
+        version: 4.2.1
+      '@walt/cdn':
+        specifier: workspace:*
+        version: link:../../packages/cdn
+      '@walt/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@walt/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@walt/mailerlite':
+        specifier: workspace:*
+        version: link:../../packages/mailerlite
+      '@walt/ses':
+        specifier: workspace:*
+        version: link:../../packages/ses
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      drizzle-orm:
+        specifier: ^0.40.0
+        version: 0.40.1(@types/pg@8.18.0)(gel@2.2.0)(pg@8.19.0)
+      lucide-react:
+        specifier: ^0.577.0
+        version: 0.577.0(react@19.2.4)
+      next:
+        specifier: ^15.2.1
+        version: 15.5.12(@babel/core@7.29.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      postcss:
+        specifier: ^8.5.8
+        version: 8.5.8
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.4(react@19.2.4)
+      tailwind-merge:
+        specifier: ^3.5.0
+        version: 3.5.0
+      tailwindcss:
+        specifier: ^4.2.1
+        version: 4.2.1
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
+
   apps/web:
     dependencies:
       '@anthropic-ai/sdk':

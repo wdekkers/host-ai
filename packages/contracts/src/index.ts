@@ -8,3 +8,4 @@ export * from './seo.js';
 export * from './knowledge.js';
 export * from './task-suggestions.js';
 export * from './bookings.js';
+export * from './sites.js';
