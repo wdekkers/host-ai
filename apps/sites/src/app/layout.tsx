@@ -7,6 +7,8 @@ import { SiteProvider } from '@/lib/site-context';
 import { resolveSiteCached } from '@/lib/resolve-site';
 import { buildThemeStyles } from '@/lib/theme';
 import { getFontClasses } from '@/lib/fonts';
+import SiteHeader from '@/components/SiteHeader';
+import SiteFooter from '@/components/SiteFooter';
 import './globals.css';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -40,7 +42,9 @@ export default async function RootLayout({ children }: { children: ReactNode }):
     <html lang="en" className={fontClasses} style={themeStyles as React.CSSProperties}>
       <body className="min-h-screen antialiased" style={{ fontFamily: 'var(--font-body)' }}>
         <SiteProvider site={site}>
+          <SiteHeader />
           {children}
+          <SiteFooter />
         </SiteProvider>
       </body>
     </html>
