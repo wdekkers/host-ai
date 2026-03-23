@@ -146,6 +146,19 @@ services:
         limits:
           memory: 128M
 
+  bookings:
+    <<: *fastify
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      - PORT=4106
+    command: ['services/bookings/dist/index.js']
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
 networks:
   walt-net:
     driver: bridge

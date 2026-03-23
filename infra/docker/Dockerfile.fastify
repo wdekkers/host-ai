@@ -23,6 +23,7 @@ COPY services/messaging/package.json ./services/messaging/
 COPY services/ops/package.json ./services/ops/
 COPY services/notifications/package.json ./services/notifications/
 COPY services/tasks/package.json ./services/tasks/
+COPY services/bookings/package.json ./services/bookings/
 
 RUN pnpm install --frozen-lockfile
 
@@ -37,7 +38,7 @@ COPY apps/gateway/ ./apps/gateway/
 COPY services/ ./services/
 
 # Build all Fastify services + their dependencies
-RUN pnpm turbo run build --filter=@walt/gateway... --filter=@walt/service-identity... --filter=@walt/service-messaging... --filter=@walt/service-ops... --filter=@walt/service-notifications... --filter=@walt/service-tasks...
+RUN pnpm turbo run build --filter=@walt/gateway... --filter=@walt/service-identity... --filter=@walt/service-messaging... --filter=@walt/service-ops... --filter=@walt/service-notifications... --filter=@walt/service-tasks... --filter=@walt/service-bookings...
 
 # ──────────────────────────────────────────────
 # Stage 4: runner — minimal production image
@@ -61,11 +62,26 @@ COPY --from=build /app/packages/contracts/dist ./packages/contracts/dist
 COPY --from=build /app/packages/contracts/package.json ./packages/contracts/
 COPY --from=build /app/packages/db/dist ./packages/db/dist
 COPY --from=build /app/packages/db/package.json ./packages/db/
+COPY --from=build /app/packages/hospitable/dist ./packages/hospitable/dist
+COPY --from=build /app/packages/hospitable/package.json ./packages/hospitable/
+COPY --from=build /app/packages/stripe/dist ./packages/stripe/dist
+COPY --from=build /app/packages/stripe/package.json ./packages/stripe/
+COPY --from=build /app/packages/ses/dist ./packages/ses/dist
+COPY --from=build /app/packages/ses/package.json ./packages/ses/
+COPY --from=build /app/packages/cdn/dist ./packages/cdn/dist
+COPY --from=build /app/packages/cdn/package.json ./packages/cdn/
+COPY --from=build /app/packages/mailerlite/dist ./packages/mailerlite/dist
+COPY --from=build /app/packages/mailerlite/package.json ./packages/mailerlite/
 
 # Re-link workspace packages so Node.js can resolve @walt/* at runtime
 RUN mkdir -p node_modules/@walt && \
     ln -sfn /app/packages/contracts node_modules/@walt/contracts && \
-    ln -sfn /app/packages/db node_modules/@walt/db
+    ln -sfn /app/packages/db node_modules/@walt/db && \
+    ln -sfn /app/packages/hospitable node_modules/@walt/hospitable && \
+    ln -sfn /app/packages/stripe node_modules/@walt/stripe && \
+    ln -sfn /app/packages/ses node_modules/@walt/ses && \
+    ln -sfn /app/packages/cdn node_modules/@walt/cdn && \
+    ln -sfn /app/packages/mailerlite node_modules/@walt/mailerlite
 
 # Copy built gateway
 COPY --from=build /app/apps/gateway/dist ./apps/gateway/dist
@@ -82,6 +98,8 @@ COPY --from=build /app/services/notifications/dist ./services/notifications/dist
 COPY --from=build /app/services/notifications/package.json ./services/notifications/
 COPY --from=build /app/services/tasks/dist ./services/tasks/dist
 COPY --from=build /app/services/tasks/package.json ./services/tasks/
+COPY --from=build /app/services/bookings/dist ./services/bookings/dist
+COPY --from=build /app/services/bookings/package.json ./services/bookings/
 
 USER walt
 
