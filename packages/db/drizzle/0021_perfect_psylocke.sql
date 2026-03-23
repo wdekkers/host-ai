@@ -1,8 +1,8 @@
-CREATE TYPE "walt"."checklist_category" AS ENUM('turnover', 'house_manager', 'maintenance', 'seasonal');--> statement-breakpoint
-CREATE TYPE "walt"."checklist_scope" AS ENUM('global', 'property');--> statement-breakpoint
-CREATE TYPE "walt"."host_again" AS ENUM('yes', 'no', 'undecided');--> statement-breakpoint
-CREATE TYPE "walt"."ops_thread_type" AS ENUM('direct', 'group');--> statement-breakpoint
-CREATE TABLE "walt"."agent_configs" (
+DO $$ BEGIN CREATE TYPE "walt"."checklist_category" AS ENUM('turnover', 'house_manager', 'maintenance', 'seasonal'); EXCEPTION WHEN duplicate_object THEN null; END $$;--> statement-breakpoint
+DO $$ BEGIN CREATE TYPE "walt"."checklist_scope" AS ENUM('global', 'property'); EXCEPTION WHEN duplicate_object THEN null; END $$;--> statement-breakpoint
+DO $$ BEGIN CREATE TYPE "walt"."host_again" AS ENUM('yes', 'no', 'undecided'); EXCEPTION WHEN duplicate_object THEN null; END $$;--> statement-breakpoint
+DO $$ BEGIN CREATE TYPE "walt"."ops_thread_type" AS ENUM('direct', 'group'); EXCEPTION WHEN duplicate_object THEN null; END $$;--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "walt"."agent_configs" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"organization_id" text NOT NULL,
 	"scope" text NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE "walt"."agent_configs" (
 	"updated_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "walt"."checklist_items" (
+CREATE TABLE IF NOT EXISTS "walt"."checklist_items" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"checklist_id" uuid NOT NULL,
 	"title" text NOT NULL,
@@ -24,7 +24,7 @@ CREATE TABLE "walt"."checklist_items" (
 	"sort_order" integer DEFAULT 0 NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "walt"."checklists" (
+CREATE TABLE IF NOT EXISTS "walt"."checklists" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"organization_id" text NOT NULL,
 	"name" text NOT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE "walt"."checklists" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "walt"."draft_events" (
+CREATE TABLE IF NOT EXISTS "walt"."draft_events" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"organization_id" text NOT NULL,
 	"message_id" uuid NOT NULL,
@@ -48,7 +48,7 @@ CREATE TABLE "walt"."draft_events" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "walt"."guests" (
+CREATE TABLE IF NOT EXISTS "walt"."guests" (
 	"id" text PRIMARY KEY NOT NULL,
 	"organization_id" text NOT NULL,
 	"platform_guest_id" text,
@@ -63,7 +63,7 @@ CREATE TABLE "walt"."guests" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "walt"."inventory_items" (
+CREATE TABLE IF NOT EXISTS "walt"."inventory_items" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"room_id" uuid NOT NULL,
 	"name" text NOT NULL,
@@ -72,14 +72,14 @@ CREATE TABLE "walt"."inventory_items" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "walt"."inventory_rooms" (
+CREATE TABLE IF NOT EXISTS "walt"."inventory_rooms" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"property_id" text NOT NULL,
 	"name" text NOT NULL,
 	"sort_order" integer DEFAULT 0 NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "walt"."knowledge_entries" (
+CREATE TABLE IF NOT EXISTS "walt"."knowledge_entries" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"organization_id" text NOT NULL,
 	"scope" text NOT NULL,
@@ -99,7 +99,7 @@ CREATE TABLE "walt"."knowledge_entries" (
 	CONSTRAINT "knowledge_entries_scope_property_id_check" CHECK ((scope = 'global' AND property_id IS NULL) OR (scope = 'property' AND property_id IS NOT NULL))
 );
 --> statement-breakpoint
-CREATE TABLE "walt"."ops_messages" (
+CREATE TABLE IF NOT EXISTS "walt"."ops_messages" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"thread_id" uuid NOT NULL,
 	"sender_name" text,
@@ -110,7 +110,7 @@ CREATE TABLE "walt"."ops_messages" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "walt"."ops_thread_participants" (
+CREATE TABLE IF NOT EXISTS "walt"."ops_thread_participants" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"thread_id" uuid NOT NULL,
 	"display_name" text NOT NULL,
@@ -118,7 +118,7 @@ CREATE TABLE "walt"."ops_thread_participants" (
 	"joined_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "walt"."ops_threads" (
+CREATE TABLE IF NOT EXISTS "walt"."ops_threads" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"organization_id" text NOT NULL,
 	"name" text,
@@ -127,7 +127,7 @@ CREATE TABLE "walt"."ops_threads" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "walt"."pool_temperature_readings" (
+CREATE TABLE IF NOT EXISTS "walt"."pool_temperature_readings" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"property_id" text NOT NULL,
 	"device_serial" text NOT NULL,
@@ -135,7 +135,7 @@ CREATE TABLE "walt"."pool_temperature_readings" (
 	"polled_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "walt"."property_appliances" (
+CREATE TABLE IF NOT EXISTS "walt"."property_appliances" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"organization_id" text NOT NULL,
 	"property_id" text NOT NULL,
@@ -153,7 +153,7 @@ CREATE TABLE "walt"."property_appliances" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "walt"."property_guidebook_entries" (
+CREATE TABLE IF NOT EXISTS "walt"."property_guidebook_entries" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"property_id" text NOT NULL,
 	"title" text NOT NULL,
@@ -163,7 +163,7 @@ CREATE TABLE "walt"."property_guidebook_entries" (
 	"last_used_at" timestamp with time zone
 );
 --> statement-breakpoint
-CREATE TABLE "walt"."property_memory" (
+CREATE TABLE IF NOT EXISTS "walt"."property_memory" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"organization_id" text NOT NULL,
 	"property_id" text NOT NULL,
@@ -173,7 +173,7 @@ CREATE TABLE "walt"."property_memory" (
 	"created_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "walt"."simulator_question_sets" (
+CREATE TABLE IF NOT EXISTS "walt"."simulator_question_sets" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"organization_id" text NOT NULL,
 	"property_id" text NOT NULL,
@@ -182,14 +182,14 @@ CREATE TABLE "walt"."simulator_question_sets" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "walt"."simulator_questions" (
+CREATE TABLE IF NOT EXISTS "walt"."simulator_questions" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"question_set_id" uuid NOT NULL,
 	"question" text NOT NULL,
 	"sort_order" integer DEFAULT 0 NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "walt"."simulator_results" (
+CREATE TABLE IF NOT EXISTS "walt"."simulator_results" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"run_id" uuid NOT NULL,
 	"question" text NOT NULL,
@@ -200,7 +200,7 @@ CREATE TABLE "walt"."simulator_results" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "walt"."simulator_runs" (
+CREATE TABLE IF NOT EXISTS "walt"."simulator_runs" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"organization_id" text NOT NULL,
 	"property_id" text NOT NULL,
@@ -211,7 +211,7 @@ CREATE TABLE "walt"."simulator_runs" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "walt"."task_reminders" (
+CREATE TABLE IF NOT EXISTS "walt"."task_reminders" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"task_id" text NOT NULL,
 	"organization_id" text NOT NULL,
@@ -223,7 +223,7 @@ CREATE TABLE "walt"."task_reminders" (
 	"created_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "walt"."task_suggestions" (
+CREATE TABLE IF NOT EXISTS "walt"."task_suggestions" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"organization_id" text NOT NULL,
 	"property_id" text NOT NULL,
@@ -239,46 +239,46 @@ CREATE TABLE "walt"."task_suggestions" (
 );
 --> statement-breakpoint
 ALTER TABLE "walt"."seo_pipeline_runs" ALTER COLUMN "metadata" SET DEFAULT '{}'::jsonb;--> statement-breakpoint
-ALTER TABLE "walt"."messages" ADD COLUMN "suggestion_scanned_at" timestamp with time zone;--> statement-breakpoint
-ALTER TABLE "walt"."messages" ADD COLUMN "draft_status" text;--> statement-breakpoint
-ALTER TABLE "walt"."messages" ADD COLUMN "intent" text;--> statement-breakpoint
-ALTER TABLE "walt"."messages" ADD COLUMN "escalation_level" text;--> statement-breakpoint
-ALTER TABLE "walt"."messages" ADD COLUMN "escalation_reason" text;--> statement-breakpoint
-ALTER TABLE "walt"."messages" ADD COLUMN "sources_used" jsonb;--> statement-breakpoint
-ALTER TABLE "walt"."properties" ADD COLUMN "is_active" boolean DEFAULT true NOT NULL;--> statement-breakpoint
-ALTER TABLE "walt"."properties" ADD COLUMN "has_pool" boolean DEFAULT false NOT NULL;--> statement-breakpoint
-ALTER TABLE "walt"."properties" ADD COLUMN "iaqualink_device_serial" text;--> statement-breakpoint
-ALTER TABLE "walt"."property_faqs" ADD COLUMN "review_status" text DEFAULT 'unreviewed' NOT NULL;--> statement-breakpoint
-ALTER TABLE "walt"."reservations" ADD COLUMN "total_price" integer;--> statement-breakpoint
-ALTER TABLE "walt"."reservations" ADD COLUMN "nightly_rate" integer;--> statement-breakpoint
-ALTER TABLE "walt"."reservations" ADD COLUMN "currency" text;--> statement-breakpoint
-ALTER TABLE "walt"."reservations" ADD COLUMN "guest_score" integer;--> statement-breakpoint
-ALTER TABLE "walt"."reservations" ADD COLUMN "guest_score_summary" text;--> statement-breakpoint
-ALTER TABLE "walt"."reservations" ADD COLUMN "guest_scored_at" timestamp with time zone;--> statement-breakpoint
-ALTER TABLE "walt"."draft_events" ADD CONSTRAINT "draft_events_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "walt"."organizations"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "walt"."draft_events" ADD CONSTRAINT "draft_events_message_id_messages_id_fk" FOREIGN KEY ("message_id") REFERENCES "walt"."messages"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "agent_configs_organization_id_scope_idx" ON "walt"."agent_configs" USING btree ("organization_id","scope");--> statement-breakpoint
-CREATE INDEX "checklist_items_checklist_id_idx" ON "walt"."checklist_items" USING btree ("checklist_id");--> statement-breakpoint
-CREATE INDEX "draft_events_message_created_idx" ON "walt"."draft_events" USING btree ("message_id","created_at");--> statement-breakpoint
-CREATE INDEX "draft_events_org_created_idx" ON "walt"."draft_events" USING btree ("organization_id","created_at");--> statement-breakpoint
-CREATE UNIQUE INDEX "guests_org_platform_guest_idx" ON "walt"."guests" USING btree ("organization_id","platform_guest_id");--> statement-breakpoint
-CREATE INDEX "inventory_items_room_id_idx" ON "walt"."inventory_items" USING btree ("room_id");--> statement-breakpoint
-CREATE INDEX "inventory_rooms_property_id_idx" ON "walt"."inventory_rooms" USING btree ("property_id");--> statement-breakpoint
-CREATE INDEX "knowledge_entries_organization_id_idx" ON "walt"."knowledge_entries" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "knowledge_entries_property_id_idx" ON "walt"."knowledge_entries" USING btree ("property_id");--> statement-breakpoint
-CREATE INDEX "knowledge_entries_organization_id_scope_topic_key_idx" ON "walt"."knowledge_entries" USING btree ("organization_id","scope","topic_key");--> statement-breakpoint
-CREATE UNIQUE INDEX "knowledge_entries_global_unique_idx" ON "walt"."knowledge_entries" USING btree ("organization_id","topic_key") WHERE "walt"."knowledge_entries"."scope" = 'global';--> statement-breakpoint
-CREATE UNIQUE INDEX "knowledge_entries_property_unique_idx" ON "walt"."knowledge_entries" USING btree ("organization_id","property_id","topic_key") WHERE "walt"."knowledge_entries"."scope" = 'property';--> statement-breakpoint
-CREATE INDEX "ops_messages_thread_id_idx" ON "walt"."ops_messages" USING btree ("thread_id");--> statement-breakpoint
-CREATE INDEX "ops_thread_participants_thread_id_idx" ON "walt"."ops_thread_participants" USING btree ("thread_id");--> statement-breakpoint
-CREATE INDEX "pool_temperature_readings_property_polled_at_idx" ON "walt"."pool_temperature_readings" USING btree ("property_id","polled_at" DESC NULLS LAST);--> statement-breakpoint
-CREATE INDEX "property_appliances_property_id_active_idx" ON "walt"."property_appliances" USING btree ("property_id","is_active");--> statement-breakpoint
-CREATE INDEX "property_guidebook_entries_property_id_idx" ON "walt"."property_guidebook_entries" USING btree ("property_id");--> statement-breakpoint
-CREATE INDEX "property_memory_organization_id_property_id_idx" ON "walt"."property_memory" USING btree ("organization_id","property_id");--> statement-breakpoint
-CREATE INDEX "simulator_question_sets_org_property_idx" ON "walt"."simulator_question_sets" USING btree ("organization_id","property_id");--> statement-breakpoint
-CREATE INDEX "simulator_questions_set_id_idx" ON "walt"."simulator_questions" USING btree ("question_set_id");--> statement-breakpoint
-CREATE INDEX "simulator_results_run_id_idx" ON "walt"."simulator_results" USING btree ("run_id");--> statement-breakpoint
-CREATE INDEX "simulator_runs_property_created_idx" ON "walt"."simulator_runs" USING btree ("property_id","created_at");--> statement-breakpoint
-CREATE INDEX "task_reminders_pending_idx" ON "walt"."task_reminders" USING btree ("scheduled_for") WHERE "walt"."task_reminders"."sent_at" IS NULL;--> statement-breakpoint
-CREATE INDEX "task_suggestions_org_status_idx" ON "walt"."task_suggestions" USING btree ("organization_id","status");--> statement-breakpoint
-CREATE UNIQUE INDEX "task_suggestions_org_reservation_title_idx" ON "walt"."task_suggestions" USING btree ("organization_id","reservation_id","title");
+ALTER TABLE "walt"."messages" ADD COLUMN IF NOT EXISTS "suggestion_scanned_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "walt"."messages" ADD COLUMN IF NOT EXISTS "draft_status" text;--> statement-breakpoint
+ALTER TABLE "walt"."messages" ADD COLUMN IF NOT EXISTS "intent" text;--> statement-breakpoint
+ALTER TABLE "walt"."messages" ADD COLUMN IF NOT EXISTS "escalation_level" text;--> statement-breakpoint
+ALTER TABLE "walt"."messages" ADD COLUMN IF NOT EXISTS "escalation_reason" text;--> statement-breakpoint
+ALTER TABLE "walt"."messages" ADD COLUMN IF NOT EXISTS "sources_used" jsonb;--> statement-breakpoint
+ALTER TABLE "walt"."properties" ADD COLUMN IF NOT EXISTS "is_active" boolean DEFAULT true NOT NULL;--> statement-breakpoint
+ALTER TABLE "walt"."properties" ADD COLUMN IF NOT EXISTS "has_pool" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "walt"."properties" ADD COLUMN IF NOT EXISTS "iaqualink_device_serial" text;--> statement-breakpoint
+ALTER TABLE "walt"."property_faqs" ADD COLUMN IF NOT EXISTS "review_status" text DEFAULT 'unreviewed' NOT NULL;--> statement-breakpoint
+ALTER TABLE "walt"."reservations" ADD COLUMN IF NOT EXISTS "total_price" integer;--> statement-breakpoint
+ALTER TABLE "walt"."reservations" ADD COLUMN IF NOT EXISTS "nightly_rate" integer;--> statement-breakpoint
+ALTER TABLE "walt"."reservations" ADD COLUMN IF NOT EXISTS "currency" text;--> statement-breakpoint
+ALTER TABLE "walt"."reservations" ADD COLUMN IF NOT EXISTS "guest_score" integer;--> statement-breakpoint
+ALTER TABLE "walt"."reservations" ADD COLUMN IF NOT EXISTS "guest_score_summary" text;--> statement-breakpoint
+ALTER TABLE "walt"."reservations" ADD COLUMN IF NOT EXISTS "guest_scored_at" timestamp with time zone;--> statement-breakpoint
+DO $$ BEGIN ALTER TABLE "walt"."draft_events" ADD CONSTRAINT "draft_events_organization_id_organizations_id_fk" FOREIGN KEY ("organization_id") REFERENCES "walt"."organizations"("id") ON DELETE no action ON UPDATE no action; EXCEPTION WHEN duplicate_object THEN null; END $$;--> statement-breakpoint
+DO $$ BEGIN ALTER TABLE "walt"."draft_events" ADD CONSTRAINT "draft_events_message_id_messages_id_fk" FOREIGN KEY ("message_id") REFERENCES "walt"."messages"("id") ON DELETE no action ON UPDATE no action; EXCEPTION WHEN duplicate_object THEN null; END $$;--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "agent_configs_organization_id_scope_idx" ON "walt"."agent_configs" USING btree ("organization_id","scope");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "checklist_items_checklist_id_idx" ON "walt"."checklist_items" USING btree ("checklist_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "draft_events_message_created_idx" ON "walt"."draft_events" USING btree ("message_id","created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "draft_events_org_created_idx" ON "walt"."draft_events" USING btree ("organization_id","created_at");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "guests_org_platform_guest_idx" ON "walt"."guests" USING btree ("organization_id","platform_guest_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "inventory_items_room_id_idx" ON "walt"."inventory_items" USING btree ("room_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "inventory_rooms_property_id_idx" ON "walt"."inventory_rooms" USING btree ("property_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "knowledge_entries_organization_id_idx" ON "walt"."knowledge_entries" USING btree ("organization_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "knowledge_entries_property_id_idx" ON "walt"."knowledge_entries" USING btree ("property_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "knowledge_entries_organization_id_scope_topic_key_idx" ON "walt"."knowledge_entries" USING btree ("organization_id","scope","topic_key");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "knowledge_entries_global_unique_idx" ON "walt"."knowledge_entries" USING btree ("organization_id","topic_key") WHERE "walt"."knowledge_entries"."scope" = 'global';--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "knowledge_entries_property_unique_idx" ON "walt"."knowledge_entries" USING btree ("organization_id","property_id","topic_key") WHERE "walt"."knowledge_entries"."scope" = 'property';--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "ops_messages_thread_id_idx" ON "walt"."ops_messages" USING btree ("thread_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "ops_thread_participants_thread_id_idx" ON "walt"."ops_thread_participants" USING btree ("thread_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "pool_temperature_readings_property_polled_at_idx" ON "walt"."pool_temperature_readings" USING btree ("property_id","polled_at" DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "property_appliances_property_id_active_idx" ON "walt"."property_appliances" USING btree ("property_id","is_active");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "property_guidebook_entries_property_id_idx" ON "walt"."property_guidebook_entries" USING btree ("property_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "property_memory_organization_id_property_id_idx" ON "walt"."property_memory" USING btree ("organization_id","property_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "simulator_question_sets_org_property_idx" ON "walt"."simulator_question_sets" USING btree ("organization_id","property_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "simulator_questions_set_id_idx" ON "walt"."simulator_questions" USING btree ("question_set_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "simulator_results_run_id_idx" ON "walt"."simulator_results" USING btree ("run_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "simulator_runs_property_created_idx" ON "walt"."simulator_runs" USING btree ("property_id","created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "task_reminders_pending_idx" ON "walt"."task_reminders" USING btree ("scheduled_for") WHERE "walt"."task_reminders"."sent_at" IS NULL;--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "task_suggestions_org_status_idx" ON "walt"."task_suggestions" USING btree ("organization_id","status");--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "task_suggestions_org_reservation_title_idx" ON "walt"."task_suggestions" USING btree ("organization_id","reservation_id","title");
