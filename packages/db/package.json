@@ -12,7 +12,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "echo 'No tests yet for @walt/db'",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:premigrate": "node scripts/clean-legacy-migrations.mjs",
+    "db:migrate": "node scripts/clean-legacy-migrations.mjs && drizzle-kit migrate",
     "db:push": "drizzle-kit push"
   }
 }

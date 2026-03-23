@@ -20,4 +20,4 @@ COPY tsconfig.base.json ./
 
 RUN pnpm install --frozen-lockfile
 
-CMD ["pnpm", "--filter", "@walt/db", "db:migrate"]
+CMD ["sh", "-c", "pnpm --filter @walt/db db:migrate"]
