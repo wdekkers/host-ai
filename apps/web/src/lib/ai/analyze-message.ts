@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { detectEscalationKeywords, type EscalationLevel } from './escalation-keywords';
 
 export type MessageContext = {
@@ -42,16 +42,16 @@ const SYSTEM_PROMPT = `You are a property management assistant. Analyze a guest 
 Respond ONLY with valid JSON.`;
 
 async function defaultCallAi(prompt: string): Promise<string> {
-  const client = new Anthropic();
-  const response = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o-mini',
     max_tokens: 300,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: prompt }],
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: prompt },
+    ],
   });
-  const block = response.content[0];
-  if (block?.type !== 'text') throw new Error('Unexpected AI response type');
-  return block.text;
+  return response.choices[0]?.message?.content ?? '';
 }
 
 function resolveEscalation(
