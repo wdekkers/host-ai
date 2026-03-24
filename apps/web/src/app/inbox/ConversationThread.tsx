@@ -6,6 +6,7 @@ import { AiDraftPanel } from './AiDraftPanel';
 import { RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { STATUS_BADGE_CONFIG, STATUS_ICONS, STATUS_COLORS } from './status-config';
+import { AiStatusToggle } from '@/components/inbox/ai-status-toggle';
 
 type Message = {
   id: string;
@@ -227,6 +228,7 @@ export function ConversationThread({
             </button>
           )}
         </div>
+        <AiStatusToggle reservationId={reservationId} />
       </div>
 
       {/* Messages */}
