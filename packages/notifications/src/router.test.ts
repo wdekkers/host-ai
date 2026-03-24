@@ -26,7 +26,7 @@ const baseNotification: Notification = {
   urgency: 'normal',
 };
 
-test('sends SMS when channel includes sms and contact has phone', async () => {
+void test('sends SMS when channel includes sms and contact has phone', async () => {
   const smsCalls: { to: string; body: string }[] = [];
   const router = createMockRouter({
     sms: {
@@ -44,7 +44,7 @@ test('sends SMS when channel includes sms and contact has phone', async () => {
   assert.ok(smsCalls[0]?.body.includes('[Hostpilot]'));
 });
 
-test('sends to multiple channels in parallel', async () => {
+void test('sends to multiple channels in parallel', async () => {
   const smsCalls: string[] = [];
   const emailCalls: string[] = [];
   const router = createMockRouter({
@@ -60,7 +60,7 @@ test('sends to multiple channels in parallel', async () => {
   assert.equal(emailCalls[0], 'host@test.com');
 });
 
-test('always persists web notification when channel includes web', async () => {
+void test('always persists web notification when channel includes web', async () => {
   const persisted: Notification[] = [];
   const router = createMockRouter({
     persistWebNotification: async (n) => { persisted.push(n); },
@@ -72,7 +72,7 @@ test('always persists web notification when channel includes web', async () => {
   assert.equal(persisted[0]?.title, 'New Booking');
 });
 
-test('skips SMS if no phone number available', async () => {
+void test('skips SMS if no phone number available', async () => {
   const smsCalls: string[] = [];
   const router = createMockRouter({
     sms: { send: async (to) => { smsCalls.push(to); } },
@@ -84,7 +84,7 @@ test('skips SMS if no phone number available', async () => {
   assert.equal(smsCalls.length, 0);
 });
 
-test('sends email when channel includes email', async () => {
+void test('sends email when channel includes email', async () => {
   const emailCalls: { to: string; subject: string; text: string }[] = [];
   const router = createMockRouter({
     email: {
