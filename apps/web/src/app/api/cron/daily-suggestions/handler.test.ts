@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { handleDailySuggestions } from './handler.js';
+import { handleDailySuggestions } from './handler';
 
 const makeRequest = () =>
   new Request('http://localhost/api/cron/daily-suggestions', {

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { handleDismissSuggestion } from './handler.js';
+import { handleDismissSuggestion } from './handler';
 
 const authCtx = { orgId: 'org-1', userId: 'user-1', role: 'owner' as const };
 

@@ -1,3 +1,3 @@
-import { handleExcludeReservation } from './handler.js';
+import { handleExcludeReservation } from './handler';
 
 export const POST = handleExcludeReservation;

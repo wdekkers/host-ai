@@ -1,3 +1,3 @@
-import { handleUpsellStats } from './handler.js';
+import { handleUpsellStats } from './handler';
 
 export const GET = handleUpsellStats;

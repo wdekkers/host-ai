@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { handleAcceptSuggestion } from './handler.js';
+import { handleAcceptSuggestion } from './handler';
 
 const authCtx = { orgId: 'org-1', userId: 'user-1', role: 'owner' as const };
 const params = Promise.resolve({ id: 'sug-1' });

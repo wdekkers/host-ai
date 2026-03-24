@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { detectEscalationKeywords } from './escalation-keywords.js';
+import { detectEscalationKeywords } from './escalation-keywords';
 
 void test('detects escalate-level keywords', () => {
   assert.equal(detectEscalationKeywords('I want a refund immediately'), 'escalate');

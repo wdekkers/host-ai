@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { normalizeReservation, normalizeMessage, normalizeProperty } from './hospitable-normalize.js';
+import { normalizeReservation, normalizeMessage, normalizeProperty } from './hospitable-normalize';
 
 void test('normalizeReservation extracts core fields from Hospitable v2 payload', () => {
   const raw = {

@@ -1,3 +1,3 @@
-import { handleListJourneys } from './handler.js';
+import { handleListJourneys } from './handler';
 
 export const GET = handleListJourneys;

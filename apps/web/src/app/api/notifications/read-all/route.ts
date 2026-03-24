@@ -1,3 +1,3 @@
-import { handleMarkAllRead } from './handler.js';
+import { handleMarkAllRead } from './handler';
 
 export const PUT = handleMarkAllRead;

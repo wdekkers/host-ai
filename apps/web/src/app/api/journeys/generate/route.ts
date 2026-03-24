@@ -1,3 +1,3 @@
-import { handleGenerateJourney } from './handler.js';
+import { handleGenerateJourney } from './handler';
 
 export const POST = handleGenerateJourney;

@@ -1,3 +1,3 @@
-import { handleUpdateUpsell } from './handler.js';
+import { handleUpdateUpsell } from './handler';
 
 export const PUT = handleUpdateUpsell;

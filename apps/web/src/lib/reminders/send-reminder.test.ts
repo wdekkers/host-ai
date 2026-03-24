@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { sendReminder } from './send-reminder.js';
+import { sendReminder } from './send-reminder';
 
 const baseReminder = {
   id: 'rem-1',

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readTemperature, clearSessionCache, type FetchFn } from './iaqualink.js';
+import { readTemperature, clearSessionCache, type FetchFn } from './iaqualink';
 
 const MOCK_CREDS = {
   AccessKeyId: 'AKIATEST',

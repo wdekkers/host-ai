@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { generateJourneyFromPrompt, type GenerateInput, type GenerateDeps } from './generate-journey.js';
+import { generateJourneyFromPrompt, type GenerateInput, type GenerateDeps } from './generate-journey';
 
 const baseInput: GenerateInput = {
   prompt: 'Create a welcome journey that sends a greeting 24 hours before check-in',

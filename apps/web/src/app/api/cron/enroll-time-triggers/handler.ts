@@ -7,7 +7,7 @@ import {
   enrollReservation,
   createEnrollmentDeps,
   type EnrollmentDbDeps,
-} from '@/lib/journeys/enrollment.js';
+} from '@/lib/journeys/enrollment';
 
 // Trigger types handled by this cron
 const TIME_TRIGGER_TYPES = [

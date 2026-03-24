@@ -14,12 +14,12 @@ import {
 } from '@walt/db';
 import type { JourneyStep, ApprovalMode, CoverageSchedule } from '@walt/contracts';
 import { journeyStepSchema, approvalModeSchema, coverageScheduleSchema } from '@walt/contracts';
-import { executeStep } from '@/lib/journeys/executor.js';
-import { isWithinCoverageWindow, getNextWindowStart } from '@/lib/journeys/coverage.js';
+import { executeStep } from '@/lib/journeys/executor';
+import { isWithinCoverageWindow, getNextWindowStart } from '@/lib/journeys/coverage';
 import {
   generateJourneyMessage,
   type GenerateJourneyMessageDeps,
-} from '@/lib/journeys/generate-journey-message.js';
+} from '@/lib/journeys/generate-journey-message';
 
 type Deps = {
   cronSecret?: string;

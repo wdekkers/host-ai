@@ -1,4 +1,4 @@
-import { SYSTEM_RULES } from '@/lib/ai/system-rules.js';
+import { SYSTEM_RULES } from '@/lib/ai/system-rules';
 
 type AgentConfig = {
   tone: string | null;

@@ -1,3 +1,3 @@
-import { handlePauseJourney } from './handler.js';
+import { handlePauseJourney } from './handler';
 
 export const POST = handlePauseJourney;

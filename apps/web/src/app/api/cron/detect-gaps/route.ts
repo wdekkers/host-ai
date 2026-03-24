@@ -1,2 +1,2 @@
-import { handleDetectGaps } from './handler.js';
-export const POST = handleDetectGaps;
+import { handleDetectGaps } from './handler';
+export const POST = (request: Request) => handleDetectGaps(request);

@@ -1,3 +1,3 @@
-import { handleUpdateAiStatus } from './handler.js';
+import { handleUpdateAiStatus } from './handler';
 
 export const PUT = handleUpdateAiStatus;

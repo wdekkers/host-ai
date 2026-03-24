@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { formatPropertyFacts } from './property-facts.js';
+import { formatPropertyFacts } from './property-facts';
 
 void test('formatPropertyFacts builds prompt section from full property row', () => {
   const result = formatPropertyFacts({
