@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { and, isNull, gt, eq } from 'drizzle-orm';
-import { messages, reservations, properties, taskSuggestions, propertyAccess } from '@walt/db';
+import { messages, reservations, properties, taskSuggestions, propertyAccess, conversationSettings } from '@walt/db';
 import type { MessageAnalysis } from '@/lib/ai/analyze-message';
 import type { SuggestionResult } from '@/lib/generate-reply-suggestion';
 
@@ -93,6 +93,15 @@ export async function handleScanMessages(request: Request, deps: Deps = {}) {
     const ctx = await getReservationContext(message.reservationId);
     if (!ctx) continue;
 
+    // Check AI status for this conversation
+    const [convSettings] = await db
+      .select()
+      .from(conversationSettings)
+      .where(eq(conversationSettings.reservationId, message.reservationId));
+
+    const aiPaused = convSettings?.aiStatus === 'paused' &&
+      (convSettings.aiPausedUntil === null || convSettings.aiPausedUntil > new Date());
+
     // Step 1: Analyze message (intent + escalation + task suggestion)
     const analysis = await analyze({
       body: message.body ?? '',
@@ -101,8 +110,8 @@ export async function handleScanMessages(request: Request, deps: Deps = {}) {
       arrivalDate: ctx.arrivalDate,
     });
 
-    // Step 2: Generate AI draft
-    const draft = await generateSuggestion({
+    // Step 2: Generate AI draft (skipped when AI is paused)
+    const draft = aiPaused ? null : await generateSuggestion({
       guestFirstName: ctx.guestFirstName,
       guestLastName: null,
       propertyName: ctx.propertyName,

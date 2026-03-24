@@ -1006,3 +1006,163 @@ export const sitePages = waltSchema.table(
     uniqueIndex('site_pages_site_slug_idx').on(t.siteId, t.slug),
   ],
 );
+
+// ─── Journey Engine ───────────────────────────────────────────
+
+export const journeys = waltSchema.table(
+  'journeys',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: text('organization_id').notNull(),
+    name: text('name').notNull(),
+    description: text('description').notNull(),
+    status: text('status').notNull().default('draft'),
+    propertyIds: text('property_ids').array().notNull().default([]),
+    triggerType: text('trigger_type').notNull(),
+    triggerConfig: jsonb('trigger_config').notNull().default({}),
+    steps: jsonb('steps').notNull(),
+    coverageSchedule: jsonb('coverage_schedule'),
+    approvalMode: text('approval_mode').notNull().default('draft'),
+    version: integer('version').notNull().default(1),
+    prompt: text('prompt').notNull(),
+    createdBy: text('created_by').notNull(),
+    updatedBy: text('updated_by').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('journeys_organization_id_idx').on(t.organizationId),
+    index('journeys_status_idx').on(t.organizationId, t.status),
+  ],
+);
+
+export const journeyEnrollments = waltSchema.table(
+  'journey_enrollments',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    journeyId: uuid('journey_id').notNull().references(() => journeys.id),
+    reservationId: text('reservation_id').notNull(),
+    organizationId: text('organization_id').notNull(),
+    currentStepIndex: integer('current_step_index').notNull().default(0),
+    journeyVersion: integer('journey_version').notNull(),
+    status: text('status').notNull().default('active'),
+    nextExecutionAt: timestamp('next_execution_at', { withTimezone: true }),
+    retryCount: integer('retry_count').notNull().default(0),
+    context: jsonb('context').notNull().default({}),
+    enrolledAt: timestamp('enrolled_at', { withTimezone: true }).notNull().defaultNow(),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex('journey_enrollments_unique_idx').on(t.journeyId, t.reservationId),
+    index('journey_enrollments_pending_idx')
+      .on(t.nextExecutionAt)
+      .where(sql`status = 'active'`),
+    index('journey_enrollments_organization_id_idx').on(t.organizationId),
+  ],
+);
+
+export const journeyExclusions = waltSchema.table(
+  'journey_exclusions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    journeyId: uuid('journey_id').notNull().references(() => journeys.id),
+    reservationId: text('reservation_id').notNull(),
+    organizationId: text('organization_id').notNull(),
+    excludedBy: text('excluded_by').notNull(),
+    excludedAt: timestamp('excluded_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex('journey_exclusions_unique_idx').on(t.journeyId, t.reservationId),
+  ],
+);
+
+export const journeyExecutionLog = waltSchema.table(
+  'journey_execution_log',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    enrollmentId: uuid('enrollment_id').notNull().references(() => journeyEnrollments.id),
+    journeyId: uuid('journey_id').notNull().references(() => journeys.id),
+    organizationId: text('organization_id').notNull(),
+    reservationId: text('reservation_id').notNull(),
+    stepIndex: integer('step_index').notNull(),
+    action: text('action').notNull(),
+    input: jsonb('input'),
+    output: jsonb('output'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('journey_execution_log_enrollment_idx').on(t.enrollmentId, t.createdAt),
+    index('journey_execution_log_rate_limit_idx').on(t.reservationId, t.action, t.createdAt),
+  ],
+);
+
+export const conversationSettings = waltSchema.table(
+  'conversation_settings',
+  {
+    reservationId: text('reservation_id').primaryKey(),
+    organizationId: text('organization_id').notNull(),
+    aiStatus: text('ai_status').notNull().default('active'),
+    aiPausedUntil: timestamp('ai_paused_until', { withTimezone: true }),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+);
+
+export const upsellEvents = waltSchema.table(
+  'upsell_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: text('organization_id').notNull(),
+    propertyId: text('property_id').notNull(),
+    reservationId: text('reservation_id').notNull(),
+    journeyId: uuid('journey_id').references(() => journeys.id),
+    enrollmentId: uuid('enrollment_id').references(() => journeyEnrollments.id),
+    upsellType: text('upsell_type').notNull(),
+    status: text('status').notNull().default('offered'),
+    messageId: text('message_id'),
+    offeredAt: timestamp('offered_at', { withTimezone: true }).notNull().defaultNow(),
+    respondedAt: timestamp('responded_at', { withTimezone: true }),
+    estimatedRevenue: integer('estimated_revenue'),
+    actualRevenue: integer('actual_revenue'),
+  },
+  (t) => [
+    index('upsell_events_org_property_idx').on(t.organizationId, t.propertyId, t.status),
+  ],
+);
+
+export const notificationPreferences = waltSchema.table(
+  'notification_preferences',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: text('organization_id').notNull(),
+    memberId: text('member_id'),
+    category: text('category').notNull(),
+    channels: text('channels').array().notNull(),
+    quietHours: jsonb('quiet_hours'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('notification_preferences_org_idx').on(t.organizationId),
+    uniqueIndex('notification_preferences_unique_idx').on(t.organizationId, t.memberId, t.category),
+  ],
+);
+
+export const notifications = waltSchema.table(
+  'notifications',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: text('organization_id').notNull(),
+    recipientId: text('recipient_id').notNull(),
+    category: text('category').notNull(),
+    title: text('title').notNull(),
+    body: text('body').notNull(),
+    metadata: jsonb('metadata'),
+    readAt: timestamp('read_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('notifications_unread_idx')
+      .on(t.organizationId, t.recipientId)
+      .where(sql`read_at IS NULL`),
+  ],
+);
