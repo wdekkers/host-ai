@@ -183,6 +183,13 @@
       "when": 1774299008320,
       "tag": "0025_melted_sleeper",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1774299100000,
+      "tag": "0026_backfill_missing_tables",
+      "breakpoints": true
     }
   ]
 }
