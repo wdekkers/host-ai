@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Sparkles } from 'lucide-react'
+import { Loader2, Sparkles } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
@@ -45,7 +45,14 @@ export function JourneyPromptInput({ onGenerate, isLoading = false }: JourneyPro
             onClick={handleGenerate}
             disabled={isLoading || !prompt.trim()}
           >
-            {isLoading ? 'Generating...' : 'Generate Journey →'}
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating your journey...
+              </>
+            ) : (
+              'Generate Journey →'
+            )}
           </Button>
         </div>
       </CardContent>
