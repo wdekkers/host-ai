@@ -9,3 +9,5 @@ export * from './knowledge.js';
 export * from './task-suggestions.js';
 export * from './bookings.js';
 export * from './sites.js';
+export * from './journeys.js';
+export * from './notifications.js';

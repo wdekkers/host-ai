@@ -58,6 +58,18 @@ export const permissionValues = [
   'admin.delete',
   // Integrations
   'integrations.read',
+  // Journeys
+  'journeys.read',
+  'journeys.write',
+  // Conversations
+  'conversations.read',
+  'conversations.write',
+  // Upsells
+  'upsells.read',
+  'upsells.write',
+  // Notifications
+  'notifications.read',
+  'notifications.write',
 ] as const;
 
 export const permissionSchema = z.enum(permissionValues);

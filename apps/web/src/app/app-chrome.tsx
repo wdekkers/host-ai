@@ -5,8 +5,10 @@ import Link from 'next/link';
 import type { ComponentType, ReactNode } from 'react';
 
 import type { Role } from '@walt/contracts';
-import { AppSidebar } from './nav-sidebar';
+import { NotificationBell } from '@/components/notifications/notification-bell';
+import { UrgentToastProvider } from '@/components/notifications/urgent-toast-provider';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { AppSidebar } from './nav-sidebar';
 
 type NavLinkComponentProps = {
   href: string;
@@ -43,9 +45,15 @@ export function AppChrome({
         role={role}
       />
       <SidebarInset>
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-white px-4">
-          <SidebarTrigger className="text-slate-400 hover:text-slate-600 md:hidden" />
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-white px-4">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger className="text-slate-400 hover:text-slate-600 md:hidden" />
+          </div>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+          </div>
         </header>
+        <UrgentToastProvider />
         <main className="flex-1 overflow-y-auto bg-slate-50 p-5">
           {children}
         </main>

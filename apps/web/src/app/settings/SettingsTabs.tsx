@@ -3,9 +3,12 @@ import Link from 'next/link';
 const tabs = [
   { href: '/settings/agent', label: 'Agent' },
   { href: '/settings/knowledge', label: 'Knowledge' },
+  { href: '/settings/notifications', label: 'Notifications' },
 ] as const;
 
-export function SettingsTabs({ current }: { current: 'agent' | 'knowledge' }) {
+type TabKey = 'agent' | 'knowledge' | 'notifications';
+
+export function SettingsTabs({ current }: { current: TabKey }) {
   return (
     <div className="mb-6 flex flex-wrap gap-2">
       {tabs.map((tab) => {

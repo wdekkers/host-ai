@@ -14,6 +14,8 @@ import {
   HelpCircle,
   Settings,
   Wrench,
+  Zap,
+  TrendingUp,
 } from 'lucide-react';
 
 import type { Role } from '@walt/contracts';
@@ -47,6 +49,8 @@ export const navGroups: NavGroup[] = [
       { label: 'Calendar', href: '/calendar', icon: Calendar, roles: ['owner', 'manager', 'agent'] },
       { label: 'Reservations', href: '/reservations', icon: CalendarDays, roles: ['owner', 'manager', 'agent'] },
       { label: 'Properties', href: '/properties', icon: Building2, roles: ['owner', 'manager'] },
+      { label: 'Journeys', href: '/journeys', icon: Zap, roles: ['owner', 'manager'] },
+      { label: 'Upsells', href: '/upsells', icon: TrendingUp, roles: ['owner', 'manager'] },
       { label: 'Checklists', href: '/property-checklists', icon: ClipboardList, roles: ['owner', 'manager', 'agent', 'cleaner'] },
       { label: 'Inventory', href: '/inventory', icon: Package, roles: ['owner', 'manager', 'agent', 'cleaner'] },
       { label: 'Contacts', href: '/contacts', icon: BookUser, roles: ['owner', 'manager', 'agent'] },

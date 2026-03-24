@@ -7,6 +7,7 @@ import { roleSchema } from '@walt/contracts';
 import type { Role } from '@walt/contracts';
 import { AppChrome } from './app-chrome';
 import './globals.css';
+import { Toaster } from '@/components/ui/sonner';
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +40,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <ClerkProvider>
           <AppChrome isAuthenticated={Boolean(userId)} role={role}>{children}</AppChrome>
         </ClerkProvider>
+        <Toaster position="bottom-right" />
       </body>
     </html>
   );
