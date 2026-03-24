@@ -137,7 +137,7 @@ export function UpsellsClient(): React.JSX.Element {
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([fetchUpsells(), fetchStats()]).finally(() => setLoading(false));
+    void Promise.all([fetchUpsells(), fetchStats()]).finally(() => setLoading(false));
   }, [fetchUpsells, fetchStats]);
 
   const handleConfirmOpen = (id: string) => {

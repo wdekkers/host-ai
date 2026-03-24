@@ -298,7 +298,6 @@ export function JourneyDetailClient() {
           <JourneyConfigCard journey={journey} promotionSuggested={journey.promotionSuggested} />
           {journey.promotionSuggested && (
             <PromotionBanner
-              journeyId={journey.id}
               messageCount={journey.messageCount ?? 0}
               editRate={0}
               onUpgrade={() => void handleUpgrade()}

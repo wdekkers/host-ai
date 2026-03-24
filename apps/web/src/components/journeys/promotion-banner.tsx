@@ -5,13 +5,12 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
 type PromotionBannerProps = {
-  journeyId: string
   messageCount: number
   editRate: number
   onUpgrade: () => void
 }
 
-export function PromotionBanner({ journeyId: _journeyId, messageCount, editRate, onUpgrade }: PromotionBannerProps) {
+export function PromotionBanner({ messageCount, editRate, onUpgrade }: PromotionBannerProps) {
   const editPercent = Math.round(editRate * 100)
 
   return (
