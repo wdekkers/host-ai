@@ -218,12 +218,28 @@ export async function generateReplySuggestion({
 
   const guestFullName = [guestFirstName, guestLastName].filter(Boolean).join(' ') || 'the guest';
 
+  const today = new Date();
+  const checkInDate = checkIn ? new Date(checkIn) : null;
+  const checkOutDate = checkOut ? new Date(checkOut) : null;
+
+  let bookingPhase = 'unknown';
+  if (checkInDate && checkOutDate) {
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const ciStart = new Date(checkInDate.getFullYear(), checkInDate.getMonth(), checkInDate.getDate());
+    const coStart = new Date(checkOutDate.getFullYear(), checkOutDate.getMonth(), checkOutDate.getDate());
+    if (todayStart < ciStart) bookingPhase = 'pre-arrival (guest has NOT checked in yet)';
+    else if (todayStart >= ciStart && todayStart < coStart) bookingPhase = 'currently hosting (guest is staying at the property RIGHT NOW)';
+    else bookingPhase = 'post-checkout (guest has already left)';
+  }
+
   const systemPrompt = `You are a short-term rental host assistant drafting a reply to a guest.
 
+Today's date: ${today.toLocaleDateString()}
 Property: ${propertyName}
 Guest full name: ${guestFullName}${guestFirstName ? `\nGuest first name: ${guestFirstName}` : ''}
 Check-in: ${formatDate(checkIn)}
 Check-out: ${formatDate(checkOut)}
+Booking phase: ${bookingPhase}
 
 Tone: ${tone}
 Emoji use: ${emojiUse}

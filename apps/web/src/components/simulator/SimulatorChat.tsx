@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,29 @@ export function SimulatorChat({ propertyId }: SimulatorChatProps) {
   const [guestName, setGuestName] = useState('Test Guest');
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
+  const [bookingPhase, setBookingPhase] = useState<'future' | 'current' | 'past'>('current');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const applyBookingPhase = useCallback((phase: 'future' | 'current' | 'past') => {
+    setBookingPhase(phase);
+    const now = new Date();
+    const fmt = (d: Date) => d.toISOString().split('T')[0]!;
+    if (phase === 'future') {
+      setCheckIn(fmt(new Date(now.getTime() + 7 * 86400000)));
+      setCheckOut(fmt(new Date(now.getTime() + 10 * 86400000)));
+    } else if (phase === 'current') {
+      setCheckIn(fmt(new Date(now.getTime() - 1 * 86400000)));
+      setCheckOut(fmt(new Date(now.getTime() + 3 * 86400000)));
+    } else {
+      setCheckIn(fmt(new Date(now.getTime() - 5 * 86400000)));
+      setCheckOut(fmt(new Date(now.getTime() - 1 * 86400000)));
+    }
+  }, []);
+
+  // Initialize dates for default booking phase on mount
+  useEffect(() => {
+    applyBookingPhase('current');
+  }, [applyBookingPhase]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
@@ -107,28 +129,49 @@ export function SimulatorChat({ propertyId }: SimulatorChatProps) {
 
       {/* Fake reservation config */}
       {showConfig && (
-        <div className="grid grid-cols-3 gap-2 mb-3">
-          <input
-            type="text"
-            value={guestName}
-            onChange={(e) => setGuestName(e.target.value)}
-            placeholder="Guest name"
-            className="rounded-md border border-slate-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
-          />
-          <input
-            type="date"
-            value={checkIn}
-            onChange={(e) => setCheckIn(e.target.value)}
-            placeholder="Check-in"
-            className="rounded-md border border-slate-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
-          />
-          <input
-            type="date"
-            value={checkOut}
-            onChange={(e) => setCheckOut(e.target.value)}
-            placeholder="Check-out"
-            className="rounded-md border border-slate-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
-          />
+        <div className="space-y-2 mb-3">
+          <div className="flex gap-1">
+            {([
+              ['future', 'Pre-arrival'],
+              ['current', 'Currently hosting'],
+              ['past', 'Post-checkout'],
+            ] as const).map(([phase, label]) => (
+              <button
+                key={phase}
+                onClick={() => applyBookingPhase(phase)}
+                className={`flex-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                  bookingPhase === phase
+                    ? 'bg-sky-600 text-white'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <input
+              type="text"
+              value={guestName}
+              onChange={(e) => setGuestName(e.target.value)}
+              placeholder="Guest name"
+              className="rounded-md border border-slate-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
+            />
+            <input
+              type="date"
+              value={checkIn}
+              onChange={(e) => setCheckIn(e.target.value)}
+              placeholder="Check-in"
+              className="rounded-md border border-slate-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
+            />
+            <input
+              type="date"
+              value={checkOut}
+              onChange={(e) => setCheckOut(e.target.value)}
+              placeholder="Check-out"
+              className="rounded-md border border-slate-200 px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
+            />
+          </div>
         </div>
       )}
 
