@@ -47,5 +47,5 @@ export async function handleChat(request: Request, authContext: AuthContext) {
     return NextResponse.json({ error: 'Failed to generate reply' }, { status: 503 });
   }
 
-  return NextResponse.json({ reply });
+  return NextResponse.json({ reply: reply.suggestion, sourcesUsed: reply.sourcesUsed });
 }
