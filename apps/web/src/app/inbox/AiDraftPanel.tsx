@@ -53,10 +53,12 @@ export function AiDraftPanel({
     }
   }, [unrepliedMessage?.id]); // intentionally omit generate — it's defined inline and stable
 
-  // The message id to use for AI generation
+  // The message id to use for AI generation (null when no guest message exists — generate from context only)
   const generateMessageId = (unrepliedMessage ?? latestGuestMessage)?.id ?? null;
+  // Always show the AI draft section unless explicitly dismissed
+  const showDraftSection = !dismissed;
 
-  async function generate(messageId: string, chips: string[], context: string) {
+  async function generate(messageId: string | null, chips: string[], context: string) {
     setLoading(true);
     try {
       const token = await getToken();
@@ -66,7 +68,7 @@ export function AiDraftPanel({
           'content-type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ messageId, chips, extraContext: context || undefined }),
+        body: JSON.stringify({ messageId: messageId ?? undefined, chips, extraContext: context || undefined }),
       });
       const data = (await res.json()) as {
         suggestion?: string;
@@ -173,9 +175,9 @@ export function AiDraftPanel({
         />
       )}
 
-      {/* Draft section — always shown when a guest message exists */}
-      {!dismissed && generateMessageId && (
-        <div className="px-4 py-3 border-b border-slate-200">
+      {/* Draft section — always available for AI generation */}
+      {showDraftSection && (
+        <div className="px-4 py-3 border-b border-slate-200 max-h-[50vh] overflow-y-auto">
           {/* Escalation banner */}
           {escalationLevel === 'escalate' && (
             <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 mb-2 text-xs text-red-800 flex items-start gap-2">
@@ -240,8 +242,8 @@ export function AiDraftPanel({
             </div>
           </div>
 
-          {/* No unreplied message: show context input to describe what to compose */}
-          {!unrepliedMessage && !suggestion && !loading && (
+          {/* No active draft: show context input to describe what to compose */}
+          {!suggestion && !loading && (
             <div className="mb-2">
               <input
                 type="text"
@@ -338,7 +340,7 @@ export function AiDraftPanel({
       {/* Manual reply */}
       <div className="px-4 py-3 flex gap-2 items-center">
         {/* Reopen AI panel when dismissed */}
-        {dismissed && latestGuestMessage && (
+        {dismissed && (
           <button
             onClick={() => {
               setDismissed(false);
