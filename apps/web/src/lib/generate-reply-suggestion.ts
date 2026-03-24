@@ -9,6 +9,7 @@ import {
   type KnowledgeEntrySource,
 } from './knowledge-resolver';
 import { formatPropertyFacts } from './property-facts';
+import { SYSTEM_RULES } from './ai/system-rules';
 
 const CHIP_INSTRUCTIONS: Record<string, string> = {
   shorter: 'Keep the reply to 1-2 sentences maximum.',
@@ -247,7 +248,7 @@ Length: ${responseLength}
 ${specialInstructions ? `Special instructions: ${specialInstructions}` : ''}
 ${chipLines ? `Style modifiers for this reply:\n${chipLines}` : ''}
 ${extraContext ? `IMPORTANT additional instructions for this reply (follow these precisely):\n${extraContext}\n` : ''}
-Reply in the same language as the guest message. Do not start with "Of course" or "Certainly".${propertyFactsContext ? `\n\n${propertyFactsContext}` : ''}${knowledgeContext ? `\n\n${knowledgeContext}` : ''}${memoryContext}`;
+${SYSTEM_RULES}${propertyFactsContext ? `\n\n${propertyFactsContext}` : ''}${knowledgeContext ? `\n\n${knowledgeContext}` : ''}${memoryContext}`;
 
   const historyMessages = conversationHistory.map((m) => ({
     role: (m.senderType === 'guest' ? 'user' : 'assistant') as 'user' | 'assistant',
