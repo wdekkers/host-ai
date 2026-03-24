@@ -37,6 +37,19 @@ try {
   } else {
     console.log('No legacy migration entries to clean');
   }
+
+  // Remove phantom entry for migration 0027 (journey engine tables).
+  // This hash was recorded by a deploy where the journal entry was missing,
+  // so drizzle tracked it as "applied" without actually running the SQL.
+  // Removing it allows drizzle to re-apply the migration properly.
+  const phantomHash = '0e42a1a218838424f51d21a4bdee2d5bbb801658d8c9adbd78b9158b99d97fdb';
+  const { rowCount: phantomCount } = await pool.query(
+    'DELETE FROM drizzle.__drizzle_migrations WHERE hash = $1',
+    [phantomHash],
+  );
+  if (phantomCount > 0) {
+    console.log(`Removed phantom migration entry for 0027_wise_clint_barton`);
+  }
 } catch (err) {
   // Table may not exist on fresh databases — that's fine
   if (err.code === '42P01') {
