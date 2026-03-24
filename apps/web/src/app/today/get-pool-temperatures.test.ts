@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { getPoolTemperatures } from './get-pool-temperatures.js';
+import { getPoolTemperatures } from './get-pool-temperatures';
 
 void test('returns empty array when no pool properties have readings', async () => {
   const result = await getPoolTemperatures('org-1', {

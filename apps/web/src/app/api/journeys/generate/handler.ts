@@ -2,10 +2,10 @@ import { randomUUID } from 'node:crypto';
 import { eq, inArray } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
-import { withPermission } from '@/lib/auth/authorize.js';
-import { db } from '@/lib/db.js';
-import { generateJourneyFromPrompt } from '@/lib/journeys/generate-journey.js';
-import { handleApiError } from '@/lib/secure-logger.js';
+import { withPermission } from '@/lib/auth/authorize';
+import { db } from '@/lib/db';
+import { generateJourneyFromPrompt } from '@/lib/journeys/generate-journey';
+import { handleApiError } from '@/lib/secure-logger';
 import { generateJourneyInputSchema } from '@walt/contracts';
 import { journeys, properties } from '@walt/db';
 

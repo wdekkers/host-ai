@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { sendViaHospitable } from './send-message.js';
+import { sendViaHospitable } from './send-message';
 
 void test('sends message successfully', async () => {
   const result = await sendViaHospitable(

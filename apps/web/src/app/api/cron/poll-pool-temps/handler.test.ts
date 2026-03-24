@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { handlePollPoolTemps } from './handler.js';
+import { handlePollPoolTemps } from './handler';
 
 const makeRequest = (secret = 'test-secret') =>
   new Request('http://localhost/api/cron/poll-pool-temps', {

@@ -4,7 +4,7 @@ import {
   generateJourneyMessage,
   type GenerateJourneyMessageInput,
   type GenerateJourneyMessageDeps,
-} from './generate-journey-message.js';
+} from './generate-journey-message';
 
 const baseInput: GenerateJourneyMessageInput = {
   directive: 'Send a welcome message to the guest',

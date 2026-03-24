@@ -1,4 +1,4 @@
-import { handleDeleteJourney, handleGetJourney, handleUpdateJourney } from './handler.js';
+import { handleDeleteJourney, handleGetJourney, handleUpdateJourney } from './handler';
 
 export const GET = handleGetJourney;
 export const PUT = handleUpdateJourney;

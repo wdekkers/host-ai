@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { executeStep } from './executor.js';
-import type { ExecutorDeps } from './executor.js';
+import { executeStep } from './executor';
+import type { ExecutorDeps } from './executor';
 import type { JourneyStep } from '@walt/contracts';
 
 function createMockDeps(overrides: Partial<ExecutorDeps> = {}): ExecutorDeps {

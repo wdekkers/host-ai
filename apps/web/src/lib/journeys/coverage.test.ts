@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { isWithinCoverageWindow, getNextWindowStart } from './coverage.js';
+import { isWithinCoverageWindow, getNextWindowStart } from './coverage';
 import type { CoverageSchedule } from '@walt/contracts';
 
 const weekdaySchedule: CoverageSchedule = {

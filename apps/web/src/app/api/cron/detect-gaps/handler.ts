@@ -7,7 +7,7 @@ import {
   enrollReservation,
   createEnrollmentDeps,
   type EnrollmentDbDeps,
-} from '@/lib/journeys/enrollment.js';
+} from '@/lib/journeys/enrollment';
 
 type Deps = {
   cronSecret?: string;

@@ -1,2 +1,2 @@
-import { handleEnrollTimeTriggers } from './handler.js';
-export const POST = handleEnrollTimeTriggers;
+import { handleEnrollTimeTriggers } from './handler';
+export const POST = (request: Request) => handleEnrollTimeTriggers(request);

@@ -2,9 +2,9 @@ import { and, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { withPermission } from '@/lib/auth/authorize.js';
-import { db } from '@/lib/db.js';
-import { handleApiError } from '@/lib/secure-logger.js';
+import { withPermission } from '@/lib/auth/authorize';
+import { db } from '@/lib/db';
+import { handleApiError } from '@/lib/secure-logger';
 import { updateUpsellInputSchema } from '@walt/contracts';
 import { upsellEvents } from '@walt/db';
 

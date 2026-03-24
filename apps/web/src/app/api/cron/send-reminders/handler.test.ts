@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { handleSendReminders } from './handler.js';
+import { handleSendReminders } from './handler';
 
 const makeRequest = () =>
   new Request('http://localhost/api/cron/send-reminders', {

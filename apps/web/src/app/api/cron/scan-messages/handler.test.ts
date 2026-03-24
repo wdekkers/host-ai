@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { handleScanMessages } from './handler.js';
+import { handleScanMessages } from './handler';
 
 void test('scans unscanned messages and marks them scanned', async () => {
   let scannedId: string | undefined;
