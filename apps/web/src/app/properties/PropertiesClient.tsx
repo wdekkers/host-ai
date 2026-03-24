@@ -10,6 +10,7 @@ import {
   MapPin,
   Eye,
   EyeOff,
+  RefreshCw,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,31 @@ export function PropertiesClient({ properties, reservationCounts }: Props) {
   const [showInactive, setShowInactive] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [items, setItems] = useState(properties);
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const res = await fetch('/api/admin/sync-hospitable', { method: 'POST' });
+      const json = (await res.json()) as {
+        properties?: number;
+        reservations?: number;
+        messages?: number;
+        error?: string;
+      };
+      if (!res.ok) throw new Error(json.error ?? 'Sync failed');
+      setSyncResult(
+        `Synced ${json.properties ?? 0} properties, ${json.reservations ?? 0} reservations, ${json.messages ?? 0} messages`,
+      );
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (err) {
+      setSyncResult(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const visible = showInactive ? items : items.filter((p) => p.isActive);
   const inactiveCount = items.filter((p) => !p.isActive).length;
@@ -66,19 +92,35 @@ export function PropertiesClient({ properties, reservationCounts }: Props) {
             {inactiveCount > 0 && !showInactive && ` · ${inactiveCount} hidden`}
           </p>
         </div>
-        {inactiveCount > 0 && (
+        <div className="flex items-center gap-2">
+          {syncResult && (
+            <span className={`text-xs ${syncResult.startsWith('Synced') ? 'text-green-600' : 'text-red-600'}`}>
+              {syncResult}
+            </span>
+          )}
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setShowInactive(!showInactive)}
+            onClick={handleSync}
+            disabled={syncing}
           >
-            {showInactive ? (
-              <><EyeOff className="h-4 w-4 mr-1.5" /> Hide inactive</>
-            ) : (
-              <><Eye className="h-4 w-4 mr-1.5" /> Show inactive ({inactiveCount})</>
-            )}
+            <RefreshCw className={`h-4 w-4 mr-1.5 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? 'Syncing...' : 'Sync from Hospitable'}
           </Button>
-        )}
+          {inactiveCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowInactive(!showInactive)}
+            >
+              {showInactive ? (
+                <><EyeOff className="h-4 w-4 mr-1.5" /> Hide inactive</>
+              ) : (
+                <><Eye className="h-4 w-4 mr-1.5" /> Show inactive ({inactiveCount})</>
+              )}
+            </Button>
+          )}
+        </div>
       </div>
 
       {visible.length === 0 ? (
