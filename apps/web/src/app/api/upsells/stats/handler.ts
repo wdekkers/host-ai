@@ -1,4 +1,4 @@
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, gte, lt, sql } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { withPermission } from '@/lib/auth/authorize.js';
@@ -8,8 +8,26 @@ import { upsellEvents } from '@walt/db';
 
 export const handleUpsellStats = withPermission(
   'upsells.read',
-  async (_request: Request, _context: unknown, authContext) => {
+  async (request: Request, _context: unknown, authContext) => {
     try {
+      const url = new URL(request.url);
+      const propertyId = url.searchParams.get('propertyId');
+      const month = url.searchParams.get('month'); // YYYY-MM
+
+      const conditions = [eq(upsellEvents.organizationId, authContext.orgId)];
+
+      if (propertyId && propertyId !== 'all') {
+        conditions.push(eq(upsellEvents.propertyId, propertyId));
+      }
+
+      if (month) {
+        const start = new Date(`${month}-01T00:00:00Z`);
+        const end = new Date(start);
+        end.setMonth(end.getMonth() + 1);
+        conditions.push(gte(upsellEvents.offeredAt, start));
+        conditions.push(lt(upsellEvents.offeredAt, end));
+      }
+
       const [stats] = await db
         .select({
           totalOffered: sql<number>`count(*)::int`,
@@ -19,7 +37,7 @@ export const handleUpsellStats = withPermission(
           actualRevenueAccepted: sql<number>`coalesce(sum(${upsellEvents.actualRevenue}) filter (where ${upsellEvents.status} = 'accepted'), 0)::int`,
         })
         .from(upsellEvents)
-        .where(eq(upsellEvents.organizationId, authContext.orgId));
+        .where(and(...conditions));
 
       return NextResponse.json(stats ?? {
         totalOffered: 0,

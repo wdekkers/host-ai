@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { withPermission } from '@/lib/auth/authorize.js';
 import { db } from '@/lib/db.js';
 import { handleApiError } from '@/lib/secure-logger.js';
-import { upsellEvents } from '@walt/db';
+import { reservations, upsellEvents } from '@walt/db';
 
 export const handleListUpsells = withPermission(
   'upsells.read',
@@ -30,8 +30,25 @@ export const handleListUpsells = withPermission(
       }
 
       const rows = await db
-        .select()
+        .select({
+          id: upsellEvents.id,
+          organizationId: upsellEvents.organizationId,
+          propertyId: upsellEvents.propertyId,
+          reservationId: upsellEvents.reservationId,
+          journeyId: upsellEvents.journeyId,
+          upsellType: upsellEvents.upsellType,
+          status: upsellEvents.status,
+          messageId: upsellEvents.messageId,
+          offeredAt: upsellEvents.offeredAt,
+          respondedAt: upsellEvents.respondedAt,
+          estimatedRevenue: upsellEvents.estimatedRevenue,
+          actualRevenue: upsellEvents.actualRevenue,
+          guestFirstName: reservations.guestFirstName,
+          guestLastName: reservations.guestLastName,
+          propertyName: reservations.propertyName,
+        })
         .from(upsellEvents)
+        .leftJoin(reservations, eq(upsellEvents.reservationId, reservations.id))
         .where(and(...conditions))
         .orderBy(desc(upsellEvents.offeredAt))
         .limit(50);

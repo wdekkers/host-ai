@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, count, eq, sql } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -6,7 +6,7 @@ import { withPermission } from '@/lib/auth/authorize.js';
 import { db } from '@/lib/db.js';
 import { handleApiError } from '@/lib/secure-logger.js';
 import { approvalModeSchema, coverageScheduleSchema, journeyStepSchema } from '@walt/contracts';
-import { journeys } from '@walt/db';
+import { journeyExecutionLog, journeys } from '@walt/db';
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -34,7 +34,21 @@ export const handleGetJourney = withPermission(
         return NextResponse.json({ error: 'Journey not found' }, { status: 404 });
       }
 
-      return NextResponse.json(row);
+      let promotionSuggested = false;
+      if (row.approvalMode === 'draft') {
+        const [stats] = await db
+          .select({ total: count() })
+          .from(journeyExecutionLog)
+          .where(and(
+            eq(journeyExecutionLog.journeyId, row.id),
+            sql`action IN ('message_drafted', 'message_sent')`,
+          ));
+        if ((stats?.total ?? 0) > 50) {
+          promotionSuggested = true;
+        }
+      }
+
+      return NextResponse.json({ ...row, promotionSuggested });
     } catch (error) {
       return handleApiError({ error, route: '/api/journeys/[id] GET' });
     }

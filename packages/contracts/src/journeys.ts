@@ -136,8 +136,9 @@ export const editJourneyInputSchema = z.object({
 export type EditJourneyInput = z.infer<typeof editJourneyInputSchema>;
 
 export const updateAiStatusInputSchema = z.object({
-  conversationId: z.string().uuid(),
+  conversationId: z.string().uuid().optional(),
   status: aiStatusSchema,
+  pauseDurationMinutes: z.number().int().positive().nullable().optional(),
 });
 export type UpdateAiStatusInput = z.infer<typeof updateAiStatusInputSchema>;
 

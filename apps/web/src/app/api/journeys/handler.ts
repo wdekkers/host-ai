@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, getTableColumns, sql } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { withPermission } from '@/lib/auth/authorize.js';
@@ -20,7 +20,11 @@ export const handleListJourneys = withPermission(
       }
 
       const rows = await db
-        .select()
+        .select({
+          ...getTableColumns(journeys),
+          enrollmentCount: sql<number>`(SELECT count(*) FROM walt.journey_enrollments WHERE journey_id = ${journeys.id} AND status = 'active')`.as('enrollment_count'),
+          messageCount: sql<number>`(SELECT count(*) FROM walt.journey_execution_log WHERE journey_id = ${journeys.id} AND action IN ('message_drafted', 'message_sent'))`.as('message_count'),
+        })
         .from(journeys)
         .where(and(...conditions))
         .orderBy(desc(journeys.createdAt))

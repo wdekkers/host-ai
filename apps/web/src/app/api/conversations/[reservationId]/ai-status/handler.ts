@@ -24,10 +24,13 @@ export const handleUpdateAiStatus = withPermission(
         );
       }
 
-      const { status } = parsed.data;
+      const { status, pauseDurationMinutes } = parsed.data;
       const now = new Date();
 
-      const aiPausedUntil: Date | null = status === 'paused' ? null : null;
+      let aiPausedUntil: Date | null = null;
+      if (status === 'paused' && pauseDurationMinutes) {
+        aiPausedUntil = new Date(Date.now() + pauseDurationMinutes * 60 * 1000);
+      }
 
       const [updated] = await db
         .insert(conversationSettings)
