@@ -13,7 +13,8 @@
     "test": "echo 'No tests yet for @walt/db'",
     "db:generate": "drizzle-kit generate",
     "db:premigrate": "node scripts/clean-legacy-migrations.mjs",
-    "db:migrate": "node scripts/clean-legacy-migrations.mjs && drizzle-kit migrate",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:migrate:drizzle": "node scripts/clean-legacy-migrations.mjs && drizzle-kit migrate",
     "db:push": "drizzle-kit push"
   }
 }
