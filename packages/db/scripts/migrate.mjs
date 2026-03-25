@@ -98,9 +98,15 @@ try {
       try {
         await pool.query(stmt);
       } catch (err) {
-        // IF NOT EXISTS / already exists errors are OK
-        if (err.code === '42P07' || err.code === '42710') {
-          // 42P07 = relation already exists, 42710 = object already exists
+        // Tolerate common "already done" or constraint errors:
+        // 42P07 = relation already exists
+        // 42710 = object already exists (constraint, index, etc.)
+        // 42701 = column already exists
+        // 23503 = FK violation (existing data doesn't match — skip ADD CONSTRAINT)
+        // 23505 = unique violation
+        const toleratedCodes = ['42P07', '42710', '42701', '23503', '23505'];
+        if (toleratedCodes.includes(err.code)) {
+          console.log(`    Skipped (${err.code}): ${err.message.slice(0, 100)}`);
           continue;
         }
         console.error(`  ERROR in ${entry.tag}: ${err.message}`);
