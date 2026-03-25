@@ -268,9 +268,7 @@ export const draftEvents = waltSchema.table(
   'draft_events',
   {
     id: uuid('id').defaultRandom().primaryKey(),
-    organizationId: text('organization_id')
-      .notNull()
-      .references(() => organizations.id),
+    organizationId: text('organization_id').notNull(),
     messageId: uuid('message_id')
       .notNull()
       .references(() => messages.id),

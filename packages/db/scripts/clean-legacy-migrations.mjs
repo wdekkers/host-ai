@@ -37,49 +37,6 @@ try {
   } else {
     console.log('No legacy migration entries to clean');
   }
-
-  // Drizzle has a bug where it records migration hashes without executing
-  // the SQL. We bypass drizzle and run DDL directly for any missing tables.
-  const { readFileSync } = await import('fs');
-  const { resolve, dirname } = await import('path');
-  const { fileURLToPath } = await import('url');
-  const __dirname = dirname(fileURLToPath(import.meta.url));
-
-  // Each entry: check if a sentinel table exists; if not, run the migration SQL directly.
-  const phantomMigrations = [
-    { table: 'draft_events', file: '0026_backfill_missing_tables.sql', label: '0026' },
-    { table: 'journeys', file: '0027_wise_clint_barton.sql', label: '0027' },
-  ];
-
-  for (const { table, file, label } of phantomMigrations) {
-    const { rows } = await pool.query(
-      "SELECT 1 FROM pg_tables WHERE schemaname = 'walt' AND tablename = $1 LIMIT 1",
-      [table],
-    );
-    if (rows.length > 0) continue;
-
-    console.log(`Table walt.${table} missing — applying migration ${label} directly...`);
-
-    const sqlFile = resolve(__dirname, '../drizzle', file);
-    const sql = readFileSync(sqlFile, 'utf8');
-    const statements = sql.split('--> statement-breakpoint').map(s => s.trim()).filter(Boolean);
-    for (const stmt of statements) {
-      await pool.query(stmt);
-    }
-    console.log(`Applied ${statements.length} statements from migration ${label}`);
-  }
-
-  // Drop the FK constraint on draft_events.organization_id → organizations.id.
-  // The organizations table is not populated (org IDs come from Clerk, not this table),
-  // so this FK causes inserts to fail.
-  try {
-    await pool.query(
-      'ALTER TABLE walt.draft_events DROP CONSTRAINT IF EXISTS draft_events_organization_id_organizations_id_fk',
-    );
-    console.log('Dropped draft_events organization FK constraint (if existed)');
-  } catch {
-    // Ignore — constraint may not exist
-  }
 } catch (err) {
   // Table may not exist on fresh databases — that's fine
   if (err.code === '42P01') {
