@@ -61,8 +61,8 @@ export function JourneysClient() {
         body: JSON.stringify({ prompt, propertyIds: [] }),
       })
       if (res.ok) {
-        const data = (await res.json()) as { id: string }
-        router.push(`/journeys/${data.id}`)
+        const data = (await res.json()) as { journey: { id: string } }
+        router.push(`/journeys/${data.journey.id}`)
       }
     } finally {
       setGenerating(false)
