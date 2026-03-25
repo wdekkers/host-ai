@@ -68,6 +68,18 @@ try {
     }
     console.log(`Applied ${statements.length} statements from migration ${label}`);
   }
+
+  // Drop the FK constraint on draft_events.organization_id → organizations.id.
+  // The organizations table is not populated (org IDs come from Clerk, not this table),
+  // so this FK causes inserts to fail.
+  try {
+    await pool.query(
+      'ALTER TABLE walt.draft_events DROP CONSTRAINT IF EXISTS draft_events_organization_id_organizations_id_fk',
+    );
+    console.log('Dropped draft_events organization FK constraint (if existed)');
+  } catch {
+    // Ignore — constraint may not exist
+  }
 } catch (err) {
   // Table may not exist on fresh databases — that's fine
   if (err.code === '42P01') {
