@@ -38,33 +38,35 @@ try {
     console.log('No legacy migration entries to clean');
   }
 
-  // Ensure migration 0027 (journey engine tables) is actually applied.
-  // Drizzle has repeatedly recorded this migration's hash without executing
-  // the SQL. We bypass drizzle and run the DDL directly if the tables are missing.
-  const { rows: journeyCheck } = await pool.query(
-    "SELECT 1 FROM pg_tables WHERE schemaname = 'walt' AND tablename = 'journeys' LIMIT 1",
-  );
-  if (journeyCheck.length === 0) {
-    console.log('Journey tables missing — applying migration 0027 directly...');
+  // Drizzle has a bug where it records migration hashes without executing
+  // the SQL. We bypass drizzle and run DDL directly for any missing tables.
+  const { readFileSync } = await import('fs');
+  const { resolve, dirname } = await import('path');
+  const { fileURLToPath } = await import('url');
+  const __dirname = dirname(fileURLToPath(import.meta.url));
 
-    // Remove any phantom tracking entries for this migration
-    const phantomHash = '0e42a1a218838424f51d21a4bdee2d5bbb801658d8c9adbd78b9158b99d97fdb';
-    await pool.query('DELETE FROM drizzle.__drizzle_migrations WHERE hash = $1', [phantomHash]);
+  // Each entry: check if a sentinel table exists; if not, run the migration SQL directly.
+  const phantomMigrations = [
+    { table: 'draft_events', file: '0026_backfill_missing_tables.sql', label: '0026' },
+    { table: 'journeys', file: '0027_wise_clint_barton.sql', label: '0027' },
+  ];
 
-    // Read and execute the migration SQL
-    const { readFileSync } = await import('fs');
-    const { resolve, dirname } = await import('path');
-    const { fileURLToPath } = await import('url');
-    const __dirname = dirname(fileURLToPath(import.meta.url));
-    const sqlFile = resolve(__dirname, '../drizzle/0027_wise_clint_barton.sql');
+  for (const { table, file, label } of phantomMigrations) {
+    const { rows } = await pool.query(
+      "SELECT 1 FROM pg_tables WHERE schemaname = 'walt' AND tablename = $1 LIMIT 1",
+      [table],
+    );
+    if (rows.length > 0) continue;
+
+    console.log(`Table walt.${table} missing — applying migration ${label} directly...`);
+
+    const sqlFile = resolve(__dirname, '../drizzle', file);
     const sql = readFileSync(sqlFile, 'utf8');
-
-    // Split on drizzle's statement breakpoint marker and execute each statement
     const statements = sql.split('--> statement-breakpoint').map(s => s.trim()).filter(Boolean);
     for (const stmt of statements) {
       await pool.query(stmt);
     }
-    console.log(`Applied ${statements.length} statements from migration 0027`);
+    console.log(`Applied ${statements.length} statements from migration ${label}`);
   }
 } catch (err) {
   // Table may not exist on fresh databases — that's fine
