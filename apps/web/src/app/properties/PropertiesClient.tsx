@@ -36,6 +36,7 @@ export function PropertiesClient({ properties, reservationCounts }: Props) {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [items, setItems] = useState(properties);
   const [syncing, setSyncing] = useState(false);
+  const [syncingProps, setSyncingProps] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
 
   const handleSync = async () => {
@@ -58,6 +59,22 @@ export function PropertiesClient({ properties, reservationCounts }: Props) {
       setSyncResult(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleSyncProperties = async () => {
+    setSyncingProps(true);
+    setSyncResult(null);
+    try {
+      const res = await fetch('/api/admin/sync-properties', { method: 'POST' });
+      const json = (await res.json()) as { properties?: number; error?: string };
+      if (!res.ok) throw new Error(json.error ?? 'Sync failed');
+      setSyncResult(`Synced ${json.properties ?? 0} properties`);
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (err) {
+      setSyncResult(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setSyncingProps(false);
     }
   };
 
@@ -101,11 +118,20 @@ export function PropertiesClient({ properties, reservationCounts }: Props) {
           <Button
             variant="outline"
             size="sm"
+            onClick={handleSyncProperties}
+            disabled={syncingProps || syncing}
+          >
+            <RefreshCw className={`h-4 w-4 mr-1.5 ${syncingProps ? 'animate-spin' : ''}`} />
+            {syncingProps ? 'Syncing...' : 'Sync Properties'}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleSync}
-            disabled={syncing}
+            disabled={syncing || syncingProps}
           >
             <RefreshCw className={`h-4 w-4 mr-1.5 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? 'Syncing...' : 'Sync from Hospitable'}
+            {syncing ? 'Syncing...' : 'Full Sync'}
           </Button>
           {inactiveCount > 0 && (
             <Button

@@ -17,6 +17,7 @@ function headers(apiKey: string) {
 
 export const handleSyncProperties = withPermission(
   'admin.create',
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async (_request: Request, _context: unknown) => {
     try {
       const config = getHospitableApiConfig();
