@@ -204,6 +204,13 @@
       "when": 1774700000000,
       "tag": "0028_drop_draft_events_org_fk",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1774800000000,
+      "tag": "0029_property_details_columns",
+      "breakpoints": true
     }
   ]
 }

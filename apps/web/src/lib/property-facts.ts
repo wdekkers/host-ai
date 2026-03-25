@@ -13,6 +13,14 @@ export type PropertyFactsInput = {
   propertyType: string | null;
   hasPool: boolean;
   description: string | null;
+  wifiName: string | null;
+  wifiPassword: string | null;
+  houseManual: string | null;
+  guestAccess: string | null;
+  spaceOverview: string | null;
+  neighborhoodDescription: string | null;
+  gettingAround: string | null;
+  additionalRules: string | null;
 };
 
 function yn(val: boolean | null): string | null {
@@ -46,6 +54,16 @@ export function formatPropertyFacts(input: PropertyFactsInput): string {
   }
 
   if (input.description) lines.push(`Description: ${input.description}`);
+
+  // Property details from Hospitable
+  if (input.wifiName) lines.push(`WiFi network: ${input.wifiName}`);
+  if (input.wifiPassword) lines.push(`WiFi password: ${input.wifiPassword}`);
+  if (input.houseManual) lines.push(`House manual: ${input.houseManual}`);
+  if (input.guestAccess) lines.push(`Guest access: ${input.guestAccess}`);
+  if (input.spaceOverview) lines.push(`Space overview: ${input.spaceOverview}`);
+  if (input.neighborhoodDescription) lines.push(`Neighborhood: ${input.neighborhoodDescription}`);
+  if (input.gettingAround) lines.push(`Getting around: ${input.gettingAround}`);
+  if (input.additionalRules) lines.push(`Additional rules: ${input.additionalRules}`);
 
   if (lines.length === 0) return '';
   return `Property facts (from listing):\n${lines.map((l) => `- ${l}`).join('\n')}`;

@@ -79,6 +79,7 @@ export function normalizeProperty(raw: Record<string, unknown>): Omit<PropertyIn
   const capacity = (raw.capacity ?? {}) as Record<string, unknown>;
   const houseRules = (raw.house_rules ?? {}) as Record<string, unknown>;
   const coordinates = (addr.coordinates ?? {}) as Record<string, unknown>;
+  const details = (raw.details ?? {}) as Record<string, unknown>;
 
   return {
     id: String(raw.id),
@@ -129,6 +130,17 @@ export function normalizeProperty(raw: Record<string, unknown>): Omit<PropertyIn
     icalImports: Array.isArray(raw.ical_imports)
       ? (raw.ical_imports as Array<{ uuid: string; url: string; name?: string }>)
       : null,
+
+    // Property details (from Hospitable details field)
+    wifiName: str(details.wifi_name),
+    wifiPassword: str(details.wifi_password),
+    houseManual: str(details.house_manual),
+    guestAccess: str(details.guest_access),
+    spaceOverview: str(details.space_overview),
+    neighborhoodDescription: str(details.neighborhood_description),
+    gettingAround: str(details.getting_around),
+    additionalRules: str(details.additional_rules),
+    otherDetails: str(details.other_details),
   };
 }
 

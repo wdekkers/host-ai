@@ -151,6 +151,14 @@ export async function generateReplySuggestion({
         propertyType: properties.propertyType,
         hasPool: properties.hasPool,
         description: properties.description,
+        wifiName: properties.wifiName,
+        wifiPassword: properties.wifiPassword,
+        houseManual: properties.houseManual,
+        guestAccess: properties.guestAccess,
+        spaceOverview: properties.spaceOverview,
+        neighborhoodDescription: properties.neighborhoodDescription,
+        gettingAround: properties.gettingAround,
+        additionalRules: properties.additionalRules,
       })
       .from(properties)
       .where(eq(properties.id, propertyId))

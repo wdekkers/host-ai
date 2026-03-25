@@ -106,6 +106,16 @@ export const properties = waltSchema.table('properties', {
   calendarRestricted: boolean('calendar_restricted'),
   parentChild: jsonb('parent_child').$type<{ type: string; parent?: string; children?: string[]; siblings?: string[] }>(),
   icalImports: jsonb('ical_imports').$type<Array<{ uuid: string; url: string; name?: string }>>(),
+  // --- Property details (from Hospitable details field) ---
+  wifiName: text('wifi_name'),
+  wifiPassword: text('wifi_password'),
+  houseManual: text('house_manual'),
+  guestAccess: text('guest_access'),
+  spaceOverview: text('space_overview'),
+  neighborhoodDescription: text('neighborhood_description'),
+  gettingAround: text('getting_around'),
+  additionalRules: text('additional_rules'),
+  otherDetails: text('other_details'),
 });
 
 export const reservations = waltSchema.table('reservations', {

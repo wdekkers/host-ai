@@ -18,6 +18,14 @@ void test('formatPropertyFacts builds prompt section from full property row', ()
     propertyType: 'house',
     hasPool: true,
     description: 'A beautiful beachfront property with ocean views.',
+    wifiName: null,
+    wifiPassword: null,
+    houseManual: null,
+    guestAccess: null,
+    spaceOverview: null,
+    neighborhoodDescription: null,
+    gettingAround: null,
+    additionalRules: null,
   });
 
   assert.ok(result.includes('Check-in: 4:00 PM'));
@@ -49,6 +57,14 @@ void test('formatPropertyFacts omits null fields', () => {
     propertyType: null,
     hasPool: false,
     description: null,
+    wifiName: null,
+    wifiPassword: null,
+    houseManual: null,
+    guestAccess: null,
+    spaceOverview: null,
+    neighborhoodDescription: null,
+    gettingAround: null,
+    additionalRules: null,
   });
 
   assert.ok(result.includes('Check-in: 3:00 PM'));
@@ -74,6 +90,14 @@ void test('formatPropertyFacts returns empty string when no fields present', () 
     propertyType: null,
     hasPool: false,
     description: null,
+    wifiName: null,
+    wifiPassword: null,
+    houseManual: null,
+    guestAccess: null,
+    spaceOverview: null,
+    neighborhoodDescription: null,
+    gettingAround: null,
+    additionalRules: null,
   });
 
   assert.equal(result, '');

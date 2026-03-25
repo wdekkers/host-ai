@@ -233,6 +233,14 @@ export async function handleExecuteJourneys(request: Request, deps: Deps = {}): 
               hasPool: properties.hasPool,
               description: properties.description,
               timezone: properties.timezone,
+              wifiName: properties.wifiName,
+              wifiPassword: properties.wifiPassword,
+              houseManual: properties.houseManual,
+              guestAccess: properties.guestAccess,
+              spaceOverview: properties.spaceOverview,
+              neighborhoodDescription: properties.neighborhoodDescription,
+              gettingAround: properties.gettingAround,
+              additionalRules: properties.additionalRules,
             })
             .from(properties)
             .where(eq(properties.id, propId))
