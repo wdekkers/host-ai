@@ -11,7 +11,7 @@ type HospitableListResponse = {
   meta?: { last_page?: number };
 };
 
-function headers(apiKey: string) {
+function hdrs(apiKey: string) {
   return { accept: 'application/json', authorization: `Bearer ${apiKey}` };
 }
 
@@ -24,6 +24,8 @@ export const handleSyncProperties = withPermission(
       if (!config) {
         return NextResponse.json({ error: 'Hospitable not configured' }, { status: 500 });
       }
+
+      // Step 1: Fetch all properties from list endpoint
       const all: Record<string, unknown>[] = [];
       let page = 1;
 
@@ -31,7 +33,7 @@ export const handleSyncProperties = withPermission(
         const url = new URL('/v2/properties', config.baseUrl);
         url.searchParams.set('per_page', '50');
         url.searchParams.set('page', String(page));
-        const res = await fetch(url, { headers: headers(config.apiKey) });
+        const res = await fetch(url, { headers: hdrs(config.apiKey) });
         if (!res.ok) throw new Error(`Hospitable properties returned ${res.status}`);
         const body = (await res.json()) as HospitableListResponse;
         for (const p of body.data ?? []) {
@@ -42,8 +44,25 @@ export const handleSyncProperties = withPermission(
         page++;
       }
 
+      // Step 2: For each property, fetch details (includes WiFi, house manual, etc.)
       let upserted = 0;
       for (const raw of all) {
+        const propId = String(raw.id);
+
+        // Fetch individual property detail (includes the 'details' field)
+        try {
+          const detailUrl = new URL(`/v2/properties/${propId}`, config.baseUrl);
+          const detailRes = await fetch(detailUrl, { headers: hdrs(config.apiKey) });
+          if (detailRes.ok) {
+            const detailBody = (await detailRes.json()) as { data?: Record<string, unknown> };
+            const detail = detailBody.data ?? detailBody;
+            // Merge detail fields into raw (detail response has more fields than list response)
+            Object.assign(raw, detail);
+          }
+        } catch {
+          // If detail fetch fails, continue with list data only
+        }
+
         const normalized = normalizeProperty(raw);
         await db
           .insert(properties)
