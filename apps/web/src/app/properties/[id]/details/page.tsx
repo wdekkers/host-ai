@@ -149,6 +149,66 @@ export default async function PropertyDetailsPage({
           </CardContent>
         </Card>
 
+        {/* Guest Info (WiFi, access, house manual) */}
+        {(property.wifiName || property.wifiPassword || property.guestAccess || property.houseManual) && (
+          <Card>
+            <CardHeader><CardTitle>Guest Info</CardTitle></CardHeader>
+            <CardContent>
+              <DetailRow label="WiFi network" value={property.wifiName} />
+              <DetailRow label="WiFi password" value={property.wifiPassword} />
+              {property.guestAccess && (
+                <div className="mt-3">
+                  <p className="text-sm text-gray-500 mb-1">Guest access</p>
+                  <p className="text-sm text-gray-700 whitespace-pre-line">{property.guestAccess}</p>
+                </div>
+              )}
+              {property.houseManual && (
+                <div className="mt-3">
+                  <p className="text-sm text-gray-500 mb-1">House manual</p>
+                  <p className="text-sm text-gray-700 whitespace-pre-line">{property.houseManual}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Neighborhood & Getting Around */}
+        {(property.spaceOverview || property.neighborhoodDescription || property.gettingAround) && (
+          <Card>
+            <CardHeader><CardTitle>Area Guide</CardTitle></CardHeader>
+            <CardContent>
+              {property.spaceOverview && (
+                <div className="mb-3">
+                  <p className="text-sm text-gray-500 mb-1">Space overview</p>
+                  <p className="text-sm text-gray-700 whitespace-pre-line">{property.spaceOverview}</p>
+                </div>
+              )}
+              {property.neighborhoodDescription && (
+                <div className="mb-3">
+                  <p className="text-sm text-gray-500 mb-1">Neighborhood</p>
+                  <p className="text-sm text-gray-700 whitespace-pre-line">{property.neighborhoodDescription}</p>
+                </div>
+              )}
+              {property.gettingAround && (
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Getting around</p>
+                  <p className="text-sm text-gray-700 whitespace-pre-line">{property.gettingAround}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Additional Rules */}
+        {property.additionalRules && (
+          <Card>
+            <CardHeader><CardTitle>Additional Rules</CardTitle></CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-700 whitespace-pre-line">{property.additionalRules}</p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Amenities */}
         {property.amenities && property.amenities.length > 0 && (
           <Card>

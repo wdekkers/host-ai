@@ -90,8 +90,8 @@ export function normalizeProperty(raw: Record<string, unknown>): Omit<PropertyIn
     raw,
 
     // Tier 1 — High AI value
-    checkInTime: str(raw.check_in),
-    checkOutTime: str(raw.check_out),
+    checkInTime: str(raw.checkin) ?? str(raw.check_in),
+    checkOutTime: str(raw.checkout) ?? str(raw.check_out),
     timezone: str(raw.timezone),
     maxGuests: num(capacity.max) != null ? Math.round(num(capacity.max)!) : null,
     bedrooms: num(capacity.bedrooms) != null ? Math.round(num(capacity.bedrooms)!) : null,
