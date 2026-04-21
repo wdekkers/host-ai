@@ -2,6 +2,7 @@
   "crons": [
     { "path": "/api/cron/daily-suggestions", "schedule": "0 13 * * *" },
     { "path": "/api/cron/scan-messages",     "schedule": "*/30 * * * *" },
-    { "path": "/api/cron/send-reminders",    "schedule": "*/15 * * * *" }
+    { "path": "/api/cron/send-reminders",    "schedule": "*/15 * * * *" },
+    { "path": "/api/cron/pricelabs-sync",    "schedule": "0 3 * * *" }
   ]
 }
