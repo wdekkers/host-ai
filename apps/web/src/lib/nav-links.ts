@@ -16,6 +16,7 @@ import {
   Wrench,
   Zap,
   TrendingUp,
+  Plug,
 } from 'lucide-react';
 
 import type { Role } from '@walt/contracts';
@@ -67,6 +68,7 @@ export const navGroups: NavGroup[] = [
     label: 'System',
     items: [
       { label: 'Settings', href: '/settings/agent', icon: Settings, roles: ['owner', 'manager'] },
+      { label: 'PriceLabs', href: '/settings/integrations/pricelabs', icon: Plug, roles: ['owner', 'manager'] },
       { label: 'Admin', href: '/admin/vendors', icon: Wrench, roles: ['owner'] },
     ],
   },
