@@ -15,6 +15,7 @@ export async function getJson<T>(path: string, opts: HttpOptions): Promise<T> {
   const url = `${opts.baseUrl.replace(/\/$/, '')}${path}`;
   let lastError: unknown = null;
 
+  // Backoff between retries: 200ms, 400ms. Attempt 2 (the 3rd) throws without sleeping.
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     let response: Response;
     try {
@@ -52,6 +53,8 @@ export async function getJson<T>(path: string, opts: HttpOptions): Promise<T> {
       );
     }
     if (!response.ok) {
+      // 4xx (non-401/403/404) and any other unhandled status — treat as server_error for now.
+      // If we start hitting specific codes in prod, add dedicated discriminators.
       throw new PriceLabsError('server_error', `Unexpected HTTP ${response.status} for ${path}`);
     }
 

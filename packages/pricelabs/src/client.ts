@@ -1,3 +1,4 @@
+import type { z } from 'zod';
 import { pricelabsEnv } from './env.js';
 import { getJson } from './http.js';
 import { PriceLabsError } from './errors.js';
@@ -27,15 +28,12 @@ export function createPriceLabsClient(opts: CreatePriceLabsClientOptions): Price
   }
   const http = { apiKey: opts.apiKey, baseUrl: opts.baseUrl ?? pricelabsEnv.PRICELABS_BASE_URL };
 
-  function parse<T>(
-    schema: { safeParse: (x: unknown) => { success: boolean; data?: T; error?: unknown } },
-    data: unknown,
-  ): T {
+  function parse<T>(schema: z.ZodType<T, z.ZodTypeDef, unknown>, data: unknown): T {
     const result = schema.safeParse(data);
     if (!result.success) {
       throw new PriceLabsError('parse_error', 'Could not parse PriceLabs response', result.error);
     }
-    return result.data as T;
+    return result.data;
   }
 
   return {
