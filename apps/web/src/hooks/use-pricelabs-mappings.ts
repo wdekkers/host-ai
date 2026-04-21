@@ -13,7 +13,9 @@ export type MappingRow = {
 export type MappingsState =
   | { state: 'loading' }
   | { state: 'not_configured' }
-  | { state: 'connected'; rows: MappingRow[] }
+  | { state: 'key_invalid'; error: string }
+  | { state: 'upstream_error'; error: string; code?: string; debug?: unknown }
+  | { state: 'connected'; fingerprint?: string; rows: MappingRow[] }
   | { state: 'error'; error: string };
 
 export function usePriceLabsMappings(): {

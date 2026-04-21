@@ -54,7 +54,12 @@ describe('PriceLabsClient', () => {
   });
 
   it('throws auth_rejected on 401', async () => {
-    fetchMock.mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({ error: 'bad key' }) });
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      json: async () => ({ error: 'bad key' }),
+      text: async () => '{"error":"bad key"}',
+    });
     const client = createPriceLabsClient({ apiKey: 'bad' });
     await expect(client.listListings()).rejects.toMatchObject({
       name: 'PriceLabsError',
@@ -63,10 +68,38 @@ describe('PriceLabsClient', () => {
   });
 
   it('throws rate_limited after max retries on persistent 429', async () => {
-    fetchMock.mockResolvedValue({ ok: false, status: 429, json: async () => ({}) });
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 429,
+      json: async () => ({}),
+      text: async () => '',
+    });
     const client = createPriceLabsClient({ apiKey: 'test-key' });
     await expect(client.listListings()).rejects.toMatchObject({ code: 'rate_limited' });
     expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('attaches {status, url, body} to PriceLabsError.cause on 500', async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: async () => ({}),
+      text: async () => 'internal boom',
+    });
+    const client = createPriceLabsClient({ apiKey: 'test-key' });
+    try {
+      await client.listListings();
+      throw new Error('should have thrown');
+    } catch (err) {
+      expect(err).toBeInstanceOf(PriceLabsError);
+      const plErr = err as PriceLabsError;
+      expect(plErr.code).toBe('server_error');
+      const cause = plErr.cause as { status: number; url: string; body: string };
+      expect(cause.status).toBe(500);
+      expect(typeof cause.url).toBe('string');
+      expect(cause.url).toMatch(/listings/);
+      expect(cause.body).toBe('internal boom');
+    }
   });
 
   it('throws parse_error on malformed response', async () => {

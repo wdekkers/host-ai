@@ -59,6 +59,46 @@ export function PriceLabsIntegrationClient({
     return <div className="p-5 text-red-600">Error: {data.error}</div>;
   }
 
+  if (data.state === 'key_invalid') {
+    return (
+      <Card className="max-w-xl border-red-200">
+        <CardHeader>
+          <CardTitle className="text-red-700">PriceLabs API key rejected</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm text-slate-600">
+          <p>
+            PriceLabs rejected the API key. Update{' '}
+            <code className="rounded bg-slate-100 px-1 py-0.5">PRICELABS_API_KEY</code>{' '}
+            in Secrets Manager and redeploy.
+          </p>
+          <p className="text-red-600">Error: {data.error}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (data.state === 'upstream_error') {
+    return (
+      <Card className="max-w-xl border-yellow-200 bg-yellow-50">
+        <CardHeader>
+          <CardTitle className="text-yellow-800">Couldn&apos;t reach PriceLabs</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm text-slate-700">
+          <p>
+            {data.error}
+            {data.code ? ` (code: ${data.code})` : ''}.
+          </p>
+          <details className="rounded bg-white/60 p-2">
+            <summary className="cursor-pointer text-xs text-slate-500">Debug info</summary>
+            <pre className="mt-2 overflow-auto text-xs">
+              {JSON.stringify(data.debug, null, 2)}
+            </pre>
+          </details>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (data.state === 'not_configured') {
     return (
       <Card className="max-w-xl">

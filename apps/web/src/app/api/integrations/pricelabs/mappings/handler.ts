@@ -6,7 +6,7 @@ import {
   properties,
   propertyAccess,
 } from '@walt/db';
-import type { PriceLabsClient } from '@walt/pricelabs';
+import { PriceLabsError, type PriceLabsClient } from '@walt/pricelabs';
 
 import { getPriceLabsClient } from '@/lib/pricelabs/get-client';
 import { autoMatchListings } from '@/lib/pricelabs/auto-match';
@@ -66,7 +66,30 @@ export async function handleGetMappings(
     return NextResponse.json({ state: 'not_configured' });
   }
 
-  const listings = await client.listListings();
+  let listings;
+  try {
+    listings = await client.listListings();
+  } catch (err) {
+    if (err instanceof PriceLabsError) {
+      console.error('[pricelabs-mappings] upstream error', {
+        code: err.code,
+        cause: err.cause,
+      });
+      if (err.code === 'auth_rejected') {
+        return NextResponse.json({
+          state: 'key_invalid',
+          error: 'PriceLabs rejected the API key',
+        });
+      }
+      return NextResponse.json({
+        state: 'upstream_error',
+        error: err.message,
+        code: err.code,
+        debug: err.cause,
+      });
+    }
+    throw err;
+  }
 
   const getProperties =
     deps.getProperties ??

@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import type { Listing, PriceLabsClient } from '@walt/pricelabs';
+import { PriceLabsError, type Listing, type PriceLabsClient } from '@walt/pricelabs';
 
 import {
   handleGetMappings,
@@ -50,6 +50,48 @@ void describe('handleGetMappings', () => {
     assert.equal(res.status, 200);
     const body = (await res.json()) as { state: string };
     assert.equal(body.state, 'not_configured');
+  });
+
+  void it('returns key_invalid when listListings throws auth_rejected', async () => {
+    const res = await handleGetMappings(makeRequest('GET'), {
+      getActor: async () => ownerActor,
+      getClient: () => ({
+        listListings: async () => {
+          throw new PriceLabsError('auth_rejected', 'nope');
+        },
+        getRecommendedRates: async () => notImplemented(),
+        getSettings: async () => notImplemented(),
+      }),
+    });
+    assert.equal(res.status, 200);
+    const body = (await res.json()) as { state: string; error: string };
+    assert.equal(body.state, 'key_invalid');
+    assert.equal(body.error, 'PriceLabs rejected the API key');
+  });
+
+  void it('returns upstream_error with debug payload on server_error', async () => {
+    const cause = { status: 500, url: 'x', body: 'xyz' };
+    const res = await handleGetMappings(makeRequest('GET'), {
+      getActor: async () => ownerActor,
+      getClient: () => ({
+        listListings: async () => {
+          throw new PriceLabsError('server_error', 'boom', cause);
+        },
+        getRecommendedRates: async () => notImplemented(),
+        getSettings: async () => notImplemented(),
+      }),
+    });
+    assert.equal(res.status, 200);
+    const body = (await res.json()) as {
+      state: string;
+      error: string;
+      code: string;
+      debug: { status: number; url: string; body: string };
+    };
+    assert.equal(body.state, 'upstream_error');
+    assert.equal(body.error, 'boom');
+    assert.equal(body.code, 'server_error');
+    assert.deepEqual(body.debug, cause);
   });
 
   void it('returns rows with auto-matches joined with stored mappings', async () => {
