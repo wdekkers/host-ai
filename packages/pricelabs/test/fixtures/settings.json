@@ -5,6 +5,5 @@
   "maxPrice": 900,
   "lastMinuteDiscount": { "enabled": true, "windowDays": 3, "percent": 15 },
   "orphanGapRules": { "enabled": true, "maxGapNights": 3 },
-  "seasonalProfile": "default-2026",
-  "raw": { "extra": "keep for diffing" }
+  "seasonalProfile": "default-2026"
 }

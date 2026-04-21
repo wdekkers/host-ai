@@ -4,7 +4,7 @@ export const ListingSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   address: z.string().nullable().optional(),
-  active: z.boolean().optional().default(true),
+  active: z.boolean().optional(),
 });
 export type Listing = z.infer<typeof ListingSchema>;
 
@@ -29,6 +29,5 @@ export const ListingSettingsSchema = z.object({
   lastMinuteDiscount: z.unknown().optional(),
   orphanGapRules: z.unknown().optional(),
   seasonalProfile: z.string().nullable().optional(),
-  raw: z.record(z.unknown()).optional(),
 });
 export type ListingSettings = z.infer<typeof ListingSettingsSchema>;
