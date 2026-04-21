@@ -2,14 +2,13 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import {
-  pricelabsCredentials,
   pricelabsListings,
   properties,
   propertyAccess,
 } from '@walt/db';
-import { createPriceLabsClient, type PriceLabsClient } from '@walt/pricelabs';
+import type { PriceLabsClient } from '@walt/pricelabs';
 
-import { decryptApiKey } from '@/lib/pricelabs/encryption';
+import { getPriceLabsClient } from '@/lib/pricelabs/get-client';
 import { autoMatchListings } from '@/lib/pricelabs/auto-match';
 import { resolveActor, type Actor } from '@/lib/auth/resolve-actor';
 
@@ -19,12 +18,6 @@ import { resolveActor, type Actor } from '@/lib/auth/resolve-actor';
 const INTEGRATIONS_PERMISSION = 'integrations.read' as const;
 
 export type { Actor };
-
-export type StoredCredentials = {
-  fingerprint: string;
-  status: string;
-  encryptedApiKey: string;
-};
 
 export type InternalPropertyRow = { id: string; name: string };
 
@@ -47,9 +40,7 @@ export type MappingUpsertRow = {
 export type GetDeps = {
   // Test-only override. Production callers go through `requirePermission`.
   getActor?: (req: Request) => Promise<Actor | null>;
-  getCredentials?: (orgId: string) => Promise<StoredCredentials | null>;
-  decryptKey?: (encrypted: string) => string;
-  createClient?: (apiKey: string) => PriceLabsClient;
+  getClient?: () => PriceLabsClient | null;
   getProperties?: (orgId: string) => Promise<InternalPropertyRow[]>;
   getStoredMappings?: (orgId: string) => Promise<StoredMappingRow[]>;
 };
@@ -70,35 +61,11 @@ export async function handleGetMappings(
   }
   const actor = actorOrResponse;
 
-  const getCredentials =
-    deps.getCredentials ??
-    (async (orgId: string) => {
-      const { db } = await import('@/lib/db');
-      const [row] = await db
-        .select({
-          fingerprint: pricelabsCredentials.apiKeyFingerprint,
-          status: pricelabsCredentials.status,
-          encryptedApiKey: pricelabsCredentials.encryptedApiKey,
-        })
-        .from(pricelabsCredentials)
-        .where(eq(pricelabsCredentials.orgId, orgId))
-        .limit(1);
-      return row ?? null;
-    });
-
-  const creds = await getCredentials(actor.orgId);
-  if (!creds) {
-    return NextResponse.json({ state: 'not_connected' });
-  }
-  if (creds.status === 'invalid') {
-    return NextResponse.json({
-      state: 'key_invalid',
-      fingerprint: creds.fingerprint,
-    });
+  const client = (deps.getClient ?? getPriceLabsClient)();
+  if (!client) {
+    return NextResponse.json({ state: 'not_configured' });
   }
 
-  const apiKey = (deps.decryptKey ?? decryptApiKey)(creds.encryptedApiKey);
-  const client = (deps.createClient ?? ((k) => createPriceLabsClient({ apiKey: k })))(apiKey);
   const listings = await client.listListings();
 
   const getProperties =
@@ -168,7 +135,6 @@ export async function handleGetMappings(
 
   return NextResponse.json({
     state: 'connected',
-    fingerprint: creds.fingerprint,
     rows,
   });
 }

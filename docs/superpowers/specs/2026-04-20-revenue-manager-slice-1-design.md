@@ -1,5 +1,7 @@
 # Slice 1 — AI Revenue Manager: PriceLabs foundation
 
+> **Addendum 2026-04-21:** Simplified to use `PRICELABS_API_KEY` env var instead of per-org encrypted DB credentials. Rationale: PriceLabs issues one account-level API key; every other integration in this repo follows the env-var pattern. When SaaS multi-tenancy arrives, all integrations will be lifted to per-org credentials together rather than PriceLabs being a one-off. The `pricelabsCredentials` table, encryption helper, credentials API route, and connect/disconnect UI described below have been removed. The admin UI now shows either a `not_configured` message or the mapping table directly.
+
 **Status:** Design approved, pending spec review → implementation plan.
 **Source:** Decomposition of `docs/ai-revenue-manager-plan.md` (26-section vision) into a shippable first slice.
 **Predecessor plan:** n/a — first slice of a multi-slice effort.
