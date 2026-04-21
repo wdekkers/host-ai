@@ -201,6 +201,9 @@ importers:
       '@walt/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@walt/hospitable':
+        specifier: workspace:*
+        version: link:../../packages/hospitable
       '@walt/pricelabs':
         specifier: workspace:*
         version: link:../../packages/pricelabs

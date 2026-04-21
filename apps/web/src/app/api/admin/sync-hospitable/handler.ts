@@ -1,12 +1,14 @@
 import { v4 as uuidv4 } from 'uuid';
 import { eq } from 'drizzle-orm';
-import { properties, reservations, messages } from '@walt/db';
+import { properties, reservations, messages, reviews } from '@walt/db';
+import { HospitableClient } from '@walt/hospitable';
 import { db } from '@/lib/db';
 import { getHospitableApiConfig } from '@/lib/integrations-env';
 import {
   normalizeReservation,
   normalizeMessage,
   normalizeProperty,
+  normalizeReview,
 } from '@/lib/hospitable-normalize';
 import { scoreGuest } from '@/lib/guest-scoring';
 
@@ -121,17 +123,76 @@ function extractGuestFromMessages(rawMessages: Record<string, unknown>[]) {
   return { first_name: first ?? null, last_name: rest.length > 0 ? rest.join(' ') : null };
 }
 
+async function syncReviewsForProperty(
+  hospitable: HospitableClient,
+  propertyId: string,
+  now: Date,
+): Promise<number> {
+  let page = 1;
+  const perPage = 50;
+  let total = 0;
+
+  while (true) {
+    const resp = await hospitable.reviews.list(propertyId, { page, per_page: perPage });
+    const items = resp.data ?? [];
+    if (items.length === 0) break;
+
+    for (const r of items) {
+      const raw = r as Record<string, unknown>;
+      const normalized = normalizeReview(raw);
+      if (!normalized) continue;
+
+      // Ensure propertyId is set (the API scopes by property but doesn't always nest property)
+      const values = {
+        ...normalized,
+        propertyId: normalized.propertyId ?? propertyId,
+        syncedAt: now,
+      };
+
+      await db
+        .insert(reviews)
+        .values(values)
+        .onConflictDoUpdate({
+          target: reviews.id,
+          set: {
+            rating: values.rating,
+            publicReview: values.publicReview,
+            publicResponse: values.publicResponse,
+            privateFeedback: values.privateFeedback,
+            respondedAt: values.respondedAt,
+            canRespond: values.canRespond,
+            raw: values.raw,
+            syncedAt: now,
+          },
+        });
+      total += 1;
+    }
+
+    const meta = resp.meta;
+    if (!meta || !meta.last_page || page >= meta.last_page) break;
+    page += 1;
+  }
+
+  return total;
+}
+
 export async function syncHospitable() {
   const config = getHospitableApiConfig();
   if (!config) {
     return { error: 'Hospitable API not configured.' };
   }
 
+  const hospitable = new HospitableClient({
+    apiKey: config.apiKey,
+    baseUrl: config.baseUrl,
+  });
+
   const rawProperties = await fetchAllProperties(config);
   const now = new Date();
   let propertyCount = 0;
   let reservationCount = 0;
   let messageCount = 0;
+  let reviewCount = 0;
   const propertyDetails: {
     id: string;
     name: string;
@@ -265,12 +326,23 @@ export async function syncHospitable() {
         messageCount++;
       }
     }
+
+    // Sync reviews for this property (log-and-continue on failure)
+    try {
+      reviewCount += await syncReviewsForProperty(hospitable, normalizedProp.id, now);
+    } catch (err) {
+      console.error(
+        `[sync-hospitable] Reviews sync failed for property ${normalizedProp.id}`,
+        err,
+      );
+    }
   }
 
   return {
     properties: propertyCount,
     reservations: reservationCount,
     messages: messageCount,
+    reviews: reviewCount,
     debug: propertyDetails,
   };
 }
