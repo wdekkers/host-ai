@@ -218,6 +218,13 @@
       "when": 1776000000000,
       "tag": "0030_pricelabs_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1776100000000,
+      "tag": "0031_drop_pricelabs_credentials",
+      "breakpoints": true
     }
   ]
 }

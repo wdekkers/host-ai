@@ -1,20 +1,18 @@
 import { NextResponse } from 'next/server';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import {
-  pricelabsCredentials,
   pricelabsListings,
   pricelabsSyncRuns,
   pricingSnapshots,
   pricelabsSettingsSnapshots,
   reservations,
 } from '@walt/db';
-import { createPriceLabsClient } from '@walt/pricelabs';
-import { decryptApiKey } from '@/lib/pricelabs/encryption';
+import { getPriceLabsClient } from '@/lib/pricelabs/get-client';
 import { runPriceLabsSyncForOrg, type SyncResult } from '@/lib/pricelabs/sync';
 
 export type CronDeps = {
   cronSecret?: string;
-  getOrgsWithCredentials?: () => Promise<{ orgId: string }[]>;
+  getOrgsWithActiveMappings?: () => Promise<{ orgId: string }[]>;
   runForOrg?: (orgId: string) => Promise<SyncResult>;
 };
 
@@ -24,12 +22,12 @@ export async function handleCronSync(request: Request, deps: CronDeps = {}): Pro
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const getOrgs = deps.getOrgsWithCredentials ?? (async () => {
+  const getOrgs = deps.getOrgsWithActiveMappings ?? (async () => {
     const { db } = await import('@/lib/db');
     return db
-      .select({ orgId: pricelabsCredentials.orgId })
-      .from(pricelabsCredentials)
-      .where(eq(pricelabsCredentials.status, 'active'));
+      .selectDistinct({ orgId: pricelabsListings.orgId })
+      .from(pricelabsListings)
+      .where(eq(pricelabsListings.status, 'active'));
   });
 
   const runForOrg = deps.runForOrg ?? defaultRunForOrg;
@@ -47,7 +45,7 @@ export async function handleCronSync(request: Request, deps: CronDeps = {}): Pro
     try {
       const result = await runForOrg(orgId);
       console.log(`[pricelabs-sync] org=${orgId} done`, result);
-      if (result.status === 'skipped_no_credentials') {
+      if (result.status === 'skipped_not_configured') {
         results.push({ orgId, status: 'skipped' });
       } else {
         results.push({
@@ -69,16 +67,7 @@ export async function handleCronSync(request: Request, deps: CronDeps = {}): Pro
 async function defaultRunForOrg(orgId: string): Promise<SyncResult> {
   const { db } = await import('@/lib/db');
   return runPriceLabsSyncForOrg(orgId, {
-    getCredentials: async (id) => {
-      const [row] = await db
-        .select({ encryptedApiKey: pricelabsCredentials.encryptedApiKey })
-        .from(pricelabsCredentials)
-        .where(eq(pricelabsCredentials.orgId, id))
-        .limit(1);
-      return row ?? null;
-    },
-    decryptKey: decryptApiKey,
-    createClient: (key) => createPriceLabsClient({ apiKey: key }),
+    getClient: () => getPriceLabsClient(),
     createSyncRun: async (id, startedAt) => {
       const [row] = await db
         .insert(pricelabsSyncRuns)
@@ -94,7 +83,7 @@ async function defaultRunForOrg(orgId: string): Promise<SyncResult> {
           propertyId: pricelabsListings.propertyId,
         })
         .from(pricelabsListings)
-        .where(eq(pricelabsListings.orgId, id));
+        .where(and(eq(pricelabsListings.orgId, id), eq(pricelabsListings.status, 'active')));
       return rows.filter((r) => r.pricelabsListingId);
     },
     getReservations: async (propertyIds) => {
@@ -128,12 +117,6 @@ async function defaultRunForOrg(orgId: string): Promise<SyncResult> {
         .update(pricelabsListings)
         .set({ lastSyncedAt: at })
         .where(eq(pricelabsListings.pricelabsListingId, pricelabsListingId));
-    },
-    markCredentialsInvalid: async (id) => {
-      await db
-        .update(pricelabsCredentials)
-        .set({ status: 'invalid', updatedAt: new Date() })
-        .where(eq(pricelabsCredentials.orgId, id));
     },
   });
 }

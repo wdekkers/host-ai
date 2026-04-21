@@ -5,16 +5,11 @@ import type { ReactElement } from 'react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   usePriceLabsMappings,
   useSavePriceLabsMappings,
   type MappingRow,
 } from '@/hooks/use-pricelabs-mappings';
-import {
-  useConnectPriceLabs,
-  useDisconnectPriceLabs,
-} from '@/hooks/use-pricelabs-credentials';
 
 type PropertyOption = { id: string; name: string };
 
@@ -24,11 +19,7 @@ export function PriceLabsIntegrationClient({
   properties: PropertyOption[];
 }): ReactElement {
   const { data, refetch } = usePriceLabsMappings();
-  const { submit, submitting } = useConnectPriceLabs();
-  const { disconnect, submitting: disconnecting } = useDisconnectPriceLabs();
   const { save, submitting: saving } = useSavePriceLabsMappings();
-  const [apiKey, setApiKey] = useState('');
-  const [connectError, setConnectError] = useState<string | null>(null);
   const [edits, setEdits] = useState<Record<string, MappingRow>>({});
 
   const rows: MappingRow[] =
@@ -39,17 +30,6 @@ export function PriceLabsIntegrationClient({
   const unmappedCount = rows.filter(
     (r) => r.status !== 'active' || !r.propertyId,
   ).length;
-
-  async function onConnect(): Promise<void> {
-    setConnectError(null);
-    const result = await submit(apiKey);
-    if (result.ok) {
-      setApiKey('');
-      await refetch();
-    } else {
-      setConnectError(result.error);
-    }
-  }
 
   function updateRow(listingId: string, patch: Partial<MappingRow>): void {
     const base =
@@ -72,14 +52,6 @@ export function PriceLabsIntegrationClient({
     }
   }
 
-  async function onDisconnect(): Promise<void> {
-    const ok = await disconnect();
-    if (ok) {
-      setEdits({});
-      await refetch();
-    }
-  }
-
   if (data.state === 'loading') {
     return <div className="p-5 text-slate-500">Loading…</div>;
   }
@@ -87,32 +59,22 @@ export function PriceLabsIntegrationClient({
     return <div className="p-5 text-red-600">Error: {data.error}</div>;
   }
 
-  if (data.state === 'not_connected' || data.state === 'key_invalid') {
+  if (data.state === 'not_configured') {
     return (
       <Card className="max-w-xl">
         <CardHeader>
-          <CardTitle>Connect PriceLabs</CardTitle>
+          <CardTitle>PriceLabs not configured</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {data.state === 'key_invalid' && (
-            <p className="text-sm text-red-600">
-              Last key (•••{data.fingerprint}) was rejected by PriceLabs — replace it.
-            </p>
-          )}
-          <p className="text-sm text-slate-600">
-            Paste your PriceLabs Customer API key. You can find it in PriceLabs
-            Account Settings → API Details.
+        <CardContent className="space-y-3 text-sm text-slate-600">
+          <p>
+            <code className="rounded bg-slate-100 px-1 py-0.5">PRICELABS_API_KEY</code>{' '}
+            is not set in the environment.
           </p>
-          <Input
-            type="password"
-            placeholder="pl_..."
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-          />
-          {connectError && <p className="text-sm text-red-600">{connectError}</p>}
-          <Button onClick={onConnect} disabled={submitting || !apiKey.trim()}>
-            {submitting ? 'Validating…' : 'Connect'}
-          </Button>
+          <p>
+            Add it to your <code className="rounded bg-slate-100 px-1 py-0.5">.env</code>{' '}
+            (or Secrets Manager for production) and redeploy. Get the key from{' '}
+            PriceLabs Account Settings → API Details.
+          </p>
         </CardContent>
       </Card>
     );
@@ -121,19 +83,8 @@ export function PriceLabsIntegrationClient({
   return (
     <div className="space-y-4 max-w-5xl">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader>
           <CardTitle>PriceLabs listings</CardTitle>
-          <div className="flex gap-2 items-center">
-            <span className="text-xs text-slate-500">Key: •••{data.fingerprint}</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onDisconnect}
-              disabled={disconnecting}
-            >
-              Disconnect
-            </Button>
-          </div>
         </CardHeader>
         <CardContent>
           {unmappedCount > 0 && (

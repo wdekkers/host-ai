@@ -2,9 +2,7 @@ import { PriceLabsError, type PriceLabsClient, type DailyRate } from '@walt/pric
 
 export type SyncDeps = {
   now?: () => Date;
-  getCredentials: (orgId: string) => Promise<{ encryptedApiKey: string } | null>;
-  decryptKey?: (encrypted: string) => string;
-  createClient: (apiKey: string) => PriceLabsClient;
+  getClient: () => PriceLabsClient | null;
   createSyncRun: (orgId: string, startedAt: Date) => Promise<string>;
   getActiveMappings: (orgId: string) => Promise<{ pricelabsListingId: string; propertyId: string | null }[]>;
   getReservations: (propertyIds: string[]) => Promise<{ propertyId: string | null; arrivalDate: Date | null; departureDate: Date | null }[]>;
@@ -32,11 +30,10 @@ export type SyncDeps = {
     errorSummary?: string;
   }) => Promise<void>;
   updateMappingLastSyncedAt: (pricelabsListingId: string, at: Date) => Promise<void>;
-  markCredentialsInvalid: (orgId: string) => Promise<void>;
 };
 
 export type SyncResult =
-  | { status: 'skipped_no_credentials' }
+  | { status: 'skipped_not_configured' }
   | { status: 'success' | 'partial' | 'failed'; runId: string; listingsSynced: number; listingsFailed: number };
 
 const FORWARD_DAYS = 365;
@@ -90,13 +87,10 @@ function buildSnapshotRows(
 
 export async function runPriceLabsSyncForOrg(orgId: string, deps: SyncDeps): Promise<SyncResult> {
   const now = (deps.now ?? (() => new Date()))();
-  const creds = await deps.getCredentials(orgId);
-  if (!creds) return { status: 'skipped_no_credentials' };
+  const client = deps.getClient();
+  if (!client) return { status: 'skipped_not_configured' };
 
   const runId = await deps.createSyncRun(orgId, now);
-
-  const apiKey = (deps.decryptKey ?? ((x) => x))(creds.encryptedApiKey);
-  const client = deps.createClient(apiKey);
 
   // Validate key first.
   try {
@@ -104,7 +98,7 @@ export async function runPriceLabsSyncForOrg(orgId: string, deps: SyncDeps): Pro
   } catch (err) {
     const code = (err as { code?: string }).code;
     if (code === 'auth_rejected') {
-      await deps.markCredentialsInvalid(orgId);
+      console.error(`[pricelabs-sync] org=${orgId} auth_rejected — check PRICELABS_API_KEY env var`);
     }
     await deps.updateSyncRun(runId, {
       completedAt: new Date(),
