@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import type { Listing } from '@walt/pricelabs';
+import type { Listing, PriceLabsClient } from '@walt/pricelabs';
 
 import {
   handleGetMappings,
@@ -9,7 +9,6 @@ import {
   type GetDeps,
   type InternalPropertyRow,
   type MappingUpsertRow,
-  type StoredCredentials,
   type StoredMappingRow,
 } from './handler';
 
@@ -27,12 +26,12 @@ function makeRequest(method: 'GET' | 'POST', body?: unknown): Request {
 
 const ownerActor = { userId: 'u1', orgId: 'org-1', role: 'owner' };
 
-function stubClient(listings: Listing[]): GetDeps['createClient'] {
-  return () => ({
+function stubClient(listings: Listing[]): PriceLabsClient {
+  return {
     listListings: async () => listings,
     getRecommendedRates: async () => notImplemented(),
     getSettings: async () => notImplemented(),
-  });
+  };
 }
 
 void describe('handleGetMappings', () => {
@@ -43,38 +42,17 @@ void describe('handleGetMappings', () => {
     assert.equal(res.status, 401);
   });
 
-  void it('returns not_connected when no credentials', async () => {
+  void it('returns not_configured when env var is missing', async () => {
     const res = await handleGetMappings(makeRequest('GET'), {
       getActor: async () => ownerActor,
-      getCredentials: async () => null,
+      getClient: () => null,
     });
     assert.equal(res.status, 200);
     const body = (await res.json()) as { state: string };
-    assert.equal(body.state, 'not_connected');
-  });
-
-  void it('returns key_invalid when credential status is invalid', async () => {
-    const creds: StoredCredentials = {
-      fingerprint: 'abcd',
-      status: 'invalid',
-      encryptedApiKey: 'whatever',
-    };
-    const res = await handleGetMappings(makeRequest('GET'), {
-      getActor: async () => ownerActor,
-      getCredentials: async () => creds,
-    });
-    assert.equal(res.status, 200);
-    const body = (await res.json()) as { state: string; fingerprint?: string };
-    assert.equal(body.state, 'key_invalid');
-    assert.equal(body.fingerprint, 'abcd');
+    assert.equal(body.state, 'not_configured');
   });
 
   void it('returns rows with auto-matches joined with stored mappings', async () => {
-    const creds: StoredCredentials = {
-      fingerprint: 'abcd',
-      status: 'active',
-      encryptedApiKey: 'ciphertext',
-    };
     const listings: Listing[] = [
       { id: 'pl-1', name: 'Alpha Beach House' },
       { id: 'pl-2', name: 'Bravo Cabin' },
@@ -92,19 +70,18 @@ void describe('handleGetMappings', () => {
       },
     ];
 
-    const res = await handleGetMappings(makeRequest('GET'), {
+    const deps: GetDeps = {
       getActor: async () => ownerActor,
-      getCredentials: async () => creds,
-      decryptKey: () => 'plain-key',
-      createClient: stubClient(listings),
+      getClient: () => stubClient(listings),
       getProperties: async () => props,
       getStoredMappings: async () => stored,
-    });
+    };
+
+    const res = await handleGetMappings(makeRequest('GET'), deps);
 
     assert.equal(res.status, 200);
     const body = (await res.json()) as {
       state: string;
-      fingerprint?: string;
       rows: Array<{
         pricelabsListingId: string;
         pricelabsListingName: string;
@@ -114,7 +91,6 @@ void describe('handleGetMappings', () => {
       }>;
     };
     assert.equal(body.state, 'connected');
-    assert.equal(body.fingerprint, 'abcd');
     assert.equal(body.rows.length, 2);
 
     const row1 = body.rows.find((r) => r.pricelabsListingId === 'pl-1');

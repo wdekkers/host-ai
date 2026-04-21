@@ -1,17 +1,4 @@
--- PriceLabs integration: credentials, listing mapping, time-series snapshots, sync audit.
-
-CREATE TABLE IF NOT EXISTS "walt"."pricelabs_credentials" (
-  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  "org_id" text NOT NULL REFERENCES "walt"."organizations"("id"),
-  "encrypted_api_key" text NOT NULL,
-  "api_key_fingerprint" text NOT NULL,
-  "status" text NOT NULL DEFAULT 'active',
-  "created_at" timestamptz NOT NULL DEFAULT now(),
-  "updated_at" timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT "pricelabs_credentials_org_unique" UNIQUE ("org_id"),
-  CONSTRAINT "pricelabs_credentials_status_check" CHECK ("status" IN ('active', 'invalid'))
-);
---> statement-breakpoint
+-- PriceLabs integration: listing mapping, time-series snapshots, sync audit.
 
 CREATE TABLE IF NOT EXISTS "walt"."pricelabs_listings" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),

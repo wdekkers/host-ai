@@ -1177,19 +1177,6 @@ export const notifications = waltSchema.table(
 
 // --- PriceLabs integration ---
 
-export const pricelabsCredentials = waltSchema.table('pricelabs_credentials', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  orgId: text('org_id').notNull().references(() => organizations.id),
-  encryptedApiKey: text('encrypted_api_key').notNull(),
-  apiKeyFingerprint: text('api_key_fingerprint').notNull(),
-  status: text('status').notNull().default('active'),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-}, (table) => ({
-  orgUnique: uniqueIndex('pricelabs_credentials_org_unique').on(table.orgId),
-  statusCheck: check('pricelabs_credentials_status_check', sql`${table.status} IN ('active', 'invalid')`),
-}));
-
 export const pricelabsListings = waltSchema.table('pricelabs_listings', {
   id: uuid('id').primaryKey().defaultRandom(),
   orgId: text('org_id').notNull().references(() => organizations.id),
