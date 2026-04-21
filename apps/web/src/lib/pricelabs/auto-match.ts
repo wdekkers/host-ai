@@ -1,7 +1,7 @@
 export type MatchConfidence = 'manual' | 'auto-high' | 'auto-low';
 
 const US_STATE_SUFFIX = /[,–-]\s*[A-Z]{2}(\s|$)/;
-const CITY_STATE_SUFFIX_FULL = /[–-]\s*[A-Z][a-zA-Z]+,\s*[A-Z]{2}\s*$/;
+const CITY_STATE_SUFFIX_FULL = /[–-]\s*[A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*,\s*[A-Z]{2}\s*$/;
 const CITY_DASH_SUFFIX = /[–-]\s*[A-Z][a-zA-Z ]+$/;
 const PUNCT = /[!?.,;:&|]+/g;
 
@@ -11,7 +11,7 @@ export function normalizeName(name: string): string {
   s = s.replace(CITY_DASH_SUFFIX, '');
   s = s.replace(US_STATE_SUFFIX, '');
   s = s.toLowerCase();
-  s = s.replace(PUNCT, '');
+  s = s.replace(PUNCT, ' ');
   s = s.replace(/\s+/g, ' ').trim();
   return s;
 }
@@ -43,7 +43,7 @@ function classify(distance: number, a: string, b: string): MatchConfidence | nul
   if (a.length > 0 && b.length > 0) {
     const shorter = a.length <= b.length ? a : b;
     const longer = a.length <= b.length ? b : a;
-    if (longer.startsWith(shorter + ' ') || longer.endsWith(' ' + shorter)) {
+    if (shorter.length >= 6 && (longer.startsWith(shorter + ' ') || longer.endsWith(' ' + shorter))) {
       return 'auto-high';
     }
   }
