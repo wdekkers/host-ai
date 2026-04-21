@@ -38,4 +38,12 @@ void describe('PriceLabs encryption', () => {
     assert.throws(() => encryptApiKey('x'), /PRICELABS_ENCRYPTION_KEY/);
     process.env.PRICELABS_ENCRYPTION_KEY = saved;
   });
+
+  void it('throws if decoded key is not 32 bytes', () => {
+    const saved = process.env.PRICELABS_ENCRYPTION_KEY;
+    // 16-byte key (too short)
+    process.env.PRICELABS_ENCRYPTION_KEY = Buffer.alloc(16).toString('base64');
+    assert.throws(() => encryptApiKey('x'), /32 bytes/);
+    process.env.PRICELABS_ENCRYPTION_KEY = saved;
+  });
 });

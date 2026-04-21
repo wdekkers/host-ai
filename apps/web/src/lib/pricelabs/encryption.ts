@@ -5,7 +5,7 @@ const IV_LENGTH = 12; // GCM standard
 const AUTH_TAG_LENGTH = 16;
 
 function getKey(): Buffer {
-  const raw = process.env.PRICELABS_ENCRYPTION_KEY;
+  const raw = process.env.PRICELABS_ENCRYPTION_KEY?.trim();
   if (!raw) {
     throw new Error('PRICELABS_ENCRYPTION_KEY is not set');
   }
