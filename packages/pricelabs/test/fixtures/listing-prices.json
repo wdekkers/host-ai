@@ -1,0 +1,53 @@
+[
+  {
+    "id": "pl-sample-1",
+    "pms": "airbnb",
+    "group": "Sample Group",
+    "currency": "USD",
+    "last_refreshed_at": "2026-04-21T14:00:00+00:00",
+    "data": [
+      {
+        "date": "2026-04-21",
+        "price": 250,
+        "user_price": 250,
+        "uncustomized_price": 296,
+        "min_stay": 2,
+        "booking_status": "",
+        "check_in": true,
+        "check_out": true,
+        "demand_color": "#c0f1958c",
+        "demand_desc": "Low Demand"
+      },
+      {
+        "date": "2026-04-22",
+        "price": 525,
+        "user_price": -1,
+        "uncustomized_price": 361,
+        "min_stay": 2,
+        "booking_status": "Booked (Check-In)",
+        "check_in": true,
+        "check_out": true,
+        "demand_color": "#EDEDED",
+        "demand_desc": "Unavailable"
+      },
+      {
+        "date": "2026-04-23",
+        "price": 525,
+        "user_price": -1,
+        "uncustomized_price": 426,
+        "min_stay": 2,
+        "booking_status": "Booked",
+        "check_in": true,
+        "check_out": true,
+        "demand_color": "#EDEDED",
+        "demand_desc": "Unavailable"
+      }
+    ]
+  },
+  {
+    "id": "pl-sample-3",
+    "pms": "smartbnb",
+    "error": "Listing sync is not toggled ON in PriceLabs",
+    "error_status": "LISTING_TOGGLE_OFF"
+  }
+]

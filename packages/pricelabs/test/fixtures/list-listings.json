@@ -1,5 +1,53 @@
-[
-  { "id": "pl-abc-123", "name": "Dreamscape Retreat", "address": "Fairplay, TX", "active": true },
-  { "id": "pl-def-456", "name": "Frisco Waves & Fairways", "address": "Frisco, CO", "active": true },
-  { "id": "pl-ghi-789", "name": "Palmera Luxury", "address": "Palm Springs, CA", "active": true }
-]
+{
+  "listings": [
+    {
+      "id": "pl-sample-1",
+      "pms": "airbnb",
+      "name": "Sample Frisco Home",
+      "push_enabled": true,
+      "isHidden": false,
+      "min": 350,
+      "base": 435,
+      "max": 1000,
+      "city_name": "Frisco",
+      "state": "Texas",
+      "no_of_bedrooms": 4,
+      "group": null,
+      "subgroup": null,
+      "tags": null,
+      "notes": null,
+      "latitude": "33.1",
+      "longitude": "-96.7",
+      "country": "United States"
+    },
+    {
+      "id": "pl-sample-2",
+      "pms": "smartbnb",
+      "name": "Sample Celina Home",
+      "push_enabled": true,
+      "isHidden": false,
+      "min": null,
+      "base": 275,
+      "max": null,
+      "city_name": "Celina",
+      "state": "Texas",
+      "no_of_bedrooms": 5,
+      "group": null,
+      "subgroup": null,
+      "tags": "Snapdragon",
+      "notes": null
+    },
+    {
+      "id": "pl-sample-3",
+      "pms": "smartbnb",
+      "name": "Sample Not Syncing",
+      "push_enabled": false,
+      "isHidden": false,
+      "min": null,
+      "base": null,
+      "max": null,
+      "city_name": null,
+      "state": null
+    }
+  ]
+}

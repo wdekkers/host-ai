@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import {
   pricelabsListings,
   pricelabsSyncRuns,
   pricingSnapshots,
   pricelabsSettingsSnapshots,
-  reservations,
 } from '@walt/db';
 import { getPriceLabsClient } from '@/lib/pricelabs/get-client';
 import { runPriceLabsSyncForOrg, type SyncResult } from '@/lib/pricelabs/sync';
@@ -16,19 +15,24 @@ export type CronDeps = {
   runForOrg?: (orgId: string) => Promise<SyncResult>;
 };
 
-export async function handleCronSync(request: Request, deps: CronDeps = {}): Promise<Response> {
+export async function handleCronSync(
+  request: Request,
+  deps: CronDeps = {},
+): Promise<Response> {
   const secret = deps.cronSecret ?? process.env.CRON_SECRET;
   if (request.headers.get('authorization') !== `Bearer ${secret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const getOrgs = deps.getOrgsWithActiveMappings ?? (async () => {
-    const { db } = await import('@/lib/db');
-    return db
-      .selectDistinct({ orgId: pricelabsListings.orgId })
-      .from(pricelabsListings)
-      .where(eq(pricelabsListings.status, 'active'));
-  });
+  const getOrgs =
+    deps.getOrgsWithActiveMappings ??
+    (async () => {
+      const { db } = await import('@/lib/db');
+      return db
+        .selectDistinct({ orgId: pricelabsListings.orgId })
+        .from(pricelabsListings)
+        .where(eq(pricelabsListings.status, 'active'));
+    });
 
   const runForOrg = deps.runForOrg ?? defaultRunForOrg;
 
@@ -83,19 +87,10 @@ async function defaultRunForOrg(orgId: string): Promise<SyncResult> {
           propertyId: pricelabsListings.propertyId,
         })
         .from(pricelabsListings)
-        .where(and(eq(pricelabsListings.orgId, id), eq(pricelabsListings.status, 'active')));
+        .where(
+          and(eq(pricelabsListings.orgId, id), eq(pricelabsListings.status, 'active')),
+        );
       return rows.filter((r) => r.pricelabsListingId);
-    },
-    getReservations: async (propertyIds) => {
-      if (propertyIds.length === 0) return [];
-      return db
-        .select({
-          propertyId: reservations.propertyId,
-          arrivalDate: reservations.arrivalDate,
-          departureDate: reservations.departureDate,
-        })
-        .from(reservations)
-        .where(inArray(reservations.propertyId, propertyIds));
     },
     insertSnapshots: async (rows) => {
       if (rows.length === 0) return;
