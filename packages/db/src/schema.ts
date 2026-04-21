@@ -1174,3 +1174,83 @@ export const notifications = waltSchema.table(
       .where(sql`read_at IS NULL`),
   ],
 );
+
+// --- PriceLabs integration ---
+
+export const pricelabsCredentials = waltSchema.table('pricelabs_credentials', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  orgId: text('org_id').notNull().references(() => organizations.id),
+  encryptedApiKey: text('encrypted_api_key').notNull(),
+  apiKeyFingerprint: text('api_key_fingerprint').notNull(),
+  status: text('status').notNull().default('active'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  orgUnique: uniqueIndex('pricelabs_credentials_org_unique').on(table.orgId),
+  statusCheck: check('pricelabs_credentials_status_check', sql`${table.status} IN ('active', 'invalid')`),
+}));
+
+export const pricelabsListings = waltSchema.table('pricelabs_listings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  orgId: text('org_id').notNull().references(() => organizations.id),
+  propertyId: text('property_id').references(() => properties.id),
+  pricelabsListingId: text('pricelabs_listing_id').notNull(),
+  pricelabsListingName: text('pricelabs_listing_name').notNull(),
+  status: text('status').notNull().default('unmapped'),
+  matchConfidence: text('match_confidence'),
+  lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  orgListingUnique: uniqueIndex('pricelabs_listings_org_listing_unique').on(table.orgId, table.pricelabsListingId),
+  statusCheck: check('pricelabs_listings_status_check', sql`${table.status} IN ('active', 'unmapped', 'inactive')`),
+  confidenceCheck: check(
+    'pricelabs_listings_confidence_check',
+    sql`${table.matchConfidence} IS NULL OR ${table.matchConfidence} IN ('manual', 'auto-high', 'auto-low')`,
+  ),
+}));
+
+export const pricelabsSyncRuns = waltSchema.table('pricelabs_sync_runs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  orgId: text('org_id').notNull().references(() => organizations.id),
+  startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+  status: text('status').notNull().default('running'),
+  listingsSynced: integer('listings_synced').notNull().default(0),
+  listingsFailed: integer('listings_failed').notNull().default(0),
+  errorSummary: text('error_summary'),
+}, (table) => ({
+  statusCheck: check('pricelabs_sync_runs_status_check', sql`${table.status} IN ('running', 'success', 'partial', 'failed')`),
+}));
+
+export const pricingSnapshots = waltSchema.table('pricing_snapshots', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  orgId: text('org_id').notNull().references(() => organizations.id),
+  pricelabsListingId: text('pricelabs_listing_id').notNull(),
+  date: text('date').notNull(),
+  recommendedPrice: integer('recommended_price').notNull(),
+  publishedPrice: integer('published_price'),
+  basePrice: integer('base_price').notNull(),
+  minPrice: integer('min_price').notNull(),
+  maxPrice: integer('max_price').notNull(),
+  minStay: integer('min_stay'),
+  closedToArrival: boolean('closed_to_arrival').notNull().default(false),
+  closedToDeparture: boolean('closed_to_departure').notNull().default(false),
+  isBooked: boolean('is_booked').notNull().default(false),
+  syncRunId: uuid('sync_run_id').notNull().references(() => pricelabsSyncRuns.id),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  lookupIdx: index('pricing_snapshots_lookup_idx').on(table.orgId, table.pricelabsListingId, table.date.desc()),
+  runIdx: index('pricing_snapshots_run_idx').on(table.syncRunId),
+}));
+
+export const pricelabsSettingsSnapshots = waltSchema.table('pricelabs_settings_snapshots', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  orgId: text('org_id').notNull().references(() => organizations.id),
+  pricelabsListingId: text('pricelabs_listing_id').notNull(),
+  syncRunId: uuid('sync_run_id').notNull().references(() => pricelabsSyncRuns.id),
+  settingsBlob: jsonb('settings_blob').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  lookupIdx: index('pricelabs_settings_snapshots_lookup_idx').on(table.orgId, table.pricelabsListingId, table.createdAt.desc()),
+}));
