@@ -2,6 +2,8 @@ import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 
+import { PriceLabsError } from '@walt/pricelabs';
+
 import { handleSaveCredentials, handleDeleteCredentials } from './handler';
 
 function makeRequest(body: unknown, headers: Record<string, string> = {}): Request {
@@ -47,10 +49,7 @@ void describe('handleSaveCredentials', () => {
       getActor: async () => ({ userId: 'u1', orgId: 'org-1', role: 'owner' }),
       createClient: () => ({
         listListings: async () => {
-          const err: Error & { code?: string } = new Error('unauthorized');
-          err.name = 'PriceLabsError';
-          err.code = 'auth_rejected';
-          throw err;
+          throw new PriceLabsError('auth_rejected', 'unauthorized');
         },
         getRecommendedRates: async () => notImplemented(),
         getSettings: async () => notImplemented(),

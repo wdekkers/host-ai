@@ -9,13 +9,17 @@ import {
 } from '@walt/pricelabs';
 
 import { encryptApiKey, keyFingerprint } from '@/lib/pricelabs/encryption';
-import { getAuthContext } from '@/lib/auth/get-auth-context';
+import { requirePermission } from '@/lib/auth/authorize';
 
-const ALLOWED_ROLES: ReadonlySet<string> = new Set(['owner', 'manager']);
+// `integrations.read` is the only integrations-scoped permission currently
+// defined in `@walt/contracts`; owners implicitly have all permissions and
+// managers are explicitly granted it in `lib/auth/permissions.ts`.
+const INTEGRATIONS_PERMISSION = 'integrations.read' as const;
 
 export type Actor = { userId: string; orgId: string; role: string };
 
 export type SaveDeps = {
+  // Test-only override. Production callers go through `requirePermission`.
   getActor?: (req: Request) => Promise<Actor | null>;
   createClient?: (apiKey: string) => PriceLabsClient;
   upsertCredentials?: (row: {
@@ -26,6 +30,7 @@ export type SaveDeps = {
 };
 
 export type DeleteDeps = {
+  // Test-only override. Production callers go through `requirePermission`.
   getActor?: (req: Request) => Promise<Actor | null>;
   deleteCredentials?: (orgId: string) => Promise<void>;
 };
@@ -34,32 +39,39 @@ const BodySchema = z.object({
   apiKey: z.string().trim().min(1, 'apiKey is required'),
 });
 
-async function defaultGetActor(req: Request): Promise<Actor | null> {
-  const ctx = await getAuthContext(req);
-  if (!ctx) return null;
-  return { userId: ctx.userId, orgId: ctx.orgId, role: ctx.role };
-}
-
-function isAuthRejected(err: unknown): boolean {
-  if (err instanceof PriceLabsError && err.code === 'auth_rejected') return true;
-  if (typeof err === 'object' && err !== null) {
-    const maybe = err as { name?: unknown; code?: unknown };
-    if (maybe.name === 'PriceLabsError' && maybe.code === 'auth_rejected') return true;
+async function resolveActor(
+  req: Request,
+  override: SaveDeps['getActor'] | undefined,
+): Promise<Actor | Response> {
+  if (override) {
+    const actor = await override(req);
+    if (!actor) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    // Mirror `requirePermission`'s 403 for test actors without the permission.
+    // Only owners/managers have `integrations.read` today.
+    const allowed = actor.role === 'owner' || actor.role === 'manager';
+    if (!allowed) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    return actor;
   }
-  return false;
+  const ctxOrResponse = await requirePermission(req, INTEGRATIONS_PERMISSION);
+  if (ctxOrResponse instanceof Response) {
+    return ctxOrResponse;
+  }
+  return { userId: ctxOrResponse.userId, orgId: ctxOrResponse.orgId, role: ctxOrResponse.role };
 }
 
 export async function handleSaveCredentials(
   req: Request,
   deps: SaveDeps = {},
 ): Promise<Response> {
-  const actor = await (deps.getActor ?? defaultGetActor)(req);
-  if (!actor) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const actorOrResponse = await resolveActor(req, deps.getActor);
+  if (actorOrResponse instanceof Response) {
+    return actorOrResponse;
   }
-  if (!ALLOWED_ROLES.has(actor.role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const actor = actorOrResponse;
 
   const json = await req.json().catch(() => null);
   const parsed = BodySchema.safeParse(json);
@@ -76,7 +88,7 @@ export async function handleSaveCredentials(
   try {
     await client.listListings();
   } catch (err) {
-    if (isAuthRejected(err)) {
+    if (err instanceof PriceLabsError && err.code === 'auth_rejected') {
       return NextResponse.json(
         { error: 'PriceLabs rejected the API key' },
         { status: 400 },
@@ -122,13 +134,11 @@ export async function handleDeleteCredentials(
   req: Request,
   deps: DeleteDeps = {},
 ): Promise<Response> {
-  const actor = await (deps.getActor ?? defaultGetActor)(req);
-  if (!actor) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const actorOrResponse = await resolveActor(req, deps.getActor);
+  if (actorOrResponse instanceof Response) {
+    return actorOrResponse;
   }
-  if (!ALLOWED_ROLES.has(actor.role)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const actor = actorOrResponse;
 
   const del =
     deps.deleteCredentials ??
