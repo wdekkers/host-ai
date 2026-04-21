@@ -26,7 +26,7 @@ const base = {
   }>,
 };
 
-test('buildScoringPrompt includes every non-empty section', () => {
+void test('buildScoringPrompt includes every non-empty section', () => {
   const prompt = buildScoringPrompt(base);
   assert.ok(prompt.includes('PROPERTY HOUSE RULES'));
   assert.ok(prompt.includes('No pets. No parties.'));
@@ -37,22 +37,22 @@ test('buildScoringPrompt includes every non-empty section', () => {
   assert.ok(prompt.includes('BOOKING'));
 });
 
-test('buildScoringPrompt omits HOST RULES block when list is empty', () => {
+void test('buildScoringPrompt omits HOST RULES block when list is empty', () => {
   const prompt = buildScoringPrompt({ ...base, scoringRules: [] });
   assert.ok(!prompt.includes('HOST RULES'));
 });
 
-test('buildScoringPrompt omits PROPERTY HOUSE RULES when null', () => {
+void test('buildScoringPrompt omits PROPERTY HOUSE RULES when null', () => {
   const prompt = buildScoringPrompt({ ...base, propertyHouseRules: null });
   assert.ok(!prompt.includes('PROPERTY HOUSE RULES'));
 });
 
-test('buildScoringPrompt omits GUEST HISTORY when no internal history and no reviews', () => {
+void test('buildScoringPrompt omits GUEST HISTORY when no internal history and no reviews', () => {
   const prompt = buildScoringPrompt({ ...base, internalHistory: null, pastReviews: [] });
   assert.ok(!prompt.includes('GUEST HISTORY'));
 });
 
-test('buildScoringPrompt keeps most recent 20 messages regardless of budget', () => {
+void test('buildScoringPrompt keeps most recent 20 messages regardless of budget', () => {
   const thread = Array.from({ length: 30 }, (_, i) => ({
     sender: (i % 2 === 0 ? 'guest' : 'host') as 'guest' | 'host',
     body: `msg-${i}`,
