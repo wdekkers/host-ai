@@ -1,0 +1,10 @@
+{
+  "listingId": "pl-abc-123",
+  "basePrice": 450,
+  "minPrice": 300,
+  "maxPrice": 900,
+  "lastMinuteDiscount": { "enabled": true, "windowDays": 3, "percent": 15 },
+  "orphanGapRules": { "enabled": true, "maxGapNights": 3 },
+  "seasonalProfile": "default-2026",
+  "raw": { "extra": "keep for diffing" }
+}

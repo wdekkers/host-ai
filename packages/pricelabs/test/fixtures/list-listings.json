@@ -1,0 +1,5 @@
+[
+  { "id": "pl-abc-123", "name": "Dreamscape Retreat", "address": "Fairplay, TX", "active": true },
+  { "id": "pl-def-456", "name": "Frisco Waves & Fairways", "address": "Frisco, CO", "active": true },
+  { "id": "pl-ghi-789", "name": "Palmera Luxury", "address": "Palm Springs, CA", "active": true }
+]
