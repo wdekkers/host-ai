@@ -145,6 +145,7 @@ jobs:
           CRON_SECRET=$(get hostpilot/prod/cron-secret)
           STRIPE_SECRET_KEY=$(get hostpilot/prod/stripe-secret-key)
           STRIPE_WEBHOOK_SECRET=$(get hostpilot/prod/stripe-webhook-secret)
+          PRICELABS_ENCRYPTION_KEY=$(get hostpilot/prod/pricelabs-encryption-key)
 
           # Mask all values so they never appear in logs
           echo "::add-mask::$DATABASE_URL"
@@ -158,6 +159,7 @@ jobs:
           echo "::add-mask::$CRON_SECRET"
           echo "::add-mask::$STRIPE_SECRET_KEY"
           echo "::add-mask::$STRIPE_WEBHOOK_SECRET"
+          echo "::add-mask::$PRICELABS_ENCRYPTION_KEY"
 
           echo "DATABASE_URL=$DATABASE_URL" >> "$GITHUB_OUTPUT"
           echo "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY" >> "$GITHUB_OUTPUT"
@@ -171,6 +173,7 @@ jobs:
           echo "CRON_SECRET=$CRON_SECRET" >> "$GITHUB_OUTPUT"
           echo "STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY" >> "$GITHUB_OUTPUT"
           echo "STRIPE_WEBHOOK_SECRET=$STRIPE_WEBHOOK_SECRET" >> "$GITHUB_OUTPUT"
+          echo "PRICELABS_ENCRYPTION_KEY=$PRICELABS_ENCRYPTION_KEY" >> "$GITHUB_OUTPUT"
 
       - name: Encode compose file
         id: compose
@@ -182,7 +185,7 @@ jobs:
           host: ${{ vars.LIGHTSAIL_HOST }}
           username: ${{ vars.LIGHTSAIL_USER }}
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
-          envs: GITHUB_ACTOR,GHCR_TOKEN,DATABASE_URL,NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,CLERK_SECRET_KEY,HOSPITABLE_API_KEY,HOSPITABLE_BASE_URL,OPENAI_API_KEY,IAQUALINK_USERNAME,IAQUALINK_PASSWORD,CRON_SECRET,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,IMAGE_TAG,COMPOSE_B64
+          envs: GITHUB_ACTOR,GHCR_TOKEN,DATABASE_URL,NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,CLERK_SECRET_KEY,HOSPITABLE_API_KEY,HOSPITABLE_BASE_URL,OPENAI_API_KEY,IAQUALINK_USERNAME,IAQUALINK_PASSWORD,CRON_SECRET,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,PRICELABS_ENCRYPTION_KEY,IMAGE_TAG,COMPOSE_B64
           script: |
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
@@ -208,6 +211,7 @@ jobs:
             CRON_SECRET=$CRON_SECRET
             STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY
             STRIPE_WEBHOOK_SECRET=$STRIPE_WEBHOOK_SECRET
+            PRICELABS_ENCRYPTION_KEY=$PRICELABS_ENCRYPTION_KEY
             EOF
 
             cd /opt/walt
@@ -227,5 +231,6 @@ jobs:
           CRON_SECRET: ${{ steps.secrets.outputs.CRON_SECRET }}
           STRIPE_SECRET_KEY: ${{ steps.secrets.outputs.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ steps.secrets.outputs.STRIPE_WEBHOOK_SECRET }}
+          PRICELABS_ENCRYPTION_KEY: ${{ steps.secrets.outputs.PRICELABS_ENCRYPTION_KEY }}
           IMAGE_TAG: ${{ github.sha }}
           COMPOSE_B64: ${{ steps.compose.outputs.b64 }}
