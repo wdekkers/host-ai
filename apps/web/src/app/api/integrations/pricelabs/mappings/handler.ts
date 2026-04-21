@@ -11,14 +11,14 @@ import { createPriceLabsClient, type PriceLabsClient } from '@walt/pricelabs';
 
 import { decryptApiKey } from '@/lib/pricelabs/encryption';
 import { autoMatchListings } from '@/lib/pricelabs/auto-match';
-import { requirePermission } from '@/lib/auth/authorize';
+import { resolveActor, type Actor } from '@/lib/auth/resolve-actor';
 
 // `integrations.read` is the only integrations-scoped permission currently
 // defined in `@walt/contracts`; owners implicitly have all permissions and
 // managers are explicitly granted it in `lib/auth/permissions.ts`.
 const INTEGRATIONS_PERMISSION = 'integrations.read' as const;
 
-export type Actor = { userId: string; orgId: string; role: string };
+export type { Actor };
 
 export type StoredCredentials = {
   fingerprint: string;
@@ -60,39 +60,11 @@ export type SaveDeps = {
   upsertMappings?: (rows: MappingUpsertRow[]) => Promise<void>;
 };
 
-async function resolveActor(
-  req: Request,
-  override: ((req: Request) => Promise<Actor | null>) | undefined,
-): Promise<Actor | Response> {
-  if (override) {
-    const actor = await override(req);
-    if (!actor) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    // Mirror `requirePermission`'s 403 for test actors without the permission.
-    // Only owners/managers have `integrations.read` today.
-    const allowed = actor.role === 'owner' || actor.role === 'manager';
-    if (!allowed) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-    return actor;
-  }
-  const ctxOrResponse = await requirePermission(req, INTEGRATIONS_PERMISSION);
-  if (ctxOrResponse instanceof Response) {
-    return ctxOrResponse;
-  }
-  return {
-    userId: ctxOrResponse.userId,
-    orgId: ctxOrResponse.orgId,
-    role: ctxOrResponse.role,
-  };
-}
-
 export async function handleGetMappings(
   req: Request,
   deps: GetDeps = {},
 ): Promise<Response> {
-  const actorOrResponse = await resolveActor(req, deps.getActor);
+  const actorOrResponse = await resolveActor(req, INTEGRATIONS_PERMISSION, deps.getActor);
   if (actorOrResponse instanceof Response) {
     return actorOrResponse;
   }
@@ -218,7 +190,7 @@ export async function handleSaveMappings(
   req: Request,
   deps: SaveDeps = {},
 ): Promise<Response> {
-  const actorOrResponse = await resolveActor(req, deps.getActor);
+  const actorOrResponse = await resolveActor(req, INTEGRATIONS_PERMISSION, deps.getActor);
   if (actorOrResponse instanceof Response) {
     return actorOrResponse;
   }
