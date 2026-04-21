@@ -201,6 +201,9 @@ importers:
       '@walt/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@walt/pricelabs':
+        specifier: workspace:*
+        version: link:../../packages/pricelabs
       aws4:
         specifier: ^1.13.2
         version: 1.13.2
