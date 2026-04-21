@@ -133,7 +133,7 @@ One row per org that has connected PriceLabs.
 | Column | Type | Notes |
 |---|---|---|
 | `id` | uuid pk | |
-| `orgId` | uuid fk → `organizations.id` | unique — one credential per org |
+| `orgId` | text fk → `organizations.id` | unique — one credential per org |
 | `encryptedApiKey` | text | AES-256-GCM, key from new env var `PRICELABS_ENCRYPTION_KEY` |
 | `apiKeyFingerprint` | text | last 4 chars of plaintext, shown in UI so user can confirm which key is stored |
 | `status` | enum: `'active' \| 'invalid'` | updated to `invalid` when validation against `listListings` returns 401 |
@@ -142,14 +142,16 @@ One row per org that has connected PriceLabs.
 
 Unique: `(orgId)`.
 
+Type convention: `orgId` is `text` to match the existing `organizations.id text primary key` column. `propertyId` is `text` to match `properties.id text primary key` (Hospitable-supplied). Only PK ids on new tables are `uuid`.
+
 ### 6.2 `pricelabsListings`
 Mapping table: internal property ↔ PriceLabs listing.
 
 | Column | Type | Notes |
 |---|---|---|
 | `id` | uuid pk | |
-| `orgId` | uuid fk | |
-| `propertyId` | uuid fk → `properties.id` | nullable (unmapped listings still get a row) |
+| `orgId` | text fk | |
+| `propertyId` | text fk → `properties.id` | nullable (unmapped listings still get a row) |
 | `pricelabsListingId` | text | PriceLabs' own listing id |
 | `pricelabsListingName` | text | snapshot of PriceLabs name at mapping time |
 | `status` | enum: `'active' \| 'unmapped' \| 'inactive'` | `active` = syncs; `unmapped` = no internal property picked; `inactive` = explicitly disabled by user |
@@ -166,7 +168,7 @@ Time-series. One row per listing × date × sync run.
 | Column | Type |
 |---|---|
 | `id` | uuid pk |
-| `orgId` | uuid fk |
+| `orgId` | text fk |
 | `pricelabsListingId` | text |
 | `date` | date — date the price applies to |
 | `recommendedPrice` | integer (cents) |
@@ -189,7 +191,7 @@ One row per listing × sync run. Full settings blob for future diffing.
 | Column | Type |
 |---|---|
 | `id` | uuid pk |
-| `orgId` | uuid fk |
+| `orgId` | text fk |
 | `pricelabsListingId` | text |
 | `syncRunId` | uuid |
 | `settingsBlob` | jsonb |
@@ -201,7 +203,7 @@ Audit log for every cron execution.
 | Column | Type |
 |---|---|
 | `id` | uuid pk |
-| `orgId` | uuid fk |
+| `orgId` | text fk |
 | `startedAt` | timestamp |
 | `completedAt` | timestamp nullable |
 | `status` | enum: `'running' \| 'success' \| 'partial' \| 'failed'` |
