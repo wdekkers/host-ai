@@ -6,7 +6,7 @@ import {
   properties,
   propertyAccess,
 } from '@walt/db';
-import type { PriceLabsClient } from '@walt/pricelabs';
+import { PriceLabsError, type PriceLabsClient } from '@walt/pricelabs';
 
 import { getPriceLabsClient } from '@/lib/pricelabs/get-client';
 import { autoMatchListings } from '@/lib/pricelabs/auto-match';
@@ -66,7 +66,36 @@ export async function handleGetMappings(
     return NextResponse.json({ state: 'not_configured' });
   }
 
-  const listings = await client.listListings();
+  let listings;
+  try {
+    listings = await client.listListings();
+  } catch (err) {
+    if (err instanceof PriceLabsError) {
+      console.error('[pricelabs-mappings] upstream error', {
+        code: err.code,
+        cause: err.cause,
+      });
+      if (err.code === 'auth_rejected') {
+        return NextResponse.json({
+          state: 'key_invalid',
+          error: 'PriceLabs rejected the API key',
+        });
+      }
+      return NextResponse.json({
+        state: 'upstream_error',
+        error: err.message,
+        code: err.code,
+        debug: err.cause,
+      });
+    }
+    throw err;
+  }
+
+  // PriceLabs may return listings that aren't actively syncing (push_enabled=false)
+  // — filter them out of the mapping UI so hosts don't try to map dead listings.
+  const totalListings = listings.length;
+  const visibleListings = listings.filter((l) => l.push_enabled === true);
+  const hiddenCount = totalListings - visibleListings.length;
 
   const getProperties =
     deps.getProperties ??
@@ -102,7 +131,7 @@ export async function handleGetMappings(
   ]);
   const storedByListing = new Map(stored.map((r) => [r.pricelabsListingId, r]));
 
-  const unmappedListings = listings
+  const unmappedListings = visibleListings
     .filter((l) => !storedByListing.has(l.id))
     .map((l) => ({ id: l.id, name: l.name }));
   const takenProps = new Set(
@@ -112,7 +141,7 @@ export async function handleGetMappings(
   const autoMatches = autoMatchListings(unmappedListings, availableProps);
   const autoByListing = new Map(autoMatches.map((m) => [m.pricelabsListingId, m]));
 
-  const rows = listings.map((l) => {
+  const rows = visibleListings.map((l) => {
     const saved = storedByListing.get(l.id);
     if (saved) {
       return {
@@ -136,6 +165,7 @@ export async function handleGetMappings(
   return NextResponse.json({
     state: 'connected',
     rows,
+    hiddenCount,
   });
 }
 

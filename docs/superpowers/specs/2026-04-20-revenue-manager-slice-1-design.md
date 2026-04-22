@@ -1,5 +1,14 @@
 # Slice 1 — AI Revenue Manager: PriceLabs foundation
 
+> **Addendum 2026-04-22 (schema rewrite against real API):** The initial schemas and client paths in this design were guessed from incomplete PriceLabs docs and did not match what the production API actually returns. The `@walt/pricelabs` client has been rewritten against the probed live shapes:
+> - `GET /v1/listings` returns `{ listings: [...] }` (not a bare array). Each listing carries `pms`, `min`/`base`/`max`, `push_enabled`, `isHidden`, `city_name`, `state`, `no_of_bedrooms`, etc.
+> - There is no `/v1/listings/{id}/recommended_prices` endpoint. Per-date prices come from a batched `POST /v1/listing_prices` with body `{ listings: [{id, pms}, ...] }`, returning a bare array where each entry is either a success row (`{id, pms, data: [RateEntry[]]}`) or an error row (`{id, pms, error, error_status}`).
+> - There is no `/v1/listings/{id}/settings` endpoint. `min`/`base`/`max` live on the top-level listing object; settings snapshots now store the full listing as their blob.
+> - `isBooked` is derived from PriceLabs' per-date `booking_status` (empty string means available, any other value means booked), not from joining our `reservations` table.
+> - `user_price === -1` is PriceLabs' sentinel for "no host override" and maps to `publishedPrice = null`. All prices are integer dollars at the API boundary and converted to cents at the sync boundary.
+> - Per-listing errors like `LISTING_TOGGLE_OFF` are counted as partial failures in the sync run rather than short-circuiting the whole run.
+> - Mappings handler now filters out non-`push_enabled` listings (they aren't syncing in PriceLabs) and reports a `hiddenCount` so the UI can explain the filter.
+
 > **Addendum 2026-04-21:** Simplified to use `PRICELABS_API_KEY` env var instead of per-org encrypted DB credentials. Rationale: PriceLabs issues one account-level API key; every other integration in this repo follows the env-var pattern. When SaaS multi-tenancy arrives, all integrations will be lifted to per-org credentials together rather than PriceLabs being a one-off. The `pricelabsCredentials` table, encryption helper, credentials API route, and connect/disconnect UI described below have been removed. The admin UI now shows either a `not_configured` message or the mapping table directly.
 
 **Status:** Design approved, pending spec review → implementation plan.

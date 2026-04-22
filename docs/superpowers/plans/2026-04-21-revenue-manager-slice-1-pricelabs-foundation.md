@@ -1,5 +1,7 @@
 # AI Revenue Manager — Slice 1: PriceLabs Foundation
 
+> **Addendum 2026-04-22 (schema rewrite against real API):** See the design doc's matching addendum for full rationale. Summary: `@walt/pricelabs` schemas + endpoints have been rewritten against the probed live API. `getRecommendedRates` and `getSettings` no longer exist — prices come from a batched `POST /v1/listing_prices`, and the top-level listing carries `pms`, `min`/`base`/`max`, `push_enabled`. `isBooked` now comes from PriceLabs' per-date `booking_status` rather than our reservations join. Per-listing errors (e.g. `LISTING_TOGGLE_OFF`) are counted as partial failures. Mapping UI filters to `push_enabled=true` listings.
+
 > **Addendum 2026-04-21:** Simplified to use `PRICELABS_API_KEY` env var instead of per-org encrypted DB credentials. Rationale: PriceLabs issues one account-level API key; every other integration in this repo follows the env-var pattern. When SaaS multi-tenancy arrives, all integrations will be lifted to per-org credentials together rather than PriceLabs being a one-off. Tasks in this plan that create the `pricelabsCredentials` table, the encryption helper, the credentials API, and the connect/disconnect UI are superseded — see the refactor commit for the final shape.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
