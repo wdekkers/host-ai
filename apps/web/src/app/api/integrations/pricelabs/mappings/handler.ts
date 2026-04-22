@@ -95,7 +95,7 @@ export async function handleGetMappings(
 
   const getProperties =
     deps.getProperties ??
-    (async (_orgId: string) => {
+    (async () => {
       const { db } = await import('@/lib/db');
       const rows = await db.select({ id: properties.id, name: properties.name }).from(properties);
       return rows;
