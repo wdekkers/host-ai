@@ -139,12 +139,28 @@ export async function handleFeedback(
       await appendGuestNote({ orgId: auth.orgId, reservationId, note: text });
     }
 
-    const result = await rescore(reservationId);
-    if (!result) {
-      return NextResponse.json({ error: 'Rescore failed' }, { status: 503 });
+    // Rescore is best-effort. If it fails, the save still succeeded — surface that
+    // clearly to the client instead of masking it as a generic 400.
+    let result: { score: number; summary: string } | null = null;
+    let rescoreError: string | null = null;
+    try {
+      result = await rescore(reservationId);
+    } catch (err) {
+      rescoreError = err instanceof Error ? err.message : String(err);
+      console.error(
+        `[feedback] rescore threw for reservation ${reservationId}:`,
+        err,
+      );
     }
-    return NextResponse.json({ score: result.score, summary: result.summary });
+
+    return NextResponse.json({
+      saved: true,
+      score: result?.score ?? null,
+      summary: result?.summary ?? null,
+      rescoreError: rescoreError ?? (result ? null : 'Rescore returned no result.'),
+    });
   } catch (error) {
+    console.error('[feedback] handler threw:', error);
     return handleApiError({ error, route: '/api/inbox/[id]/feedback' });
   }
 }
