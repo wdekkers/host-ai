@@ -23,6 +23,7 @@ export function PriceLabsIntegrationClient({
   const { save, submitting: saving } = useSavePriceLabsMappings();
   const { state: syncState, trigger: triggerSync } = useTriggerPriceLabsSync();
   const [edits, setEdits] = useState<Record<string, MappingRow>>({});
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const rows: MappingRow[] =
     data.state === 'connected'
@@ -46,11 +47,14 @@ export function PriceLabsIntegrationClient({
   }
 
   async function onSave(): Promise<void> {
+    setSaveError(null);
     const toSave = Object.values(edits);
-    const ok = await save(toSave);
-    if (ok) {
+    const result = await save(toSave);
+    if (result.ok) {
       setEdits({});
       await refetch();
+    } else {
+      setSaveError(result.error);
     }
   }
 
@@ -226,7 +230,10 @@ export function PriceLabsIntegrationClient({
               ))}
             </tbody>
           </table>
-          <div className="mt-4 flex justify-end">
+          <div className="mt-4 flex justify-end items-center gap-3">
+            {saveError && (
+              <span className="text-sm text-red-600">Save failed: {saveError}</span>
+            )}
             <Button onClick={onSave} disabled={!dirty || saving}>
               {saving ? 'Saving…' : 'Save mappings'}
             </Button>
