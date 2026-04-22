@@ -157,7 +157,11 @@ export async function handleBatch(request: Request, authContext: AuthContext) {
       temperature: 0,
     });
 
-    const response = (reply ? reply.suggestion : null) ?? 'Failed to generate response';
+    const response = reply
+      ? reply.action === 'draft'
+        ? reply.suggestion
+        : `[No reply recommended: ${reply.reason}]`
+      : 'Failed to generate response';
 
     // Grade the response
     const gradeResult = await gradeSimulatorResponse({

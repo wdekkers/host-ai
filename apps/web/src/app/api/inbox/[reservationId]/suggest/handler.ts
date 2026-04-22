@@ -67,6 +67,9 @@ export const handleSuggest = withPermission(
         conversationHistory: thread,
         chips,
         extraContext,
+        guestScore: reservation.guestScore,
+        guestScoreSummary: reservation.guestScoreSummary,
+        reservationStatus: reservation.status,
       });
 
       if (!result) {
@@ -90,6 +93,34 @@ export const handleSuggest = withPermission(
         intent = analysis.intent;
         escalationLevel = analysis.escalationLevel;
         escalationReason = analysis.escalationReason;
+      }
+
+      if (result.action === 'skip') {
+        await db.insert(draftEvents).values({
+          organizationId,
+          messageId,
+          action: 'skipped',
+          actorId: authContext.userId,
+          afterPayload: null,
+          metadata: {
+            skipReason: result.reason,
+            intent,
+            escalationLevel,
+            escalationReason,
+            sourcesUsed: result.sourcesUsed,
+            chips,
+            extraContext,
+          },
+        });
+
+        return NextResponse.json({
+          action: 'skip',
+          reason: result.reason,
+          sourcesUsed: result.sourcesUsed,
+          intent,
+          escalationLevel,
+          escalationReason,
+        });
       }
 
       await db
@@ -122,6 +153,7 @@ export const handleSuggest = withPermission(
       });
 
       return NextResponse.json({
+        action: 'draft',
         suggestion: result.suggestion,
         sourcesUsed: result.sourcesUsed,
         intent,

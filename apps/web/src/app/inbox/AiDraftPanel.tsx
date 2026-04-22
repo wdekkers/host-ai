@@ -30,6 +30,7 @@ export function AiDraftPanel({
 }) {
   const { getToken } = useAuth();
   const [suggestion, setSuggestion] = useState<string | null>(null);
+  const [skipReason, setSkipReason] = useState<string | null>(null);
   const [activeChips, setActiveChips] = useState<string[]>([]);
   const [extraContext, setExtraContext] = useState('');
   const [loading, setLoading] = useState(false);
@@ -46,6 +47,7 @@ export function AiDraftPanel({
   useEffect(() => {
     setDismissed(false);
     setSuggestion(null);
+    setSkipReason(null);
     setActiveChips([]);
     setExtraContext('');
     if (unrepliedMessage) {
@@ -71,13 +73,23 @@ export function AiDraftPanel({
         body: JSON.stringify({ messageId: messageId ?? undefined, chips, extraContext: context || undefined }),
       });
       const data = (await res.json()) as {
+        action?: 'draft' | 'skip';
         suggestion?: string;
+        reason?: string;
         sourcesUsed?: Array<{ type: string; id: string; label: string; snippet?: string }>;
         escalationLevel?: string;
         escalationReason?: string;
       };
-      if (data.suggestion) {
+      if (data.action === 'skip' && data.reason) {
+        setSkipReason(data.reason);
+        setSuggestion(null);
+        setSourcesUsed(data.sourcesUsed ?? []);
+        setEscalationLevel(data.escalationLevel ?? null);
+        setEscalationReason(data.escalationReason ?? null);
+        setDraftStatus(null);
+      } else if (data.suggestion) {
         setSuggestion(data.suggestion);
+        setSkipReason(null);
         setSourcesUsed(data.sourcesUsed ?? []);
         setEscalationLevel(data.escalationLevel ?? null);
         setEscalationReason(data.escalationReason ?? null);
@@ -242,8 +254,24 @@ export function AiDraftPanel({
             </div>
           </div>
 
+          {/* No reply recommended (AI-driven skip) */}
+          {skipReason && !suggestion && !loading && (
+            <div className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              <div className="font-semibold mb-0.5">No reply recommended</div>
+              <div className="text-amber-700">{skipReason}</div>
+              <button
+                onClick={() => {
+                  setSkipReason(null);
+                }}
+                className="mt-1.5 text-[11px] underline text-amber-700 hover:text-amber-900"
+              >
+                Draft anyway
+              </button>
+            </div>
+          )}
+
           {/* No active draft: show context input to describe what to compose */}
-          {!suggestion && !loading && (
+          {!suggestion && !skipReason && !loading && (
             <div className="mb-2">
               <input
                 type="text"

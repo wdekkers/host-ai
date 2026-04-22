@@ -107,6 +107,7 @@ void test('generates AI draft and inserts draft event', async () => {
         escalationReason: null, suggestedTask: { title: 'Early check-in for Alice', description: 'Wants 2pm' }, needsReply: true,
       }),
       generateSuggestion: async () => ({
+        action: 'draft' as const,
         suggestion: 'Let me check with our cleaners!',
         sourcesUsed: [{ type: 'knowledge_entry' as const, id: 'ke-1', label: 'Check-in policy' }],
       }),

@@ -26,10 +26,9 @@ export type SourceReference = {
   snippet?: string;
 };
 
-export type SuggestionResult = {
-  suggestion: string;
-  sourcesUsed: SourceReference[];
-};
+export type SuggestionResult =
+  | { action: 'draft'; suggestion: string; sourcesUsed: SourceReference[] }
+  | { action: 'skip'; reason: string; sourcesUsed: SourceReference[] };
 
 export async function generateReplySuggestion({
   guestFirstName,
@@ -43,6 +42,9 @@ export async function generateReplySuggestion({
   chips,
   extraContext,
   temperature,
+  guestScore,
+  guestScoreSummary,
+  reservationStatus,
 }: {
   guestFirstName: string | null;
   guestLastName: string | null;
@@ -55,6 +57,9 @@ export async function generateReplySuggestion({
   chips?: string[];
   extraContext?: string;
   temperature?: number;
+  guestScore?: number | null;
+  guestScoreSummary?: string | null;
+  reservationStatus?: string | null;
 }): Promise<SuggestionResult | null> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
@@ -241,6 +246,35 @@ export async function generateReplySuggestion({
     else bookingPhase = 'post-checkout (guest has already left)';
   }
 
+  const riskContext = [
+    typeof guestScore === 'number' ? `Guest risk score: ${guestScore}/10` : null,
+    guestScoreSummary ? `Score reasoning: ${guestScoreSummary}` : null,
+    reservationStatus ? `Reservation status: ${reservationStatus}` : null,
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  const decisionRules = `DECISION RULES (apply in order, BEFORE drafting anything):
+
+1. If Reservation status is 'denied', 'declined', or 'cancelled', OR any prior HOST
+   message in this conversation clearly declines the booking (e.g. "our decision is
+   final", "unable to accommodate", "we will not be hosting", "this won't work"),
+   return action=skip. Do NOT draft a reply.
+
+2. If the latest GUEST message is an emotional appeal or plea attempting to reverse
+   a prior host decline (guilt-tripping, mentioning children being disappointed,
+   pressure about alternatives being booked, repeated "please reconsider"),
+   return action=skip.
+
+3. If guest score is <= 4 AND the guest is actively negotiating against a stated
+   house rule (pets after no-pets, extra visitors after no-visitors, events after
+   no-events), draft ONLY a brief, firm restatement of the policy. Do NOT invite
+   further discussion, do NOT apologize, do NOT offer alternatives.
+
+Output MUST be valid JSON, one of:
+  {"action": "draft", "text": "<the reply to the guest>"}
+  {"action": "skip", "reason": "<1 short sentence for the host explaining why no reply>"}`;
+
   const systemPrompt = `You are a short-term rental host assistant drafting a reply to a guest.
 
 Today's date: ${today.toLocaleDateString()}
@@ -249,13 +283,15 @@ Guest full name: ${guestFullName}${guestFirstName ? `\nGuest first name: ${guest
 Check-in: ${formatDate(checkIn)}
 Check-out: ${formatDate(checkOut)}
 Booking phase: ${bookingPhase}
-
+${riskContext ? `\n${riskContext}\n` : ''}
 Tone: ${tone}
 Emoji use: ${emojiUse}
 Length: ${responseLength}
 ${specialInstructions ? `Special instructions: ${specialInstructions}` : ''}
 ${chipLines ? `Style modifiers for this reply:\n${chipLines}` : ''}
 ${extraContext ? `IMPORTANT additional instructions for this reply (follow these precisely):\n${extraContext}\n` : ''}
+${decisionRules}
+
 ${SYSTEM_RULES}${propertyFactsContext ? `\n\n${propertyFactsContext}` : ''}${knowledgeContext ? `\n\n${knowledgeContext}` : ''}${memoryContext}`;
 
   const historyMessages = conversationHistory.map((m) => ({
@@ -267,10 +303,23 @@ ${SYSTEM_RULES}${propertyFactsContext ? `\n\n${propertyFactsContext}` : ''}${kno
     model: 'gpt-4o-mini',
     max_tokens: 500,
     temperature: temperature ?? undefined,
+    response_format: { type: 'json_object' },
     messages: [{ role: 'system', content: systemPrompt }, ...historyMessages],
   });
 
   const content = response.choices[0]?.message?.content ?? null;
   if (!content) return null;
-  return { suggestion: content, sourcesUsed };
+
+  try {
+    const parsed = JSON.parse(content) as { action?: string; text?: string; reason?: string };
+    if (parsed.action === 'skip' && typeof parsed.reason === 'string' && parsed.reason.length > 0) {
+      return { action: 'skip', reason: parsed.reason, sourcesUsed };
+    }
+    if (parsed.action === 'draft' && typeof parsed.text === 'string' && parsed.text.length > 0) {
+      return { action: 'draft', suggestion: parsed.text, sourcesUsed };
+    }
+  } catch {
+    // Fall through — treat raw content as a draft for backward compatibility.
+  }
+  return { action: 'draft', suggestion: content, sourcesUsed };
 }
