@@ -83,7 +83,7 @@ export function FeedbackModal({
           <RadioGroup value={target} onValueChange={(v) => setTarget(v as 'rule' | 'guest')}>
             <div className="flex items-center gap-2">
               <RadioGroupItem value="rule" id="fb-rule" />
-              <Label htmlFor="fb-rule">Save as house rule (applies to all future guests)</Label>
+              <Label htmlFor="fb-rule">Teach the AI this pattern (applies to all future guests)</Label>
             </div>
             <div className="flex items-center gap-2">
               <RadioGroupItem value="guest" id="fb-guest" />
