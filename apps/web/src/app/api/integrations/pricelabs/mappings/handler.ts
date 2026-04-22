@@ -1,11 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
-import {
-  pricelabsListings,
-  properties,
-  propertyAccess,
-} from '@walt/db';
+import { pricelabsListings, properties } from '@walt/db';
 import { PriceLabsError, type PriceLabsClient } from '@walt/pricelabs';
 
 import { getPriceLabsClient } from '@/lib/pricelabs/get-client';
@@ -99,13 +95,9 @@ export async function handleGetMappings(
 
   const getProperties =
     deps.getProperties ??
-    (async (orgId: string) => {
+    (async (_orgId: string) => {
       const { db } = await import('@/lib/db');
-      const rows = await db
-        .select({ id: properties.id, name: properties.name })
-        .from(properties)
-        .innerJoin(propertyAccess, eq(propertyAccess.propertyId, properties.id))
-        .where(eq(propertyAccess.organizationId, orgId));
+      const rows = await db.select({ id: properties.id, name: properties.name }).from(properties);
       return rows;
     });
 

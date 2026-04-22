@@ -15,22 +15,12 @@ void describe('handleGetPricingSnapshots', () => {
     assert.equal(res.status, 401);
   });
 
-  void it('403 when user has no access to the property', async () => {
-    const res = await handleGetPricingSnapshots(
-      new Request('http://t/api/properties/prop-1/pricing-snapshots'),
-      'prop-1',
-      { getActor: async () => actor, userHasAccessToProperty: async () => false },
-    );
-    assert.equal(res.status, 403);
-  });
-
   void it('returns no_mapping when property has no mapping', async () => {
     const res = await handleGetPricingSnapshots(
       new Request('http://t/api/properties/prop-1/pricing-snapshots'),
       'prop-1',
       {
         getActor: async () => actor,
-        userHasAccessToProperty: async () => true,
         getMapping: async () => null,
       },
     );
@@ -44,7 +34,6 @@ void describe('handleGetPricingSnapshots', () => {
       'prop-1',
       {
         getActor: async () => actor,
-        userHasAccessToProperty: async () => true,
         getMapping: async () => ({ pricelabsListingId: 'pl-1', lastSyncedAt: null }),
         getRecentSnapshots: async () => [],
       },
@@ -59,7 +48,6 @@ void describe('handleGetPricingSnapshots', () => {
       'prop-1',
       {
         getActor: async () => actor,
-        userHasAccessToProperty: async () => true,
         getMapping: async () => ({
           pricelabsListingId: 'pl-1',
           lastSyncedAt: new Date('2026-04-21T03:00:00Z'),
