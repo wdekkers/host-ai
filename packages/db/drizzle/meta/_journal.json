@@ -232,6 +232,13 @@
       "when": 1776200000000,
       "tag": "0032_drop_pricelabs_org_fks",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1776300000000,
+      "tag": "0033_scoring_rules_and_house_rules",
+      "breakpoints": true
     }
   ]
 }
