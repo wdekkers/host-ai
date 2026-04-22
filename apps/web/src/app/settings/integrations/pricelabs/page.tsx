@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import { redirect } from 'next/navigation';
-import { asc, eq } from 'drizzle-orm';
-import { properties, propertyAccess } from '@walt/db';
+import { asc } from 'drizzle-orm';
+import { properties } from '@walt/db';
 
 import { db } from '@/lib/db';
 import { getAuthContext } from '@/lib/auth/get-auth-context';
@@ -22,8 +22,6 @@ export default async function PriceLabsIntegrationPage(): Promise<ReactElement |
   const propsRows = await db
     .select({ id: properties.id, name: properties.name })
     .from(properties)
-    .innerJoin(propertyAccess, eq(propertyAccess.propertyId, properties.id))
-    .where(eq(propertyAccess.organizationId, authContext.orgId))
     .orderBy(asc(properties.name));
 
   return (

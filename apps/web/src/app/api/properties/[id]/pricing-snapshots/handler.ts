@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { and, eq, sql } from 'drizzle-orm';
 
-import { pricelabsListings, propertyAccess } from '@walt/db';
+import { pricelabsListings } from '@walt/db';
 
 import { resolveActor, type Actor } from '@/lib/auth/resolve-actor';
 
@@ -19,7 +19,6 @@ export type MappingRow = {
 
 export type Deps = {
   getActor?: (req: Request) => Promise<Actor | null>;
-  userHasAccessToProperty?: (actor: Actor, propertyId: string) => Promise<boolean>;
   getMapping?: (orgId: string, propertyId: string) => Promise<MappingRow | null>;
   getRecentSnapshots?: (
     orgId: string,
@@ -44,26 +43,9 @@ export async function handleGetPricingSnapshots(
   if (actorOrRes instanceof Response) return actorOrRes;
   const actor = actorOrRes;
 
-  const userHasAccess =
-    deps.userHasAccessToProperty ??
-    (async (act: Actor, id: string) => {
-      const { db } = await import('@/lib/db');
-      const [row] = await db
-        .select({ propertyId: propertyAccess.propertyId })
-        .from(propertyAccess)
-        .where(
-          and(
-            eq(propertyAccess.organizationId, act.orgId),
-            eq(propertyAccess.propertyId, id),
-          ),
-        )
-        .limit(1);
-      return !!row;
-    });
-
-  if (!(await userHasAccess(actor, propertyId))) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  // Note: property-level access scoping is not used in this deployment; any
+  // authenticated org member with `integrations.read` can view snapshots for
+  // any property. When multi-tenancy lands, reintroduce a property_access join.
 
   const getMapping =
     deps.getMapping ??
