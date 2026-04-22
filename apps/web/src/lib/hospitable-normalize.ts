@@ -74,6 +74,18 @@ export function normalizeReservation(
   };
 }
 
+function extractHouseRules(raw: Record<string, unknown>): string | null {
+  const candidates = [
+    raw.house_rules,
+    (raw.details as Record<string, unknown> | undefined)?.house_rules,
+    (raw.listings as Record<string, unknown> | undefined)?.house_rules,
+  ];
+  for (const c of candidates) {
+    if (typeof c === 'string' && c.trim().length > 0) return c.trim();
+  }
+  return null;
+}
+
 export function normalizeProperty(raw: Record<string, unknown>): Omit<PropertyInsert, 'syncedAt'> {
   const addr = (raw.address ?? {}) as Record<string, unknown>;
   const capacity = (raw.capacity ?? {}) as Record<string, unknown>;
@@ -100,6 +112,7 @@ export function normalizeProperty(raw: Record<string, unknown>): Omit<PropertyIn
     petsAllowed: typeof houseRules.pets_allowed === 'boolean' ? houseRules.pets_allowed : null,
     smokingAllowed: typeof houseRules.smoking_allowed === 'boolean' ? houseRules.smoking_allowed : null,
     eventsAllowed: typeof houseRules.events_allowed === 'boolean' ? houseRules.events_allowed : null,
+    houseRules: extractHouseRules(raw),
     amenities: Array.isArray(raw.amenities) ? (raw.amenities as string[]) : null,
 
     // Tier 2 — Descriptive & structural

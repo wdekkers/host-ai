@@ -116,6 +116,7 @@ export const properties = waltSchema.table('properties', {
   gettingAround: text('getting_around'),
   additionalRules: text('additional_rules'),
   otherDetails: text('other_details'),
+  houseRules: text('house_rules'),
 });
 
 export const reservations = waltSchema.table('reservations', {
@@ -165,6 +166,22 @@ export const guests = waltSchema.table('guests', {
 }, (table) => [
   uniqueIndex('guests_org_platform_guest_idx').on(table.organizationId, table.platformGuestId),
 ]);
+
+export const scoringRules = waltSchema.table(
+  'scoring_rules',
+  {
+    id: uuid('id').primaryKey(),
+    organizationId: text('organization_id').notNull(),
+    ruleText: text('rule_text').notNull(),
+    active: boolean('active').notNull().default(true),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().default(sql`now()`),
+    createdBy: text('created_by'),
+  },
+  (table) => [
+    index('scoring_rules_org_idx').on(table.organizationId),
+  ],
+);
 
 export const reviews = waltSchema.table('reviews', {
   id: text('id').primaryKey(), // Hospitable review UUID

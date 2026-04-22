@@ -4,9 +4,10 @@ const tabs = [
   { href: '/settings/agent', label: 'Agent' },
   { href: '/settings/knowledge', label: 'Knowledge' },
   { href: '/settings/notifications', label: 'Notifications' },
+  { href: '/settings/scoring-rules', label: 'Scoring Rules' },
 ] as const;
 
-type TabKey = 'agent' | 'knowledge' | 'notifications';
+type TabKey = 'agent' | 'knowledge' | 'notifications' | 'scoring-rules';
 
 export function SettingsTabs({ current }: { current: TabKey }) {
   return (

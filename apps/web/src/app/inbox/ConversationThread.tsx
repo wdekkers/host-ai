@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { AiDraftPanel } from './AiDraftPanel';
-import { RefreshCw } from 'lucide-react';
+import { FeedbackModal } from './FeedbackModal';
+import { MessageSquarePlus, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { STATUS_BADGE_CONFIG, STATUS_ICONS, STATUS_COLORS } from './status-config';
 import { AiStatusToggle } from '@/components/inbox/ai-status-toggle';
@@ -64,6 +65,7 @@ export function ConversationThread({
   const [hasMore, setHasMore] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [scoring, setScoring] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const topSentinelRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -215,6 +217,13 @@ export function ConversationThread({
               >
                 <RefreshCw className={`h-3 w-3 ${scoring ? 'animate-spin' : ''}`} />
               </button>
+              <button
+                onClick={() => setFeedbackOpen(true)}
+                className="text-slate-400 hover:text-sky-600"
+                title="Give feedback on this score"
+              >
+                <MessageSquarePlus className="h-3 w-3" />
+              </button>
             </div>
           )}
           {reservation?.guestScore == null && (
@@ -315,6 +324,17 @@ export function ConversationThread({
         )}
         <div ref={bottomRef} />
       </div>
+
+      <FeedbackModal
+        reservationId={reservationId}
+        open={feedbackOpen}
+        onOpenChange={setFeedbackOpen}
+        onRescored={(score, summary) =>
+          setReservation((prev) =>
+            prev ? { ...prev, guestScore: score, guestScoreSummary: summary } : prev,
+          )
+        }
+      />
 
       {reservation && (
         <AiDraftPanel
