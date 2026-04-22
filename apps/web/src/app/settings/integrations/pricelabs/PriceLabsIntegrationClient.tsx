@@ -10,6 +10,7 @@ import {
   useSavePriceLabsMappings,
   type MappingRow,
 } from '@/hooks/use-pricelabs-mappings';
+import { useTriggerPriceLabsSync } from '@/hooks/use-pricelabs-sync';
 
 type PropertyOption = { id: string; name: string };
 
@@ -20,6 +21,7 @@ export function PriceLabsIntegrationClient({
 }): ReactElement {
   const { data, refetch } = usePriceLabsMappings();
   const { save, submitting: saving } = useSavePriceLabsMappings();
+  const { state: syncState, trigger: triggerSync } = useTriggerPriceLabsSync();
   const [edits, setEdits] = useState<Record<string, MappingRow>>({});
 
   const rows: MappingRow[] =
@@ -123,8 +125,28 @@ export function PriceLabsIntegrationClient({
   return (
     <div className="space-y-4 max-w-5xl">
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-2">
           <CardTitle>PriceLabs listings</CardTitle>
+          <div className="flex items-center gap-3">
+            {syncState.state === 'success' && (
+              <span className="text-xs text-slate-500">
+                Synced {syncState.summary.results.filter((r) => r.status === 'success').length}/
+                {syncState.summary.results.length} orgs at{' '}
+                {syncState.at.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+              </span>
+            )}
+            {syncState.state === 'error' && (
+              <span className="text-xs text-red-600">Sync failed: {syncState.error}</span>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={triggerSync}
+              disabled={syncState.state === 'running'}
+            >
+              {syncState.state === 'running' ? 'Syncing…' : 'Sync now'}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {data.state === 'connected' && (data.hiddenCount ?? 0) > 0 && (
