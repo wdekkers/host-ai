@@ -225,6 +225,13 @@
       "when": 1776100000000,
       "tag": "0031_drop_pricelabs_credentials",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1776200000000,
+      "tag": "0032_drop_pricelabs_org_fks",
+      "breakpoints": true
     }
   ]
 }

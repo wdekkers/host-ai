@@ -46,12 +46,14 @@ export function usePriceLabsMappings(): {
   return { data, refetch };
 }
 
+export type SaveResult = { ok: true } | { ok: false; error: string };
+
 export function useSavePriceLabsMappings(): {
-  save: (rows: MappingRow[]) => Promise<boolean>;
+  save: (rows: MappingRow[]) => Promise<SaveResult>;
   submitting: boolean;
 } {
   const [submitting, setSubmitting] = useState(false);
-  const save = useCallback(async (rows: MappingRow[]): Promise<boolean> => {
+  const save = useCallback(async (rows: MappingRow[]): Promise<SaveResult> => {
     setSubmitting(true);
     try {
       const res = await fetch('/api/integrations/pricelabs/mappings', {
@@ -59,7 +61,11 @@ export function useSavePriceLabsMappings(): {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ mappings: rows }),
       });
-      return res.ok;
+      if (res.ok) return { ok: true };
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      return { ok: false, error: body.error ?? `HTTP ${res.status}` };
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : 'unknown' };
     } finally {
       setSubmitting(false);
     }
