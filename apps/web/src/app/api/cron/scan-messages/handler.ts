@@ -130,7 +130,7 @@ export async function handleScanMessages(request: Request, deps: Deps = {}) {
       needsReply: analysis.needsReply,
     };
 
-    if (draft) {
+    if (draft && draft.action === 'draft') {
       await updateMessageDraft(message.id, {
         ...analysisFields,
         suggestion: draft.suggestion,
@@ -146,6 +146,21 @@ export async function handleScanMessages(request: Request, deps: Deps = {}) {
         action: 'generated',
         afterPayload: draft.suggestion,
         metadata: {
+          intent: analysis.intent,
+          escalationLevel: analysis.escalationLevel,
+          sourcesUsed: draft.sourcesUsed,
+        },
+      });
+    } else if (draft && draft.action === 'skip') {
+      // Drafter recommended no reply — persist analysis + skip reason, don't auto-send.
+      await updateMessageDraft(message.id, analysisFields);
+      await insertDraftEvent({
+        organizationId: ctx.organizationId,
+        messageId: message.id,
+        action: 'skipped',
+        afterPayload: null,
+        metadata: {
+          skipReason: draft.reason,
           intent: analysis.intent,
           escalationLevel: analysis.escalationLevel,
           sourcesUsed: draft.sourcesUsed,
