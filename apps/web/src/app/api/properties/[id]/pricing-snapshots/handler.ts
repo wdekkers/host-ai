@@ -81,6 +81,8 @@ export async function handleGetPricingSnapshots(
     deps.getRecentSnapshots ??
     (async (orgId: string, listingId: string, d: number) => {
       const { db } = await import('@/lib/db');
+      // Explicit ::int cast on the day offset — without it Postgres can't
+      // resolve `date + unknown` (parameter is typed as unknown by the driver).
       const result = await db.execute(sql`
         SELECT date, recommended_price, published_price, is_booked
         FROM walt.pricing_snapshots
@@ -92,7 +94,7 @@ export async function handleGetPricingSnapshots(
             ORDER BY created_at DESC LIMIT 1
           )
           AND date::date >= CURRENT_DATE
-          AND date::date < CURRENT_DATE + ${d}
+          AND date::date < CURRENT_DATE + (${d}::int)
         ORDER BY date ASC
       `);
       const rows = result.rows as RawSnapshot[];

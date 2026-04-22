@@ -11,6 +11,7 @@ import {
   Eye,
   EyeOff,
   RefreshCw,
+  LineChart,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -169,7 +170,12 @@ export function PropertiesClient({ properties, reservationCounts }: Props) {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <h3 className="text-sm font-semibold text-slate-900 truncate">
-                        {p.name}
+                        <Link
+                          href={`/properties/${p.id}/details`}
+                          className="hover:text-sky-600"
+                        >
+                          {p.name}
+                        </Link>
                       </h3>
                       {(p.address || p.city) && (
                         <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
@@ -201,6 +207,11 @@ export function PropertiesClient({ properties, reservationCounts }: Props) {
                     <Link href={`/tasks?propertyId=${p.id}`} title="Tasks">
                       <Button variant="ghost" size="icon" className="h-8 w-8">
                         <CheckSquare className="h-4 w-4 text-slate-400" />
+                      </Button>
+                    </Link>
+                    <Link href={`/properties/${p.id}/details`} title="Details & pricing">
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <LineChart className="h-4 w-4 text-slate-400" />
                       </Button>
                     </Link>
                     <Link href={`/properties/${p.id}/knowledge`} title="Knowledge">
