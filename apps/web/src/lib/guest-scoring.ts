@@ -40,6 +40,7 @@ type PromptInputs = {
   scoringRules: string[];
   internalHistory: string | null;
   pastReviews: PastReview[];
+  hospitableSignals: { subCategory: string | null; issueAlert: string | null };
 };
 
 const CHAR_BUDGET = 8000;
@@ -64,6 +65,17 @@ export function buildScoringPrompt(inputs: PromptInputs): string {
   if (inputs.scoringRules.length > 0) {
     const bullets = inputs.scoringRules.map((r) => `- ${r}`).join('\n');
     sections.push(`HOST RULES AND RED FLAGS (weigh heavily):\n${bullets}`);
+  }
+
+  const signalLines: string[] = [];
+  if (inputs.hospitableSignals.subCategory) {
+    signalLines.push(`- Reservation sub-status: ${inputs.hospitableSignals.subCategory}`);
+  }
+  if (inputs.hospitableSignals.issueAlert) {
+    signalLines.push(`- Hospitable alert: ${inputs.hospitableSignals.issueAlert}`);
+  }
+  if (signalLines.length > 0) {
+    sections.push(`HOSPITABLE SIGNALS:\n${signalLines.join('\n')}`);
   }
 
   const b = inputs.booking;
@@ -117,6 +129,17 @@ function trimThread(thread: ThreadMessage[]): ThreadMessage[] {
 
 function totalChars(msgs: ThreadMessage[]): number {
   return msgs.reduce((sum, m) => sum + m.body.length + 16, 0);
+}
+
+function extractHospitableSignals(raw: Record<string, unknown>): {
+  subCategory: string | null;
+  issueAlert: string | null;
+} {
+  const resStatus = (raw.reservation_status ?? {}) as Record<string, unknown>;
+  const current = (resStatus.current ?? {}) as Record<string, unknown>;
+  const subCategory = typeof current.sub_category === 'string' ? current.sub_category : null;
+  const issueAlert = typeof raw.issue_alert === 'string' ? raw.issue_alert : null;
+  return { subCategory, issueAlert };
 }
 
 function extractGuestCount(raw: Record<string, unknown>): {
@@ -225,6 +248,8 @@ export async function scoreGuest(reservationId: string): Promise<ScoringResult |
     .from(scoringRules)
     .where(eq(scoringRules.active, true));
 
+  const hospitableSignals = extractHospitableSignals(raw);
+
   const prompt = buildScoringPrompt({
     booking: {
       guestName,
@@ -238,6 +263,7 @@ export async function scoreGuest(reservationId: string): Promise<ScoringResult |
     scoringRules: activeRules.map((r) => r.ruleText),
     internalHistory,
     pastReviews,
+    hospitableSignals,
   });
 
   const openai = new OpenAI();

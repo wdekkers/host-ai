@@ -24,6 +24,7 @@ const base = {
     publicReview: string | null;
     privateFeedback: string | null;
   }>,
+  hospitableSignals: { subCategory: null as string | null, issueAlert: null as string | null },
 };
 
 void test('buildScoringPrompt includes every non-empty section', () => {
@@ -50,6 +51,21 @@ void test('buildScoringPrompt omits PROPERTY HOUSE RULES when null', () => {
 void test('buildScoringPrompt omits GUEST HISTORY when no internal history and no reviews', () => {
   const prompt = buildScoringPrompt({ ...base, internalHistory: null, pastReviews: [] });
   assert.ok(!prompt.includes('GUEST HISTORY'));
+});
+
+void test('buildScoringPrompt renders HOSPITABLE SIGNALS when fields present', () => {
+  const prompt = buildScoringPrompt({
+    ...base,
+    hospitableSignals: { subCategory: 'pending verification', issueAlert: 'Broken AC' },
+  });
+  assert.ok(prompt.includes('HOSPITABLE SIGNALS'));
+  assert.ok(prompt.includes('pending verification'));
+  assert.ok(prompt.includes('Broken AC'));
+});
+
+void test('buildScoringPrompt omits HOSPITABLE SIGNALS when fields empty', () => {
+  const prompt = buildScoringPrompt(base);
+  assert.ok(!prompt.includes('HOSPITABLE SIGNALS'));
 });
 
 void test('buildScoringPrompt keeps most recent 20 messages regardless of budget', () => {
