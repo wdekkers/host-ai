@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
-import { Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,6 +22,8 @@ export function ScoringRulesClient(): React.ReactElement {
   const [newText, setNewText] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editText, setEditText] = useState('');
 
   const authHeaders = useCallback(async (): Promise<Record<string, string>> => {
     const token = await getToken();
@@ -69,6 +71,32 @@ export function ScoringRulesClient(): React.ReactElement {
     await load();
   }
 
+  function startEdit(rule: Rule): void {
+    setEditingId(rule.id);
+    setEditText(rule.ruleText);
+  }
+
+  function cancelEdit(): void {
+    setEditingId(null);
+    setEditText('');
+  }
+
+  async function saveEdit(rule: Rule): Promise<void> {
+    const trimmed = editText.trim();
+    if (!trimmed || trimmed === rule.ruleText) {
+      cancelEdit();
+      return;
+    }
+    const headers = { ...(await authHeaders()), 'Content-Type': 'application/json' };
+    await fetch(`/api/scoring-rules/${rule.id}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ ruleText: trimmed }),
+    });
+    cancelEdit();
+    await load();
+  }
+
   async function remove(rule: Rule): Promise<void> {
     const headers = await authHeaders();
     await fetch(`/api/scoring-rules/${rule.id}`, { method: 'DELETE', headers });
@@ -105,16 +133,60 @@ export function ScoringRulesClient(): React.ReactElement {
                 <li key={rule.id} className="flex items-start gap-3 py-3">
                   <Switch checked={rule.active} onCheckedChange={() => void toggleActive(rule)} />
                   <div className="flex-1">
-                    <p className={rule.active ? '' : 'text-muted-foreground line-through'}>
-                      {rule.ruleText}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Added {new Date(rule.createdAt).toLocaleDateString()}
-                    </p>
+                    {editingId === rule.id ? (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          rows={3}
+                          autoFocus
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => void saveEdit(rule)}
+                            disabled={
+                              editText.trim().length === 0 || editText.trim() === rule.ruleText
+                            }
+                          >
+                            Save
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={cancelEdit}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p className={rule.active ? '' : 'text-muted-foreground line-through'}>
+                          {rule.ruleText}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Added {new Date(rule.createdAt).toLocaleDateString()}
+                        </p>
+                      </>
+                    )}
                   </div>
-                  <Button size="icon" variant="ghost" onClick={() => void remove(rule)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {editingId !== rule.id && (
+                    <>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => startEdit(rule)}
+                        title="Edit"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => void remove(rule)}
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
                 </li>
               ))}
             </ul>
