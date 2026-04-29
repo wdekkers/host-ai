@@ -1,10 +1,13 @@
 import { eq } from 'drizzle-orm';
 
 import { db } from '@/lib/db';
-import { scoreGuest } from '@/lib/guest-scoring';
+import { assessGuest } from '@/lib/guest-assessment';
 import { reservations } from '@walt/db';
 
-export async function handleScoreGuest(reservationId: string) {
+export async function handleScoreGuest(
+  reservationId: string,
+  auth: { orgId: string; userId?: string },
+) {
   const [reservation] = await db
     .select({ id: reservations.id })
     .from(reservations)
@@ -15,19 +18,14 @@ export async function handleScoreGuest(reservationId: string) {
     return { error: 'Reservation not found', status: 404 } as const;
   }
 
-  const result = await scoreGuest(reservationId);
+  const result = await assessGuest(reservationId, {
+    organizationId: auth.orgId,
+    trigger: 'manual_rescore',
+    userId: auth.userId,
+  });
   if (!result) {
     return { error: 'Scoring failed', status: 503 } as const;
   }
-
-  await db
-    .update(reservations)
-    .set({
-      guestScore: result.score,
-      guestScoreSummary: result.summary,
-      guestScoredAt: new Date(),
-    })
-    .where(eq(reservations.id, reservationId));
 
   return {
     score: result.score,

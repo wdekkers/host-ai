@@ -8,10 +8,13 @@ type Params = { params: Promise<{ reservationId: string }> };
 
 export const POST = withPermission(
   'inbox.read',
-  async (_request: Request, { params }: Params) => {
+  async (_request: Request, { params }: Params, auth) => {
     try {
       const { reservationId } = await params;
-      const result = await handleScoreGuest(reservationId);
+      const result = await handleScoreGuest(reservationId, {
+        orgId: auth.orgId,
+        userId: auth.userId,
+      });
 
       if ('error' in result) {
         return NextResponse.json({ error: result.error }, { status: result.status });
