@@ -6,6 +6,7 @@ import { db } from '@/lib/db';
 import { PropertySettingsTabs } from '../PropertySettingsTabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PricingCard } from './PricingCard';
+import { NicknamesCard } from './NicknamesCard';
 
 function Badge({ children, variant = 'default' }: { children: React.ReactNode; variant?: 'default' | 'success' | 'destructive' }) {
   const styles = {
@@ -276,6 +277,10 @@ export default async function PropertyDetailsPage({
             </CardContent>
           </Card>
         )}
+      </div>
+
+      <div className="mt-6">
+        <NicknamesCard propertyId={id} initialNicknames={property.nicknames} />
       </div>
 
       <div className="mt-4">

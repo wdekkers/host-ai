@@ -10,6 +10,7 @@ type Params = { params: Promise<{ id: string }> };
 
 const updatePropertySchema = z.object({
   isActive: z.boolean().optional(),
+  nicknames: z.array(z.string().min(1).max(80)).max(20).optional(),
 });
 
 export const PATCH = withPermission('properties.update', async (request, context: Params) => {
@@ -21,6 +22,7 @@ export const PATCH = withPermission('properties.update', async (request, context
 
   const updates: Record<string, unknown> = {};
   if (parsed.data.isActive !== undefined) updates.isActive = parsed.data.isActive;
+  if (parsed.data.nicknames !== undefined) updates.nicknames = parsed.data.nicknames;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
@@ -30,7 +32,7 @@ export const PATCH = withPermission('properties.update', async (request, context
     .update(properties)
     .set(updates)
     .where(eq(properties.id, id))
-    .returning({ id: properties.id, isActive: properties.isActive });
+    .returning({ id: properties.id, isActive: properties.isActive, nicknames: properties.nicknames });
 
   if (!updated) {
     return NextResponse.json({ error: 'Property not found' }, { status: 404 });
