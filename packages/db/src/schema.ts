@@ -209,9 +209,10 @@ export const guestAssessments = waltSchema.table(
   (table) => [
     index('guest_assessments_reservation_idx').on(table.reservationId, table.createdAt),
     index('guest_assessments_org_idx').on(table.organizationId, table.createdAt),
-    uniqueIndex('guest_assessments_reservation_msg_uniq')
-      .on(table.reservationId, table.sourceMessageId)
-      .where(sql`source_message_id IS NOT NULL`),
+    uniqueIndex('guest_assessments_reservation_msg_uniq').on(
+      table.reservationId,
+      table.sourceMessageId,
+    ),
     check(
       'guest_assessments_risk_level_chk',
       sql`risk_level IN ('low','medium','high')`,
