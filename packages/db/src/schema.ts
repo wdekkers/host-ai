@@ -144,6 +144,8 @@ export const reservations = waltSchema.table('reservations', {
   guestScore: integer('guest_score'),
   guestScoreSummary: text('guest_score_summary'),
   guestScoredAt: timestamp('guest_scored_at', { withTimezone: true }),
+  guestRiskLevel: text('guest_risk_level'),
+  guestTrustLevel: text('guest_trust_level'),
   raw: jsonb('raw').notNull(),
   syncedAt: timestamp('synced_at', { withTimezone: true }).notNull(),
 });
@@ -180,6 +182,137 @@ export const scoringRules = waltSchema.table(
   },
   (table) => [
     index('scoring_rules_org_idx').on(table.organizationId),
+  ],
+);
+
+export const guestAssessments = waltSchema.table(
+  'guest_assessments',
+  {
+    id: uuid('id').primaryKey(),
+    reservationId: text('reservation_id').notNull(),
+    organizationId: text('organization_id').notNull(),
+    score: integer('score').notNull(),
+    summary: text('summary').notNull(),
+    riskLevel: text('risk_level').notNull(),
+    trustLevel: text('trust_level').notNull(),
+    recommendation: text('recommendation').notNull(),
+    signals: jsonb('signals').notNull().default(sql`'[]'::jsonb`),
+    rulesAcceptance: jsonb('rules_acceptance').notNull(),
+    trigger: text('trigger').notNull(),
+    model: text('model').notNull(),
+    promptVersion: text('prompt_version').notNull(),
+    inputsHash: text('inputs_hash').notNull(),
+    sourceMessageId: text('source_message_id'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
+    createdBy: text('created_by'),
+  },
+  (table) => [
+    index('guest_assessments_reservation_idx').on(table.reservationId, table.createdAt),
+    index('guest_assessments_org_idx').on(table.organizationId, table.createdAt),
+    uniqueIndex('guest_assessments_reservation_msg_uniq')
+      .on(table.reservationId, table.sourceMessageId)
+      .where(sql`source_message_id IS NOT NULL`),
+    check(
+      'guest_assessments_risk_level_chk',
+      sql`risk_level IN ('low','medium','high')`,
+    ),
+    check(
+      'guest_assessments_trust_level_chk',
+      sql`trust_level IN ('low','medium','high')`,
+    ),
+  ],
+);
+
+export const riskSignalsCatalog = waltSchema.table(
+  'risk_signals_catalog',
+  {
+    id: uuid('id').primaryKey(),
+    organizationId: text('organization_id').notNull(),
+    label: text('label').notNull(),
+    dimension: text('dimension').notNull(),
+    severity: text('severity').notNull(),
+    valence: text('valence').notNull(),
+    active: boolean('active').notNull().default(true),
+    isDefault: boolean('is_default').notNull().default(false),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().default(sql`now()`),
+  },
+  (table) => [
+    index('risk_signals_catalog_org_idx').on(table.organizationId),
+    uniqueIndex('risk_signals_catalog_org_label_uniq').on(table.organizationId, table.label),
+    check(
+      'risk_signals_catalog_dimension_chk',
+      sql`dimension IN ('booking_pattern','profile','language','policy_violation')`,
+    ),
+    check(
+      'risk_signals_catalog_severity_chk',
+      sql`severity IN ('low','medium','high','critical')`,
+    ),
+    check(
+      'risk_signals_catalog_valence_chk',
+      sql`valence IN ('risk','trust','neutral')`,
+    ),
+  ],
+);
+
+export const propertySignalOverrides = waltSchema.table(
+  'property_signal_overrides',
+  {
+    id: uuid('id').primaryKey(),
+    propertyId: text('property_id').notNull(),
+    catalogItemId: uuid('catalog_item_id').notNull(),
+    severity: text('severity'),
+    active: boolean('active'),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().default(sql`now()`),
+  },
+  (table) => [
+    uniqueIndex('property_signal_overrides_uniq').on(table.propertyId, table.catalogItemId),
+    check(
+      'property_signal_overrides_severity_chk',
+      sql`severity IS NULL OR severity IN ('low','medium','high','critical')`,
+    ),
+  ],
+);
+
+export const guestIncidents = waltSchema.table(
+  'guest_incidents',
+  {
+    id: uuid('id').primaryKey(),
+    organizationId: text('organization_id').notNull(),
+    guestFirstName: text('guest_first_name'),
+    guestLastName: text('guest_last_name'),
+    reservationId: text('reservation_id'),
+    propertyId: text('property_id'),
+    incidentType: text('incident_type').notNull(),
+    severity: text('severity').notNull(),
+    notes: text('notes'),
+    source: text('source').notNull(),
+    status: text('status').notNull(),
+    sourceReviewId: text('source_review_id'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().default(sql`now()`),
+    createdBy: text('created_by'),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    reviewedBy: text('reviewed_by'),
+  },
+  (table) => [
+    index('guest_incidents_org_name_idx').on(
+      table.organizationId,
+      table.guestLastName,
+      table.guestFirstName,
+    ),
+    index('guest_incidents_status_idx').on(table.status),
+    check(
+      'guest_incidents_severity_chk',
+      sql`severity IN ('low','medium','high')`,
+    ),
+    check(
+      'guest_incidents_source_chk',
+      sql`source IN ('manual','review_extracted')`,
+    ),
+    check(
+      'guest_incidents_status_value_chk',
+      sql`status IN ('suggested','confirmed','dismissed')`,
+    ),
   ],
 );
 
