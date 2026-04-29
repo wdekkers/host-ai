@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useAuth } from '@clerk/nextjs';
 import { Trash2, CheckCircle, Circle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,6 +41,7 @@ export function TaskRow({
   categoriesById: Map<string, TaskCategory>;
   onChanged(): void;
 }): React.ReactElement {
+  const { getToken } = useAuth();
   const [busy, setBusy] = useState(false);
 
   const isResolved = task.status === 'resolved';
@@ -50,9 +52,10 @@ export function TaskRow({
     setBusy(true);
     try {
       const newStatus = isResolved ? 'open' : 'resolved';
+      const token = await getToken();
       const res = await fetch(`/api/tasks/${task.id}`, {
         method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', Authorization: token ? `Bearer ${token}` : '' },
         body: JSON.stringify({ status: newStatus }),
       });
       if (!res.ok) throw new Error('Failed to update task');
@@ -66,7 +69,8 @@ export function TaskRow({
     if (!confirm(`Delete "${task.title}"?`)) return;
     setBusy(true);
     try {
-      const res = await fetch(`/api/tasks/${task.id}`, { method: 'DELETE' });
+      const token = await getToken();
+      const res = await fetch(`/api/tasks/${task.id}`, { method: 'DELETE', headers: { Authorization: token ? `Bearer ${token}` : '' } });
       if (!res.ok) throw new Error('Failed to delete task');
       onChanged();
     } finally {

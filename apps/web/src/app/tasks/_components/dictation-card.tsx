@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useAuth } from '@clerk/nextjs';
 import { Mic, MicOff, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ export function DictationCard({
 }: {
   onParsed: (drafts: DictationDraftTask[]) => void;
 }): React.ReactElement {
+  const { getToken } = useAuth();
   const dictation = useDictation();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,9 +23,10 @@ export function DictationCard({
     setBusy(true);
     setError(null);
     try {
+      const token = await getToken();
       const res = await fetch('/api/tasks/parse-dictation', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', Authorization: token ? `Bearer ${token}` : '' },
         body: JSON.stringify({ transcript: dictation.transcript }),
       });
       if (!res.ok) {

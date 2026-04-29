@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
+import { useAuth } from '@clerk/nextjs';
 
 type RecognitionLike = {
   continuous: boolean;
@@ -37,6 +38,7 @@ export type DictationState = {
 };
 
 export function useDictation(): DictationState {
+  const { getToken } = useAuth();
   const [transcript, setTranscript] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,13 +73,19 @@ export function useDictation(): DictationState {
         recorder.ondataavailable = (e) => {
           if (e.data.size > 0) chunks.push(e.data);
         };
+        // Capture token before arming onstop so it is available in the callback
+        const token = await getToken();
         recorder.onstop = async () => {
           stream.getTracks().forEach((t) => t.stop());
           const blob = new Blob(chunks, { type: recorder.mimeType });
           const form = new FormData();
           form.append('audio', new File([blob], 'recording.webm', { type: blob.type }));
           try {
-            const res = await fetch('/api/transcribe', { method: 'POST', body: form });
+            const res = await fetch('/api/transcribe', {
+              method: 'POST',
+              headers: { Authorization: token ? `Bearer ${token}` : '' },
+              body: form,
+            });
             if (!res.ok) throw new Error(`Transcribe failed (${res.status})`);
             const data = (await res.json()) as { transcript: string };
             setTranscript((prev) => (prev ? `${prev} ${data.transcript}` : data.transcript));
@@ -138,7 +146,7 @@ export function useDictation(): DictationState {
       setError(err instanceof Error ? err.message : 'Failed to start recording');
       setIsRecording(false);
     }
-  }, []);
+  }, [getToken]);
 
   return {
     transcript,

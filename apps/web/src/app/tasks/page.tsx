@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '@clerk/nextjs';
 import type { DictationDraftTask, TaskCategory } from '@walt/contracts';
 import { DictationCard } from './_components/dictation-card';
 import { PreviewDrawer } from './_components/preview-drawer';
@@ -10,6 +11,7 @@ import { TasksList } from './_components/tasks-list';
 type PropertyOption = { id: string; name: string; nicknames: string[] };
 
 export default function TasksPage(): React.ReactElement {
+  const { getToken } = useAuth();
   const [drafts, setDrafts] = useState<DictationDraftTask[] | null>(null);
   const [properties, setProperties] = useState<PropertyOption[]>([]);
   const [categories, setCategories] = useState<TaskCategory[]>([]);
@@ -17,9 +19,10 @@ export default function TasksPage(): React.ReactElement {
 
   useEffect(() => {
     void (async () => {
+      const token = await getToken();
       const [pRes, cRes] = await Promise.all([
-        fetch('/api/properties', { cache: 'no-store' }),
-        fetch('/api/task-categories', { cache: 'no-store' }),
+        fetch('/api/properties', { cache: 'no-store', headers: { Authorization: token ? `Bearer ${token}` : '' } }),
+        fetch('/api/task-categories', { cache: 'no-store', headers: { Authorization: token ? `Bearer ${token}` : '' } }),
       ]);
       if (pRes.ok) {
         const p = (await pRes.json()) as {
