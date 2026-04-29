@@ -1,0 +1,25 @@
+{
+  "transcript": "At Birchwood, the guest bedroom window blinds are broken. Please fix this weekend.",
+  "today": "2026-04-28",
+  "properties": [
+    { "id": "prop-006", "name": "Birchwood", "nicknames": ["BW", "Birch"] }
+  ],
+  "categories": [
+    { "id": "f6a7b8c9-d0e1-2345-fabc-456789012345", "name": "Repairs" }
+  ],
+  "expected": {
+    "tasks": [
+      {
+        "title": "Fix broken guest bedroom window blinds",
+        "description": "Guest bedroom window blinds are broken and need repair.",
+        "propertyMatches": ["prop-006"],
+        "propertyAmbiguous": null,
+        "categoryId": "f6a7b8c9-d0e1-2345-fabc-456789012345",
+        "suggestedNewCategory": null,
+        "priority": "medium",
+        "dueDate": "2026-05-02T00:00:00.000Z",
+        "confidence": "high"
+      }
+    ]
+  }
+}

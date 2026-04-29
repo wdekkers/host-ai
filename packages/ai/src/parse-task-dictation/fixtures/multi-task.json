@@ -1,0 +1,37 @@
+{
+  "transcript": "At Maple Lodge, the front door lock is jammed and needs replacing. Also at Cedar Cabin, the hot tub filter needs cleaning ASAP.",
+  "today": "2026-04-28",
+  "properties": [
+    { "id": "prop-002", "name": "Maple Lodge", "nicknames": ["ML", "Maple"] },
+    { "id": "prop-003", "name": "Cedar Cabin", "nicknames": ["CC", "Cedar"] }
+  ],
+  "categories": [
+    { "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901", "name": "Maintenance" }
+  ],
+  "expected": {
+    "tasks": [
+      {
+        "title": "Replace jammed front door lock",
+        "description": "Front door lock is jammed and needs to be replaced.",
+        "propertyMatches": ["prop-002"],
+        "propertyAmbiguous": null,
+        "categoryId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+        "suggestedNewCategory": null,
+        "priority": "medium",
+        "dueDate": null,
+        "confidence": "high"
+      },
+      {
+        "title": "Clean hot tub filter",
+        "description": "Hot tub filter needs cleaning urgently.",
+        "propertyMatches": ["prop-003"],
+        "propertyAmbiguous": null,
+        "categoryId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+        "suggestedNewCategory": null,
+        "priority": "high",
+        "dueDate": null,
+        "confidence": "high"
+      }
+    ]
+  }
+}

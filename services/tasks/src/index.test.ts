@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { randomUUID } from 'node:crypto';
-import { createDb } from '@walt/db';
-import { buildTasksApp } from './index.js';
+import { eq } from 'drizzle-orm';
+import { createDb, properties } from '@walt/db';
+import { buildTasksApp, loadPropertyContext } from './index.js';
 
 const db = createDb(process.env.DATABASE_URL ?? 'postgres://walt:walt@localhost:5432/walt');
 
@@ -199,4 +200,22 @@ void test('DELETE /tasks/:id soft-deletes task', async () => {
   const listPayload = listResponse.json() as { items: Array<{ id: string }> };
   assert.ok(!listPayload.items.some((t) => t.id === item.id));
   await app.close();
+});
+
+void test('loadPropertyContext returns id, name, nicknames', async () => {
+  const propertyId = `test-prop-${randomUUID()}`;
+  await db.insert(properties).values({
+    id: propertyId,
+    name: 'Rushing Creek',
+    nicknames: ['RC', 'Rushing'],
+    raw: {},
+    syncedAt: new Date(),
+  });
+  try {
+    const ctx = await loadPropertyContext(db);
+    const found = ctx.find((p) => p.id === propertyId);
+    assert.deepEqual(found, { id: propertyId, name: 'Rushing Creek', nicknames: ['RC', 'Rushing'] });
+  } finally {
+    await db.delete(properties).where(eq(properties.id, propertyId));
+  }
 });

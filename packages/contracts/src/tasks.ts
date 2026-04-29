@@ -92,3 +92,50 @@ export type CreateTaskInput = z.infer<typeof createTaskInputSchema>;
 export type UpdateTaskInput = z.infer<typeof updateTaskInputSchema>;
 export type CreateTaskCategoryInput = z.infer<typeof createTaskCategoryInputSchema>;
 export type UpdateTaskCategoryInput = z.infer<typeof updateTaskCategoryInputSchema>;
+
+export const parseTaskDictationInputSchema = z.object({
+  transcript: z.string().min(1).max(10_000),
+});
+
+export const dictationDraftTaskSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().nullable(),
+  propertyMatches: z.array(z.string()),
+  propertyAmbiguous: z.string().nullable(),
+  categoryId: z.string().uuid().nullable(),
+  suggestedNewCategory: z.string().nullable(),
+  priority: taskPrioritySchema,
+  dueDate: z.string().datetime().nullable(),
+  confidence: z.enum(['high', 'medium', 'low']),
+});
+
+export const parseTaskDictationOutputSchema = z.object({
+  tasks: z.array(dictationDraftTaskSchema),
+});
+
+export const bulkCreateTaskInputSchema = z.object({
+  drafts: z
+    .array(
+      createTaskInputSchema.extend({
+        newCategoryName: z.string().min(1).optional(),
+      }),
+    )
+    .min(1),
+  source: z.enum(['ai-dictation', 'manual']).default('manual'),
+});
+
+export const bulkCreateTaskResultSchema = z.object({
+  results: z.array(
+    z.object({
+      ok: z.boolean(),
+      task: taskSchema.optional(),
+      error: z.string().optional(),
+    }),
+  ),
+});
+
+export type ParseTaskDictationInput = z.infer<typeof parseTaskDictationInputSchema>;
+export type DictationDraftTask = z.infer<typeof dictationDraftTaskSchema>;
+export type ParseTaskDictationOutput = z.infer<typeof parseTaskDictationOutputSchema>;
+export type BulkCreateTaskInput = z.infer<typeof bulkCreateTaskInputSchema>;
+export type BulkCreateTaskResult = z.infer<typeof bulkCreateTaskResultSchema>;

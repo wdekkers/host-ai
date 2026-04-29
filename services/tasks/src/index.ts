@@ -11,7 +11,7 @@ import {
 } from '@walt/contracts';
 import type { TaskAuditAction } from '@walt/contracts';
 
-type Db = ReturnType<typeof createDb>;
+export type Db = ReturnType<typeof createDb>;
 
 async function writeAudit(
   db: Db,
@@ -33,6 +33,8 @@ async function writeAudit(
     delta: opts.delta,
   });
 }
+
+export { loadPropertyContext } from './property-context.js';
 
 export function buildTasksApp(db: Db) {
   const app = Fastify({ logger: true });

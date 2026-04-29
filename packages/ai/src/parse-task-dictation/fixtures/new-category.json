@@ -1,0 +1,26 @@
+{
+  "transcript": "At Pine Ridge, the front lawn needs mowing and the hedges need trimming.",
+  "today": "2026-04-28",
+  "properties": [
+    { "id": "prop-005", "name": "Pine Ridge", "nicknames": ["PR", "Pine"] }
+  ],
+  "categories": [
+    { "id": "d4e5f6a7-b8c9-0123-defa-234567890123", "name": "Cleaning" },
+    { "id": "e5f6a7b8-c9d0-1234-efab-345678901234", "name": "Repairs" }
+  ],
+  "expected": {
+    "tasks": [
+      {
+        "title": "Mow lawn and trim hedges",
+        "description": "Front lawn needs mowing and hedges need trimming.",
+        "propertyMatches": ["prop-005"],
+        "propertyAmbiguous": null,
+        "categoryId": null,
+        "suggestedNewCategory": "Landscaping",
+        "priority": "medium",
+        "dueDate": null,
+        "confidence": "high"
+      }
+    ]
+  }
+}
