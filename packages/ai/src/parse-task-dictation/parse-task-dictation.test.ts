@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { parseTaskDictation } from './index.js';
+import { parseTaskDictationWithOpenAi } from './index.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixturesDir = join(here, 'fixtures');
@@ -17,10 +17,10 @@ const fixtureNames = readdirSync(fixturesDir)
   .map((n) => n.replace(/\.json$/, ''));
 
 for (const name of fixtureNames) {
-  void test(`parseTaskDictation: ${name} fixture`, async () => {
+  void test(`parseTaskDictationWithOpenAi: ${name} fixture`, async () => {
     const fx = loadFixture(name);
     const stub = async () => JSON.stringify(fx.expected);
-    const result = await parseTaskDictation(
+    const result = await parseTaskDictationWithOpenAi(
       {
         transcript: fx.transcript,
         today: fx.today,
@@ -33,10 +33,10 @@ for (const name of fixtureNames) {
   });
 }
 
-void test('parseTaskDictation: invalid JSON throws', async () => {
+void test('parseTaskDictationWithOpenAi: invalid JSON throws', async () => {
   await assert.rejects(
     () =>
-      parseTaskDictation(
+      parseTaskDictationWithOpenAi(
         { transcript: 'x', today: '2026-04-28', properties: [], categories: [] },
         { invokeModel: async () => 'not json' },
       ),
@@ -44,18 +44,18 @@ void test('parseTaskDictation: invalid JSON throws', async () => {
   );
 });
 
-void test('parseTaskDictation: empty tasks array passes', async () => {
-  const result = await parseTaskDictation(
+void test('parseTaskDictationWithOpenAi: empty tasks array passes', async () => {
+  const result = await parseTaskDictationWithOpenAi(
     { transcript: '', today: '2026-04-28', properties: [], categories: [] },
     { invokeModel: async () => JSON.stringify({ tasks: [] }) },
   );
   assert.deepEqual(result, { tasks: [] });
 });
 
-void test('parseTaskDictation: schema-invalid output throws', async () => {
+void test('parseTaskDictationWithOpenAi: schema-invalid output throws', async () => {
   await assert.rejects(
     () =>
-      parseTaskDictation(
+      parseTaskDictationWithOpenAi(
         { transcript: 'x', today: '2026-04-28', properties: [], categories: [] },
         { invokeModel: async () => JSON.stringify({ tasks: [{ title: '' }] }) },
       ),

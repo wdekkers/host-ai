@@ -10,14 +10,14 @@ import {
   updateTaskInputSchema,
 } from '@walt/contracts';
 import type { TaskAuditAction } from '@walt/contracts';
-import type { parseTaskDictation } from '@walt/ai';
+import type { parseTaskDictationWithOpenAi } from '@walt/ai';
 import { registerParseDictationRoute } from './parse-dictation.js';
 import { registerBulkCreateRoute } from './bulk.js';
 
 export type Db = ReturnType<typeof createDb>;
 
 export type TasksAppDeps = {
-  parseTaskDictation?: typeof parseTaskDictation;
+  parseTaskDictation?: typeof parseTaskDictationWithOpenAi;
 };
 
 async function writeAudit(

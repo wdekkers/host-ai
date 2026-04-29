@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { eq } from 'drizzle-orm';
 import { taskCategories } from '@walt/db';
 import { parseTaskDictationInputSchema } from '@walt/contracts';
-import { parseTaskDictation as defaultParse } from '@walt/ai';
+import { parseTaskDictationWithOpenAi as defaultParse } from '@walt/ai';
 import { loadPropertyContext } from './property-context.js';
 import type { Db, TasksAppDeps } from './index.js';
 

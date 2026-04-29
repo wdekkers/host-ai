@@ -1,10 +1,12 @@
-import type { TextBlock } from '@anthropic-ai/sdk/resources/messages/messages.js';
+import OpenAI from 'openai';
+import { z } from 'zod';
 import {
   parseTaskDictationOutputSchema,
   type ParseTaskDictationOutput,
 } from './schema.js';
 import { buildSystemPrompt, buildUserPrompt } from './prompt.js';
-import { createAnthropicClient } from '../anthropic-client.js';
+
+const envSchema = z.object({ OPENAI_API_KEY: z.string().min(1) });
 
 export type ParseTaskDictationOptions = {
   transcript: string;
@@ -17,27 +19,28 @@ export type ParseTaskDictationDeps = {
   invokeModel?: (prompt: { system: string; user: string }) => Promise<string>;
 };
 
-const DEFAULT_MODEL = 'claude-sonnet-4-6';
+const DEFAULT_MODEL = 'gpt-4o-mini';
 
 async function defaultInvokeModel(prompt: {
   system: string;
   user: string;
 }): Promise<string> {
-  const client = createAnthropicClient();
-  const message = await client.messages.create({
+  const env = envSchema.parse(process.env);
+  const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
+  const response = await client.chat.completions.create({
     model: DEFAULT_MODEL,
     max_tokens: 2000,
     temperature: 0.1,
-    system: prompt.system,
-    messages: [{ role: 'user', content: prompt.user }],
+    response_format: { type: 'json_object' },
+    messages: [
+      { role: 'system', content: prompt.system },
+      { role: 'user', content: prompt.user },
+    ],
   });
-  return message.content
-    .filter((b): b is TextBlock => b.type === 'text')
-    .map((b) => b.text)
-    .join('');
+  return response.choices[0]?.message?.content ?? '';
 }
 
-export async function parseTaskDictation(
+export async function parseTaskDictationWithOpenAi(
   options: ParseTaskDictationOptions,
   deps: ParseTaskDictationDeps = {},
 ): Promise<ParseTaskDictationOutput> {
@@ -53,13 +56,13 @@ export async function parseTaskDictation(
     parsedJson = JSON.parse(raw);
   } catch (err) {
     throw new Error(
-      `parseTaskDictation: failed to parse model output as JSON: ${(err as Error).message}`,
+      `parseTaskDictationWithOpenAi: failed to parse model output as JSON: ${(err as Error).message}`,
     );
   }
   const parsed = parseTaskDictationOutputSchema.safeParse(parsedJson);
   if (!parsed.success) {
     throw new Error(
-      `parseTaskDictation: failed to parse model output as expected schema: ${parsed.error.message}`,
+      `parseTaskDictationWithOpenAi: failed to parse model output as expected schema: ${parsed.error.message}`,
     );
   }
   return parsed.data;
