@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { eq } from 'drizzle-orm';
-import { properties, reservations, messages, reviews } from '@walt/db';
+import { organizations, properties, reservations, messages, reviews } from '@walt/db';
 import { HospitableClient } from '@walt/hospitable';
 import { db } from '@/lib/db';
 import { getHospitableApiConfig } from '@/lib/integrations-env';
@@ -10,7 +10,7 @@ import {
   normalizeProperty,
   normalizeReview,
 } from '@/lib/hospitable-normalize';
-import { scoreGuest } from '@/lib/guest-scoring';
+import { assessGuest } from '@/lib/guest-assessment';
 
 const CORE_STATUSES = ['inquiry', 'request', 'accepted', 'cancelled'] as const;
 
@@ -187,6 +187,10 @@ export async function syncHospitable() {
     baseUrl: config.baseUrl,
   });
 
+  // TODO: multi-tenant — pass orgId from auth context once sync becomes per-org
+  const [org] = await db.select({ id: organizations.id }).from(organizations).limit(1);
+  const orgId = org?.id ?? null;
+
   const rawProperties = await fetchAllProperties(config);
   const now = new Date();
   let propertyCount = 0;
@@ -298,21 +302,20 @@ export async function syncHospitable() {
         .where(eq(reservations.id, normalized.id))
         .limit(1);
 
-      if (!currentRes?.guestScoredAt) {
+      if (!currentRes?.guestScoredAt && orgId) {
         try {
-          const scoreResult = await scoreGuest(normalized.id);
-          if (scoreResult) {
-            await db
-              .update(reservations)
-              .set({
-                guestScore: scoreResult.score,
-                guestScoreSummary: scoreResult.summary,
-                guestScoredAt: new Date(),
-              })
-              .where(eq(reservations.id, normalized.id));
-          }
-        } catch {
-          // Scoring failure is non-fatal — user can re-score manually
+          const trigger =
+            normalized.status === 'inquiry' ? 'inquiry' :
+            normalized.status === 'request' ? 'booking_request' : 'new_message';
+          await assessGuest(normalized.id, {
+            organizationId: orgId,
+            trigger,
+          });
+        } catch (e) {
+          console.error(
+            `[sync-hospitable] Assessment failed for reservation ${normalized.id}`,
+            e,
+          );
         }
       }
 

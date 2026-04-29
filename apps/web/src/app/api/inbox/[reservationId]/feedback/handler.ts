@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { guests, reservations, scoringRules } from '@walt/db';
 
 import { db } from '@/lib/db';
-import { scoreGuest } from '@/lib/guest-scoring';
+import { assessGuest } from '@/lib/guest-assessment';
 import { handleApiError } from '@/lib/secure-logger';
 
 const bodySchema = z.object({
@@ -25,9 +25,11 @@ type Deps = {
     reservationId: string;
     note: string;
   }) => Promise<{ ok: true }>;
-  rescore?: (
-    reservationId: string,
-  ) => Promise<{ score: number; summary: string } | null>;
+  rescore?: (args: {
+    reservationId: string;
+    orgId: string;
+    userId: string;
+  }) => Promise<{ score: number; summary: string } | null>;
 };
 
 async function defaultCreateRule(args: {
@@ -101,19 +103,15 @@ async function defaultAppendGuestNote(args: {
 }
 
 async function persistRescore(
-  reservationId: string,
+  args: { reservationId: string; orgId: string; userId: string },
 ): Promise<{ score: number; summary: string } | null> {
-  const result = await scoreGuest(reservationId);
+  const result = await assessGuest(args.reservationId, {
+    organizationId: args.orgId,
+    trigger: 'feedback',
+    userId: args.userId,
+  });
   if (!result) return null;
-  await db
-    .update(reservations)
-    .set({
-      guestScore: result.score,
-      guestScoreSummary: result.summary,
-      guestScoredAt: new Date(),
-    })
-    .where(eq(reservations.id, reservationId));
-  return result;
+  return { score: result.score, summary: result.summary };
 }
 
 export async function handleFeedback(
@@ -144,7 +142,7 @@ export async function handleFeedback(
     let result: { score: number; summary: string } | null = null;
     let rescoreError: string | null = null;
     try {
-      result = await rescore(reservationId);
+      result = await rescore({ reservationId, orgId: auth.orgId, userId: auth.userId });
     } catch (err) {
       rescoreError = err instanceof Error ? err.message : String(err);
       console.error(
