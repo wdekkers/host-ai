@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useAuth } from '@clerk/nextjs';
 import { Trash2, AlertTriangle } from 'lucide-react';
 import {
   Sheet,
@@ -86,6 +87,7 @@ export function PreviewDrawer({
   categories: TaskCategory[];
   onCreated(): void;
 }): React.ReactElement {
+  const { getToken } = useAuth();
   const [drafts, setDrafts] = useState<EditableDraft[]>(() =>
     initialDrafts.map((d, i) => ({ ...d, _localId: `draft-${i}` })),
   );
@@ -121,9 +123,10 @@ export function PreviewDrawer({
         source: 'ai-dictation' as const,
       };
 
+      const token = await getToken();
       const res = await fetch('/api/tasks/bulk', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', Authorization: token ? `Bearer ${token}` : '' },
         body: JSON.stringify(payload),
       });
 

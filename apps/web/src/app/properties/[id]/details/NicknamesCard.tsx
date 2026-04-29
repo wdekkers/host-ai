@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type JSX } from 'react';
+import { useAuth } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChipInput } from '@/components/ui/chip-input';
@@ -14,6 +15,7 @@ export function NicknamesCard({
   propertyId,
   initialNicknames,
 }: NicknamesCardProps): JSX.Element {
+  const { getToken } = useAuth();
   const [nicknames, setNicknames] = useState<string[]>(initialNicknames);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
@@ -23,9 +25,10 @@ export function NicknamesCard({
     setSaving(true);
     setError(null);
     try {
+      const token = await getToken();
       const res = await fetch(`/api/properties/${propertyId}`, {
         method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', Authorization: token ? `Bearer ${token}` : '' },
         body: JSON.stringify({ nicknames }),
       });
       if (!res.ok) {

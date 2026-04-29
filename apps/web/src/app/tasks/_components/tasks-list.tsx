@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
 import type { Task, TaskCategory } from '@walt/contracts';
 import { TaskRow } from './task-row';
 
@@ -13,6 +14,7 @@ const PAGE_SIZE = 50;
 
 export function TasksList({ propertyId }: Props): React.ReactElement {
   const params = useSearchParams();
+  const { getToken } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [properties, setProperties] = useState<PropertyItem[]>([]);
   const [categories, setCategories] = useState<TaskCategory[]>([]);
@@ -44,10 +46,12 @@ export function TasksList({ propertyId }: Props): React.ReactElement {
     setLoading(true);
     void (async () => {
       try {
+        const token = await getToken();
+        const authHeaders = { Authorization: token ? `Bearer ${token}` : '' };
         const [tRes, pRes, cRes] = await Promise.all([
-          fetch(`/api/tasks?${query}`, { cache: 'no-store' }),
-          fetch('/api/properties', { cache: 'no-store' }),
-          fetch('/api/task-categories', { cache: 'no-store' }),
+          fetch(`/api/tasks?${query}`, { cache: 'no-store', headers: authHeaders }),
+          fetch('/api/properties', { cache: 'no-store', headers: authHeaders }),
+          fetch('/api/task-categories', { cache: 'no-store', headers: authHeaders }),
         ]);
         if (!tRes.ok) throw new Error(`Failed to load tasks (${tRes.status})`);
         const tData = (await tRes.json()) as { items?: Task[] };
@@ -71,7 +75,7 @@ export function TasksList({ propertyId }: Props): React.ReactElement {
     return () => {
       cancelled = true;
     };
-  }, [query, refreshKey]);
+  }, [query, refreshKey, getToken]);
 
   if (loading) return <div className="text-sm text-muted-foreground">Loading tasks…</div>;
   if (error) return <div className="text-sm text-destructive">{error}</div>;
