@@ -42,8 +42,13 @@ export function useDictation(): DictationState {
   const [error, setError] = useState<string | null>(null);
   const [needsWhisperFallback, setNeedsWhisperFallback] = useState(false);
   const recognitionRef = useRef<RecognitionLike | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
 
   const stop = useCallback(() => {
+    if (recorderRef.current) {
+      recorderRef.current.stop();
+      recorderRef.current = null;
+    }
     recognitionRef.current?.stop();
     recognitionRef.current = null;
     setIsRecording(false);
@@ -58,10 +63,37 @@ export function useDictation(): DictationState {
         : undefined;
 
     if (!RecognitionCtor) {
-      // TODO: hookup Whisper fallback here — use MediaRecorder to capture audio
-      // and POST to /api/transcribe (to be implemented in next group).
       setNeedsWhisperFallback(true);
-      setError('Voice recording requires Whisper fallback (not yet enabled)');
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        const chunks: Blob[] = [];
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) chunks.push(e.data);
+        };
+        recorder.onstop = async () => {
+          stream.getTracks().forEach((t) => t.stop());
+          const blob = new Blob(chunks, { type: recorder.mimeType });
+          const form = new FormData();
+          form.append('audio', new File([blob], 'recording.webm', { type: blob.type }));
+          try {
+            const res = await fetch('/api/transcribe', { method: 'POST', body: form });
+            if (!res.ok) throw new Error(`Transcribe failed (${res.status})`);
+            const data = (await res.json()) as { transcript: string };
+            setTranscript((prev) => (prev ? `${prev} ${data.transcript}` : data.transcript));
+          } catch (err) {
+            setError((err as Error).message);
+          }
+          recorderRef.current = null;
+          setIsRecording(false);
+        };
+        recorderRef.current = recorder;
+        recorder.start();
+        setIsRecording(true);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to start recording');
+        setIsRecording(false);
+      }
       return;
     }
 

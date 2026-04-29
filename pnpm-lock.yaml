@@ -195,6 +195,9 @@ importers:
       '@types/aws4':
         specifier: ^1.11.6
         version: 1.11.6
+      '@walt/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@walt/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -268,6 +271,9 @@ importers:
       '@walt/contracts':
         specifier: workspace:*
         version: link:../contracts
+      openai:
+        specifier: ^6.27.0
+        version: 6.27.0(zod@3.25.76)
       zod:
         specifier: ^3.24.2
         version: 3.25.76
