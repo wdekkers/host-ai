@@ -7,6 +7,7 @@ import { PropertySettingsTabs } from '../PropertySettingsTabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PricingCard } from './PricingCard';
 import { NicknamesCard } from './NicknamesCard';
+import { TasksList } from '@/app/tasks/_components/tasks-list';
 
 function Badge({ children, variant = 'default' }: { children: React.ReactNode; variant?: 'default' | 'success' | 'destructive' }) {
   const styles = {
@@ -285,6 +286,15 @@ export default async function PropertyDetailsPage({
 
       <div className="mt-4">
         <PricingCard propertyId={id} />
+      </div>
+
+      <div className="mt-6">
+        <Card>
+          <CardHeader><CardTitle>Tasks</CardTitle></CardHeader>
+          <CardContent>
+            <TasksList propertyId={id} />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
