@@ -9,12 +9,12 @@ const base: CatalogRow[] = [
   { id: 'c', label: 'Inactive', dimension: 'profile', severity: 'low', valence: 'risk', active: false },
 ];
 
-test('returns only active rows when there are no overrides', () => {
+void test('returns only active rows when there are no overrides', () => {
   const result = applyOverrides(base, []);
   assert.deepEqual(result.map((r) => r.id), ['a', 'b']);
 });
 
-test('overrides severity when override severity is set', () => {
+void test('overrides severity when override severity is set', () => {
   const overrides: OverrideRow[] = [
     { catalogItemId: 'a', severity: 'low', active: null },
   ];
@@ -23,7 +23,7 @@ test('overrides severity when override severity is set', () => {
   assert.equal(a?.severity, 'low');
 });
 
-test('omits a row when override active=false', () => {
+void test('omits a row when override active=false', () => {
   const overrides: OverrideRow[] = [
     { catalogItemId: 'a', severity: null, active: false },
   ];
@@ -31,7 +31,7 @@ test('omits a row when override active=false', () => {
   assert.equal(result.find((r) => r.id === 'a'), undefined);
 });
 
-test('keeps a row when override active=true even if base active=false', () => {
+void test('keeps a row when override active=true even if base active=false', () => {
   const overrides: OverrideRow[] = [
     { catalogItemId: 'c', severity: null, active: true },
   ];
@@ -39,7 +39,7 @@ test('keeps a row when override active=true even if base active=false', () => {
   assert.notEqual(result.find((r) => r.id === 'c'), undefined);
 });
 
-test('null override severity preserves base severity', () => {
+void test('null override severity preserves base severity', () => {
   const overrides: OverrideRow[] = [
     { catalogItemId: 'b', severity: null, active: null },
   ];

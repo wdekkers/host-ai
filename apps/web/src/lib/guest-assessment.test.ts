@@ -35,7 +35,7 @@ const baseInputs: AssessmentPromptInputs = {
   ],
 };
 
-test('buildAssessmentPrompt includes every input section', () => {
+void test('buildAssessmentPrompt includes every input section', () => {
   const prompt = buildAssessmentPrompt(baseInputs);
   assert.ok(prompt.includes('PROPERTY HOUSE RULES'));
   assert.ok(prompt.includes('No pets'));
@@ -50,7 +50,7 @@ test('buildAssessmentPrompt includes every input section', () => {
   assert.ok(prompt.includes('CONVERSATION'));
 });
 
-test('buildAssessmentPrompt omits optional sections when empty', () => {
+void test('buildAssessmentPrompt omits optional sections when empty', () => {
   const prompt = buildAssessmentPrompt({
     ...baseInputs,
     propertyHouseRules: null,
@@ -64,12 +64,12 @@ test('buildAssessmentPrompt omits optional sections when empty', () => {
   assert.ok(!prompt.includes('PAST REVIEWS'));
 });
 
-test('buildAssessmentPrompt instructs that public reviews do not override private feedback or incidents', () => {
+void test('buildAssessmentPrompt instructs that public reviews do not override private feedback or incidents', () => {
   const prompt = buildAssessmentPrompt(baseInputs);
   assert.ok(prompt.toLowerCase().includes('does not override'));
 });
 
-test('buildAssessmentPrompt always emits the JSON output schema', () => {
+void test('buildAssessmentPrompt always emits the JSON output schema', () => {
   const prompt = buildAssessmentPrompt(baseInputs);
   assert.ok(prompt.includes('"score"'));
   assert.ok(prompt.includes('"risk_level"'));
@@ -79,11 +79,11 @@ test('buildAssessmentPrompt always emits the JSON output schema', () => {
   assert.ok(prompt.includes('"rules_acceptance"'));
 });
 
-test('computeInputsHash returns the same hash for the same inputs', () => {
+void test('computeInputsHash returns the same hash for the same inputs', () => {
   assert.equal(computeInputsHash(baseInputs), computeInputsHash(baseInputs));
 });
 
-test('computeInputsHash returns a different hash when a message body changes', () => {
+void test('computeInputsHash returns a different hash when a message body changes', () => {
   const modified: AssessmentPromptInputs = {
     ...baseInputs,
     thread: [...baseInputs.thread, { sender: 'guest', body: 'One more question.' }],
@@ -91,7 +91,7 @@ test('computeInputsHash returns a different hash when a message body changes', (
   assert.notEqual(computeInputsHash(baseInputs), computeInputsHash(modified));
 });
 
-test('computeInputsHash returns a different hash when the catalog changes', () => {
+void test('computeInputsHash returns a different hash when the catalog changes', () => {
   const modified: AssessmentPromptInputs = {
     ...baseInputs,
     effectiveCatalog: [
@@ -102,7 +102,7 @@ test('computeInputsHash returns a different hash when the catalog changes', () =
   assert.notEqual(computeInputsHash(baseInputs), computeInputsHash(modified));
 });
 
-test('parseAssessmentResponse parses a valid response and clamps score to 1-10', () => {
+void test('parseAssessmentResponse parses a valid response and clamps score to 1-10', () => {
   const content = JSON.stringify({
     score: 12,
     summary: 'Some summary',
@@ -125,10 +125,10 @@ test('parseAssessmentResponse parses a valid response and clamps score to 1-10',
   assert.equal(result!.rulesAcceptance.confirmed, true);
 });
 
-test('parseAssessmentResponse returns null on invalid JSON', () => {
+void test('parseAssessmentResponse returns null on invalid JSON', () => {
   assert.equal(parseAssessmentResponse('not json'), null);
 });
 
-test('parseAssessmentResponse returns null when required fields are missing', () => {
+void test('parseAssessmentResponse returns null when required fields are missing', () => {
   assert.equal(parseAssessmentResponse(JSON.stringify({ score: 7 })), null);
 });

@@ -63,7 +63,7 @@ export async function loadEffectiveCatalog(
 
   let overrides: OverrideRow[] = [];
   if (propertyId) {
-    overrides = await db
+    const rows = await db
       .select({
         catalogItemId: propertySignalOverrides.catalogItemId,
         severity: propertySignalOverrides.severity,
@@ -71,6 +71,11 @@ export async function loadEffectiveCatalog(
       })
       .from(propertySignalOverrides)
       .where(eq(propertySignalOverrides.propertyId, propertyId));
+    overrides = rows.map((r) => ({
+      catalogItemId: r.catalogItemId,
+      severity: r.severity as Severity | null,
+      active: r.active,
+    }));
   }
 
   return applyOverrides(catalogRows as CatalogRow[], overrides as OverrideRow[]);
