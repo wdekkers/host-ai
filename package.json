@@ -14,6 +14,7 @@
     "gen:openapi": "turbo run gen:openapi"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
     "@eslint/js": "^9.22.0",
     "@fastify/swagger": "^9.4.2",
     "@fastify/swagger-ui": "^5.2.2",
@@ -29,6 +30,7 @@
     "fastify": "^5.2.1",
     "globals": "^16.4.0",
     "next": "^15.2.1",
+    "openai": "^6.27.0",
     "openapi-fetch": "^0.12.2",
     "openapi-typescript": "^7.6.1",
     "pg": "^8.13.3",
@@ -44,6 +46,7 @@
   },
   "pnpm": {
     "overrides": {
+      "@anthropic-ai/sdk": "^0.80.0",
       "@eslint/js": "^9.22.0",
       "@fastify/swagger": "^9.4.2",
       "@fastify/swagger-ui": "^5.2.2",
@@ -58,6 +61,7 @@
       "fastify": "^5.2.1",
       "globals": "^16.4.0",
       "next": "^15.2.1",
+      "openai": "^6.27.0",
       "openapi-fetch": "^0.12.2",
       "openapi-typescript": "^7.6.1",
       "pg": "^8.13.3",
