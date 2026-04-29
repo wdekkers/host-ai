@@ -16,7 +16,6 @@
     "test": "node --test --import tsx 'src/**/*.test.ts'"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.80.0",
     "@walt/contracts": "workspace:*",
     "openai": "^6.27.0",
     "zod": "3.25.76"

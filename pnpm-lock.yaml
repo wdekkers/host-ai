@@ -5,7 +5,6 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@anthropic-ai/sdk': ^0.80.0
   '@eslint/js': ^9.22.0
   '@fastify/swagger': ^9.4.2
   '@fastify/swagger-ui': ^5.2.2
@@ -38,9 +37,6 @@ importers:
 
   .:
     devDependencies:
-      '@anthropic-ai/sdk':
-        specifier: ^0.80.0
-        version: 0.80.0(zod@3.25.76)
       '@eslint/js':
         specifier: ^9.22.0
         version: 9.39.3
@@ -273,9 +269,6 @@ importers:
 
   packages/ai:
     dependencies:
-      '@anthropic-ai/sdk':
-        specifier: ^0.80.0
-        version: 0.80.0(zod@3.25.76)
       '@walt/contracts':
         specifier: workspace:*
         version: link:../contracts
