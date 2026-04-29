@@ -4,8 +4,6 @@
   "version": "0.1.0",
   "packageManager": "pnpm@10.6.0",
   "scripts": {
-    "prepare": "git config core.hooksPath .githooks || true",
-    "hooks:install": "git config core.hooksPath .githooks",
     "dev": "turbo run dev --parallel",
     "build": "turbo run build",
     "lint": "turbo run lint",
