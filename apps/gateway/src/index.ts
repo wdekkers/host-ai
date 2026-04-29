@@ -324,6 +324,56 @@ app.post('/tasks', { preHandler: requireAuth() }, async (request, reply) => {
   }
 });
 
+app.post('/tasks/parse-dictation', { preHandler: requireAuth() }, async (request, reply) => {
+  try {
+    const response = await fetch(`${tasksServiceBaseUrl}/tasks/parse-dictation`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        accept: 'application/json',
+        'x-org-id': request.auth?.orgId ?? '',
+        'x-user-id': request.auth?.userId ?? '',
+      },
+      body: JSON.stringify(request.body ?? {}),
+    });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      return reply
+        .status(response.status)
+        .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
+    }
+    return reply.status(response.status).send(await response.json());
+  } catch (error) {
+    app.log.error({ error }, 'Failed to parse dictation in tasks service');
+    return reply.status(502).send({ error: 'Tasks service unavailable' });
+  }
+});
+
+app.post('/tasks/bulk', { preHandler: requireAuth() }, async (request, reply) => {
+  try {
+    const response = await fetch(`${tasksServiceBaseUrl}/tasks/bulk`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        accept: 'application/json',
+        'x-org-id': request.auth?.orgId ?? '',
+        'x-user-id': request.auth?.userId ?? '',
+      },
+      body: JSON.stringify(request.body ?? {}),
+    });
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      return reply
+        .status(response.status)
+        .send({ error: payload.error ?? `Tasks service returned ${response.status}` });
+    }
+    return reply.status(response.status).send(await response.json());
+  } catch (error) {
+    app.log.error({ error }, 'Failed to bulk create tasks in tasks service');
+    return reply.status(502).send({ error: 'Tasks service unavailable' });
+  }
+});
+
 app.patch('/tasks/:id', { preHandler: requireAuth() }, async (request, reply) => {
   try {
     const { id } = request.params as { id: string };
