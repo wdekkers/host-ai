@@ -202,6 +202,132 @@ void test('DELETE /tasks/:id soft-deletes task', async () => {
   await app.close();
 });
 
+void test('POST /tasks/parse-dictation: 400 when missing x-org-id', async () => {
+  const app = buildTasksApp(db);
+  const response = await app.inject({
+    method: 'POST',
+    url: '/tasks/parse-dictation',
+    payload: { transcript: 'x' },
+  });
+  assert.equal(response.statusCode, 400);
+  await app.close();
+});
+
+void test('POST /tasks/parse-dictation returns parsed drafts (stubbed AI)', async () => {
+  const orgId = randomUUID();
+  const app = buildTasksApp(db, {
+    parseTaskDictation: async () => ({
+      tasks: [
+        {
+          title: 'Fix faucet',
+          description: 'Kitchen faucet leaks',
+          propertyMatches: [],
+          propertyAmbiguous: 'lake house',
+          categoryId: null,
+          suggestedNewCategory: 'Plumbing',
+          priority: 'medium',
+          dueDate: null,
+          confidence: 'medium',
+        },
+      ],
+    }),
+  });
+  const response = await app.inject({
+    method: 'POST',
+    url: '/tasks/parse-dictation',
+    headers: { 'x-org-id': orgId, 'x-user-id': 'user-1' },
+    payload: { transcript: 'Kitchen faucet leaks at the lake house' },
+  });
+  assert.equal(response.statusCode, 200);
+  const body = response.json() as { tasks: Array<{ title: string }> };
+  assert.equal(body.tasks.length, 1);
+  assert.equal(body.tasks[0]!.title, 'Fix faucet');
+  await app.close();
+});
+
+void test('POST /tasks/parse-dictation: 422 on AI failure', async () => {
+  const orgId = randomUUID();
+  const app = buildTasksApp(db, {
+    parseTaskDictation: async () => {
+      throw new Error('parseTaskDictation: failed');
+    },
+  });
+  const response = await app.inject({
+    method: 'POST',
+    url: '/tasks/parse-dictation',
+    headers: { 'x-org-id': orgId, 'x-user-id': 'user-1' },
+    payload: { transcript: 'x' },
+  });
+  assert.equal(response.statusCode, 422);
+  await app.close();
+});
+
+void test('POST /tasks/bulk creates multiple tasks with category upsert', async () => {
+  const orgId = randomUUID();
+  const propertyId = `test-prop-${randomUUID()}`;
+  await db.insert(properties).values({
+    id: propertyId,
+    name: 'X',
+    raw: {},
+    syncedAt: new Date(),
+  });
+
+  try {
+    const app = buildTasksApp(db);
+    const response = await app.inject({
+      method: 'POST',
+      url: '/tasks/bulk',
+      headers: { 'x-org-id': orgId, 'x-user-id': 'u' },
+      payload: {
+        drafts: [
+          { title: 'A', priority: 'medium', propertyIds: [propertyId] },
+          {
+            title: 'B',
+            priority: 'high',
+            propertyIds: [propertyId],
+            newCategoryName: 'Plumbing',
+          },
+        ],
+        source: 'ai-dictation',
+      },
+    });
+    assert.equal(response.statusCode, 200);
+    const body = response.json() as {
+      results: Array<{ ok: boolean; task?: { title: string; categoryId: string | null } }>;
+    };
+    assert.equal(body.results.length, 2);
+    assert.ok(body.results[0]!.ok);
+    assert.ok(body.results[1]!.ok);
+    assert.equal(body.results[0]!.task!.title, 'A');
+    assert.ok(body.results[1]!.task!.categoryId);
+    await app.close();
+  } finally {
+    await db.delete(properties).where(eq(properties.id, propertyId));
+  }
+});
+
+void test('POST /tasks/bulk reports per-row failures without aborting', async () => {
+  const orgId = randomUUID();
+  const app = buildTasksApp(db);
+  const response = await app.inject({
+    method: 'POST',
+    url: '/tasks/bulk',
+    headers: { 'x-org-id': orgId, 'x-user-id': 'u' },
+    payload: {
+      drafts: [
+        { title: 'OK', priority: 'medium', propertyIds: ['nonexistent'] },
+        { title: '', priority: 'medium', propertyIds: ['x'] },
+      ],
+    },
+  });
+  assert.equal(response.statusCode, 200);
+  const body = response.json() as { results: Array<{ ok: boolean }> };
+  assert.equal(body.results.length, 2);
+  assert.ok(body.results[0]!.ok);
+  assert.equal(body.results[1]!.ok, false);
+  await app.close();
+});
+
 void test('loadPropertyContext returns id, name, nicknames', async () => {
   const propertyId = `test-prop-${randomUUID()}`;
   await db.insert(properties).values({

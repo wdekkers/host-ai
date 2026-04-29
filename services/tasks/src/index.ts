@@ -10,8 +10,15 @@ import {
   updateTaskInputSchema,
 } from '@walt/contracts';
 import type { TaskAuditAction } from '@walt/contracts';
+import type { parseTaskDictation } from '@walt/ai';
+import { registerParseDictationRoute } from './parse-dictation.js';
+import { registerBulkCreateRoute } from './bulk.js';
 
 export type Db = ReturnType<typeof createDb>;
+
+export type TasksAppDeps = {
+  parseTaskDictation?: typeof parseTaskDictation;
+};
 
 async function writeAudit(
   db: Db,
@@ -36,7 +43,7 @@ async function writeAudit(
 
 export { loadPropertyContext } from './property-context.js';
 
-export function buildTasksApp(db: Db) {
+export function buildTasksApp(db: Db, deps: TasksAppDeps = {}) {
   const app = Fastify({ logger: true });
 
   app.get('/health', async () => ({ status: 'ok', service: 'tasks' }));
@@ -382,6 +389,9 @@ export function buildTasksApp(db: Db) {
 
     return { item };
   });
+
+  registerParseDictationRoute(app, db, deps);
+  registerBulkCreateRoute(app, db);
 
   return app;
 }

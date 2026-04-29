@@ -435,6 +435,9 @@ importers:
 
   services/tasks:
     dependencies:
+      '@walt/ai':
+        specifier: workspace:^
+        version: link:../../packages/ai
       '@walt/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
