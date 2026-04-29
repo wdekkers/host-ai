@@ -21,6 +21,7 @@ COPY packages/stripe/package.json ./packages/stripe/
 COPY packages/ses/package.json ./packages/ses/
 COPY packages/cdn/package.json ./packages/cdn/
 COPY packages/mailerlite/package.json ./packages/mailerlite/
+COPY packages/ai/package.json ./packages/ai/
 COPY apps/web/package.json ./apps/web/
 COPY apps/gateway/package.json ./apps/gateway/
 COPY services/identity/package.json ./services/identity/
@@ -77,6 +78,8 @@ COPY --from=build /app/packages/cdn/dist ./packages/cdn/dist
 COPY --from=build /app/packages/cdn/package.json ./packages/cdn/
 COPY --from=build /app/packages/mailerlite/dist ./packages/mailerlite/dist
 COPY --from=build /app/packages/mailerlite/package.json ./packages/mailerlite/
+COPY --from=build /app/packages/ai/dist ./packages/ai/dist
+COPY --from=build /app/packages/ai/package.json ./packages/ai/
 
 # Re-link workspace packages so Node.js can resolve @walt/* at runtime
 RUN mkdir -p node_modules/@walt && \
@@ -86,7 +89,8 @@ RUN mkdir -p node_modules/@walt && \
     ln -sfn /app/packages/stripe node_modules/@walt/stripe && \
     ln -sfn /app/packages/ses node_modules/@walt/ses && \
     ln -sfn /app/packages/cdn node_modules/@walt/cdn && \
-    ln -sfn /app/packages/mailerlite node_modules/@walt/mailerlite
+    ln -sfn /app/packages/mailerlite node_modules/@walt/mailerlite && \
+    ln -sfn /app/packages/ai node_modules/@walt/ai
 
 # Copy built gateway
 COPY --from=build /app/apps/gateway/dist ./apps/gateway/dist
