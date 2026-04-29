@@ -117,6 +117,7 @@ export const properties = waltSchema.table('properties', {
   additionalRules: text('additional_rules'),
   otherDetails: text('other_details'),
   houseRules: text('house_rules'),
+  nicknames: text('nicknames').array().notNull().default(sql`'{}'::text[]`),
 });
 
 export const reservations = waltSchema.table('reservations', {
