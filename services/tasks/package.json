@@ -15,6 +15,7 @@
     "tsx": "^4.19.3"
   },
   "dependencies": {
+    "@walt/ai": "workspace:^",
     "@walt/contracts": "workspace:*",
     "@walt/db": "workspace:*"
   }

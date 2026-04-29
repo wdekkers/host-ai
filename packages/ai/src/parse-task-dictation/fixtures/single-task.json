@@ -1,0 +1,25 @@
+{
+  "transcript": "At RC, the kitchen faucet is dripping. Need to get that fixed by Friday.",
+  "today": "2026-04-28",
+  "properties": [
+    { "id": "prop-001", "name": "Rushing Creek", "nicknames": ["RC", "Rushing"] }
+  ],
+  "categories": [
+    { "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890", "name": "Plumbing" }
+  ],
+  "expected": {
+    "tasks": [
+      {
+        "title": "Fix dripping kitchen faucet",
+        "description": "Kitchen faucet is dripping and needs repair.",
+        "propertyMatches": ["prop-001"],
+        "propertyAmbiguous": null,
+        "categoryId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "suggestedNewCategory": null,
+        "priority": "medium",
+        "dueDate": "2026-05-01T00:00:00.000Z",
+        "confidence": "high"
+      }
+    ]
+  }
+}

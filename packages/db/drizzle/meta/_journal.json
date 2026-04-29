@@ -253,6 +253,13 @@
       "when": 1777719600000,
       "tag": "0035_guest_assessments_unique_message_idx",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1777800000000,
+      "tag": "0036_property_nicknames",
+      "breakpoints": true
     }
   ]
 }

@@ -195,6 +195,9 @@ importers:
       '@types/aws4':
         specifier: ^1.11.6
         version: 1.11.6
+      '@walt/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@walt/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -259,6 +262,34 @@ importers:
       shadcn:
         specifier: ^4.1.0
         version: 4.1.0(@types/node@22.19.13)(typescript@5.9.3)
+
+  packages/ai:
+    dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.80.0
+        version: 0.80.0(zod@3.25.76)
+      '@walt/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      openai:
+        specifier: ^6.27.0
+        version: 6.27.0(zod@3.25.76)
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
+    devDependencies:
+      '@walt/config-eslint':
+        specifier: workspace:*
+        version: link:../config-eslint
+      '@walt/config-typescript':
+        specifier: workspace:*
+        version: link:../config-typescript
+      tsx:
+        specifier: ^4.19.3
+        version: 4.21.0
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
 
   packages/api-client: {}
 
@@ -410,6 +441,9 @@ importers:
 
   services/tasks:
     dependencies:
+      '@walt/ai':
+        specifier: workspace:^
+        version: link:../../packages/ai
       '@walt/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts

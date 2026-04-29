@@ -16,6 +16,7 @@
     "@clerk/nextjs": "^5.7.5",
     "@tailwindcss/postcss": "^4.2.1",
     "@types/aws4": "^1.11.6",
+    "@walt/ai": "workspace:*",
     "@walt/contracts": "workspace:*",
     "@walt/db": "workspace:*",
     "@walt/hospitable": "workspace:*",
